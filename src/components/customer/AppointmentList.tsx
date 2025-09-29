@@ -27,7 +27,7 @@ import {
   Car,
   MessageSquare,
   Edit,
-  Trash2,
+  X,
   AlertCircle,
   HelpCircle,
 } from "lucide-react";
@@ -46,11 +46,16 @@ interface AppointmentListProps {
 }
 
 const statusColors: Record<AppointmentStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  confirmed: "bg-blue-100 text-blue-800 border-blue-300",
-  "in-progress": "bg-orange-100 text-orange-800 border-orange-300",
-  completed: "bg-green-100 text-green-800 border-green-300",
-  cancelled: "bg-red-100 text-red-800 border-red-300",
+  pending:
+    "bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border-yellow-300 shadow-sm",
+  confirmed:
+    "bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300 shadow-sm",
+  "in-progress":
+    "bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border-orange-300 shadow-sm",
+  completed:
+    "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300 shadow-sm",
+  cancelled:
+    "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300 shadow-sm",
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
@@ -172,11 +177,23 @@ export default function AppointmentList({
       </div>
 
       {/* Appointments List */}
-      <Card className="w-full">
-        <CardHeader className="bg-secondary text-white">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            My Consultation Appointments ({appointments.length})
+      <Card className="w-full shadow-lg border-0 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-secondary to-primary text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/5"></div>
+          <CardTitle className="flex items-center gap-3 text-lg relative z-10">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xl font-bold">
+                My Consultation Appointments
+              </div>
+              <div className="text-sm text-white/90 font-normal">
+                {appointments.length}{" "}
+                {appointments.length === 1 ? "appointment" : "appointments"}{" "}
+                scheduled
+              </div>
+            </div>
           </CardTitle>
         </CardHeader>
 
@@ -185,46 +202,62 @@ export default function AppointmentList({
           <div className="hidden md:block">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700">
-                    Vehicle
+                <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 border-b-2 border-gray-200">
+                  <TableHead className="font-bold text-gray-800 py-4 text-left">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-primary" />
+                      Vehicle
+                    </div>
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Consultation
+                  <TableHead className="font-bold text-gray-800 py-4 text-left">
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4 text-primary" />
+                      Consultation
+                    </div>
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
-                    Date & Time
+                  <TableHead className="font-bold text-gray-800 py-4 text-left">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Date & Time
+                    </div>
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
+                  <TableHead className="font-bold text-gray-800 py-4 text-left">
                     Status
                   </TableHead>
-                  <TableHead className="font-semibold text-gray-700">
+                  <TableHead className="font-bold text-gray-800 py-4 text-center">
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {appointments.map((appointment) => (
-                  <TableRow key={appointment.id} className="hover:bg-gray-50">
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-3">
-                        <Car className="h-4 w-4 text-primary" />
+                  <TableRow
+                    key={appointment.id}
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-b border-gray-100 group"
+                  >
+                    <TableCell className="py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl group-hover:from-primary/20 group-hover:to-secondary/20 transition-all duration-200">
+                          <Car className="h-5 w-5 text-primary" />
+                        </div>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900 text-base">
                             {appointment.vehicleName}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 mt-1">
                             {appointment.vehicleDetails}
                           </p>
                         </div>
                       </div>
                     </TableCell>
 
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-3">
-                        <HelpCircle className="h-4 w-4 text-primary" />
+                    <TableCell className="py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl group-hover:from-green-200 group-hover:to-emerald-200 transition-all duration-200">
+                          <HelpCircle className="h-5 w-5 text-green-600" />
+                        </div>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900 text-base">
                             {
                               consultationTypeLabels[
                                 appointment.consultationType
@@ -232,22 +265,41 @@ export default function AppointmentList({
                             }
                           </p>
                           {appointment.customerIssue && (
-                            <p className="text-sm text-gray-600">
-                              Issue: {appointment.customerIssue}
+                            <p className="text-sm text-gray-600 mt-1 max-w-xs truncate">
+                              <span className="font-medium">Issue:</span>{" "}
+                              {appointment.customerIssue}
                             </p>
                           )}
+                          {appointment.employeeName && (
+                            <p className="text-sm text-blue-600 mt-1">
+                              <span className="font-medium">Assigned to:</span>{" "}
+                              {appointment.employeeName}
+                            </p>
+                          )}
+                          {appointment.status === "completed" &&
+                            appointment.recommendedServices &&
+                            appointment.recommendedServices.length > 0 && (
+                              <p className="text-sm text-green-600 mt-1">
+                                <span className="font-medium">
+                                  Services recommended:
+                                </span>{" "}
+                                {appointment.recommendedServices.length} items
+                              </p>
+                            )}
                         </div>
                       </div>
                     </TableCell>
 
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-4 w-4 text-primary" />
+                    <TableCell className="py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl group-hover:from-blue-200 group-hover:to-cyan-200 transition-all duration-200">
+                          <Clock className="h-5 w-5 text-blue-600" />
+                        </div>
                         <div>
-                          <p className="font-medium">
+                          <p className="font-semibold text-gray-900 text-base">
                             {formatDate(appointment.appointmentDate)}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 mt-1">
                             {formatTime(appointment.startTime)} -{" "}
                             {formatTime(appointment.endTime)}
                           </p>
@@ -255,30 +307,32 @@ export default function AppointmentList({
                       </div>
                     </TableCell>
 
-                    <TableCell className="py-4">
-                      <Badge
-                        className={cn(
-                          "border",
-                          statusColors[appointment.status]
-                        )}
-                        variant="outline"
-                      >
-                        {statusLabels[appointment.status]}
-                      </Badge>
+                    <TableCell className="py-6">
+                      <div className="flex justify-center">
+                        <Badge
+                          className={cn(
+                            "border-2 px-4 py-2 text-sm font-semibold rounded-full",
+                            statusColors[appointment.status]
+                          )}
+                          variant="outline"
+                        >
+                          {statusLabels[appointment.status]}
+                        </Badge>
+                      </div>
                     </TableCell>
 
-                    <TableCell className="py-4">
-                      <div className="flex gap-2">
+                    <TableCell className="py-6">
+                      <div className="flex justify-center gap-3">
                         {canEditOrDelete(appointment.status) && (
                           <>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => onEdit(appointment)}
-                              className="hover:bg-blue-50"
+                              className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md border-2"
                               disabled={isLoading}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-4 w-4 text-blue-600" />
                             </Button>
 
                             <Dialog>
@@ -286,12 +340,12 @@ export default function AppointmentList({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="hover:bg-red-50"
+                                  className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md border-2"
                                   disabled={
                                     isLoading || deletingId === appointment.id
                                   }
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <X className="h-4 w-4 text-red-600" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent>
@@ -351,11 +405,11 @@ export default function AppointmentList({
           </div>
 
           {/* Mobile Card View */}
-          <div className="block md:hidden space-y-4 p-4">
+          <div className="block md:hidden space-y-4 p-6">
             {appointments.map((appointment) => (
               <Card
                 key={appointment.id}
-                className="border-l-4"
+                className="border-l-4 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-white to-gray-50 overflow-hidden"
                 style={{
                   borderLeftColor:
                     appointment.status === "pending"
@@ -369,10 +423,13 @@ export default function AppointmentList({
                       : "#f97316",
                 }}
               >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
                     <Badge
-                      className={cn("border", statusColors[appointment.status])}
+                      className={cn(
+                        "border-2 px-3 py-1 text-sm font-semibold rounded-full shadow-sm",
+                        statusColors[appointment.status]
+                      )}
                       variant="outline"
                     >
                       {statusLabels[appointment.status]}
@@ -386,8 +443,9 @@ export default function AppointmentList({
                             size="sm"
                             onClick={() => onEdit(appointment)}
                             disabled={isLoading}
+                            className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 text-blue-600" />
                           </Button>
 
                           <Dialog>
@@ -398,8 +456,9 @@ export default function AppointmentList({
                                 disabled={
                                   isLoading || deletingId === appointment.id
                                 }
+                                className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <X className="h-4 w-4 text-red-600" />
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -428,47 +487,94 @@ export default function AppointmentList({
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-primary" />
-                      <span className="font-medium">
-                        {appointment.vehicleName}
-                      </span>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                      <div className="p-2 bg-primary/20 rounded-lg">
+                        <Car className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900 text-base">
+                          {appointment.vehicleName}
+                        </span>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {appointment.vehicleDetails}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-primary" />
-                      <span>
-                        {consultationTypeLabels[appointment.consultationType]}
-                      </span>
+                    <div className="flex items-start gap-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                      <div className="p-2 bg-green-500/20 rounded-lg">
+                        <HelpCircle className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-semibold text-gray-900 block">
+                          {consultationTypeLabels[appointment.consultationType]}
+                        </span>
+                        {appointment.customerIssue && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium">Issue:</span>{" "}
+                            {appointment.customerIssue}
+                          </p>
+                        )}
+                        {appointment.employeeName && (
+                          <p className="text-sm text-blue-600 mt-1">
+                            <span className="font-medium">Assigned to:</span>{" "}
+                            {appointment.employeeName}
+                          </p>
+                        )}
+                        {appointment.status === "completed" &&
+                          appointment.recommendedServices &&
+                          appointment.recommendedServices.length > 0 && (
+                            <p className="text-sm text-green-600 mt-1">
+                              <span className="font-medium">
+                                Services recommended:
+                              </span>{" "}
+                              {appointment.recommendedServices.length} items
+                            </p>
+                          )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span>{formatDate(appointment.appointmentDate)}</span>
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Calendar className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900">
+                          {formatDate(appointment.appointmentDate)}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span>
-                        {formatTime(appointment.startTime)} -{" "}
-                        {formatTime(appointment.endTime)}
-                      </span>
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl">
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <Clock className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-900">
+                          {formatTime(appointment.startTime)} -{" "}
+                          {formatTime(appointment.endTime)}
+                        </span>
+                      </div>
                     </div>
 
                     {appointment.customerIssue && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded">
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Issue:</span>{" "}
+                      <div className="mt-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-l-4 border-blue-400">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold text-blue-600">
+                            Issue:
+                          </span>{" "}
                           {appointment.customerIssue}
                         </p>
                       </div>
                     )}
 
                     {appointment.notes && (
-                      <div className="mt-2 p-2 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Notes:</span>{" "}
+                      <div className="mt-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-l-4 border-cyan-400">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-semibold text-cyan-600">
+                            Notes:
+                          </span>{" "}
                           {appointment.notes}
                         </p>
                       </div>
