@@ -1,10 +1,19 @@
-import React from "react";
+"use client";
 
-export default function CustomerDashboard() {
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function CustomerPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to the new dashboard
+    router.replace("/customer/dashboard");
+  }, [router]);
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Customer Dashboard</h1>
-      <div className="bg-white p-6 rounded shadow">To be developed</div>
+    <div className="flex items-center justify-center h-screen">
+      <p>Redirecting to dashboard...</p>
     </div>
   );
 }

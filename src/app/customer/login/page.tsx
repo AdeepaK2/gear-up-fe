@@ -70,7 +70,7 @@ export default function CustomerLoginPage() {
         localStorage.setItem("customerEmail", formData.email);
 
         // Redirect to customer dashboard
-        router.push("/customer");
+        router.push("/customer/dashboard");
       } else {
         setErrors({ general: "Invalid email or password" });
       }
