@@ -3,15 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Briefcase, Package, Calendar as CalendarIcon, FileText, LogOut } from 'lucide-react';
+import { Home,UserCog, User, Briefcase, Package, Calendar as CalendarIcon, FileText, LogOut } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
     { href: '/admin', icon: <Home className="h-5 w-5" />, text: 'Dashboard' },
-    { href: '/admin/employees', icon: <Users className="h-5 w-5" />, text: 'Employees' },
-    { href: '/admin/customers', icon: <Users className="h-5 w-5" />, text: 'Customers' },
+    { href: '/admin/employees', icon: <UserCog className="h-5 w-5" />, text: 'Employees' },
+    { href: '/admin/customers', icon: <User className="h-5 w-5" />, text: 'Customers' },
     { href: '/admin/projects', icon: <Briefcase className="h-5 w-5" />, text: 'Projects' },
     { href: '/admin/services', icon: <Package className="h-5 w-5" />, text: 'Services' },
     { href: '/admin/appointments', icon: <CalendarIcon className="h-5 w-5" />, text: 'Appointments' },

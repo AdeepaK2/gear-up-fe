@@ -4,14 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React from "react";
-import { Home, User, Briefcase, Calendar, Bell, LogOut } from "lucide-react";
+import { Home, UserCog, User, Briefcase, Calendar, Bell, LogOut} from "lucide-react";
 
 const navItems = [
   { href: "/employee", label: "Dashboard", icon: <Home size={18} /> },
-  { href: "/employee/profile", label: "Profile", icon: <User size={18} /> },
+  { href: "/employee/profile", label: "Profile", icon: <UserCog size={18} /> },
   { href: "/employee/projects", label: "Projects", icon: <Briefcase size={18} /> },
   { href: "/employee/appointments", label: "Appointments", icon: <Calendar size={18} /> },
-  { href: "/employee/notifications", label: "Notifications", icon: <Bell size={18} /> },
+   { href: "/employee/notifications", label: "Notifications", icon: <Bell size={18} /> },
+
+
 ];
 
 export default function EmployeeSidebar() {
@@ -25,7 +27,7 @@ export default function EmployeeSidebar() {
         </div>
       </div>
 
-      <div className="mb-4 text-center font-semibold">Company</div>
+      {/* <div className="mb-4 text-center font-semibold">Company</div> */}
 
       <nav className="space-y-2">
         {navItems.map((item) => {
