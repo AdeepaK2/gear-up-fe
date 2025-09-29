@@ -13,50 +13,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { AppointmentStatus } from "@/lib/types/Appointment";
-
-// Simple interfaces for frontend only
-interface Vehicle {
-  id: string;
-  name: string;
-  details: string;
-}
-
-interface ServiceCategory {
-  id: string;
-  name: string;
-  description: string;
-  duration: string;
-}
-
-interface AppointmentData {
-  id: string;
-  vehicleId: string;
-  vehicleName: string;
-  vehicleDetails: string;
-  serviceCategoryId: string;
-  serviceName: string;
-  serviceDescription: string;
-  serviceDuration: string;
-  appointmentDate: string;
-  startTime: string;
-  endTime: string;
-  status: AppointmentStatus;
-  description?: string;
-  notes?: string;
-}
-
-interface AppointmentFormData {
-  id?: string;
-  vehicleId: string;
-  serviceCategoryId: string;
-  appointmentDate: string;
-  startTime: string;
-  endTime: string;
-  status?: AppointmentStatus;
-  description?: string;
-  notes?: string;
-}
+import {
+  AppointmentStatus,
+  AppointmentData,
+  AppointmentFormData,
+  Vehicle,
+  ConsultationType,
+} from "@/lib/types/Appointment";
 
 // Mock data - Replace with your actual data
 const mockVehicles: Vehicle[] = [
@@ -77,54 +40,19 @@ const mockVehicles: Vehicle[] = [
   },
 ];
 
-const mockServiceCategories: ServiceCategory[] = [
-  {
-    id: "1",
-    name: "Oil Change",
-    description: "Regular engine oil and filter replacement",
-    duration: "30 minutes",
-  },
-  {
-    id: "2",
-    name: "Brake Inspection",
-    description: "Complete brake system inspection and service",
-    duration: "1 hour",
-  },
-  {
-    id: "3",
-    name: "General Maintenance",
-    description: "Comprehensive vehicle maintenance check",
-    duration: "2 hours",
-  },
-  {
-    id: "4",
-    name: "Tire Service",
-    description: "Tire rotation, alignment, and replacement",
-    duration: "45 minutes",
-  },
-  {
-    id: "5",
-    name: "Engine Diagnostics",
-    description: "Advanced computer diagnostics and troubleshooting",
-    duration: "1.5 hours",
-  },
-];
-
 const mockAppointments: AppointmentData[] = [
   {
     id: "1",
     vehicleId: "1",
     vehicleName: "2020 Toyota Camry",
     vehicleDetails: "License: ABC-123",
-    serviceCategoryId: "1",
-    serviceName: "Oil Change",
-    serviceDescription: "Regular engine oil and filter replacement",
-    serviceDuration: "30 minutes",
+    consultationType: "general-checkup",
+    consultationTypeLabel: "General Vehicle Checkup",
     appointmentDate: "2025-10-15",
     startTime: "09:00",
     endTime: "09:30",
     status: "pending",
-    description: "Regular maintenance check",
+    customerIssue: "Regular maintenance check",
     notes: "Please check tire pressure as well",
   },
   {
@@ -132,15 +60,13 @@ const mockAppointments: AppointmentData[] = [
     vehicleId: "2",
     vehicleName: "2019 Honda CR-V",
     vehicleDetails: "License: XYZ-789",
-    serviceCategoryId: "2",
-    serviceName: "Brake Inspection",
-    serviceDescription: "Complete brake system inspection and service",
-    serviceDuration: "1 hour",
+    consultationType: "specific-issue",
+    consultationTypeLabel: "Specific Issue Consultation",
     appointmentDate: "2025-10-20",
     startTime: "14:00",
     endTime: "15:00",
     status: "confirmed",
-    description: "Brake pedal feels soft",
+    customerIssue: "Brake pedal feels soft",
   },
 ];
 
@@ -208,33 +134,44 @@ export default function AppointmentsPage() {
       }
 
       const vehicle = mockVehicles.find((v) => v.id === data.vehicleId);
-      const serviceCategory = mockServiceCategories.find(
-        (s) => s.id === data.serviceCategoryId
-      );
 
-      if (!vehicle || !serviceCategory) {
-        addNotification(
-          "error",
-          "Booking Failed",
-          "Invalid vehicle or service category selected."
-        );
+      if (!vehicle) {
+        addNotification("error", "Booking Failed", "Invalid vehicle selected.");
         return;
       }
+
+      // Get consultation type label
+      const getConsultationLabel = (type: ConsultationType): string => {
+        switch (type) {
+          case "general-checkup":
+            return "General Vehicle Checkup";
+          case "specific-issue":
+            return "Specific Issue Consultation";
+          case "maintenance-advice":
+            return "Maintenance Advice";
+          case "performance-issue":
+            return "Performance Issue";
+          case "safety-concern":
+            return "Safety Concern";
+          case "other":
+            return "Other Consultation";
+          default:
+            return "General Consultation";
+        }
+      };
 
       const newAppointment: AppointmentData = {
         id: Math.random().toString(36).substr(2, 9),
         vehicleId: data.vehicleId,
         vehicleName: vehicle.name,
         vehicleDetails: vehicle.details,
-        serviceCategoryId: data.serviceCategoryId,
-        serviceName: serviceCategory.name,
-        serviceDescription: serviceCategory.description,
-        serviceDuration: serviceCategory.duration,
+        consultationType: data.consultationType,
+        consultationTypeLabel: getConsultationLabel(data.consultationType),
         appointmentDate: data.appointmentDate,
         startTime: data.startTime,
         endTime: data.endTime,
         status: "pending",
-        description: data.description,
+        customerIssue: data.customerIssue,
         notes: data.notes,
       };
 
@@ -242,7 +179,9 @@ export default function AppointmentsPage() {
       addNotification(
         "success",
         "Appointment Booked!",
-        `Your appointment for ${serviceCategory.name} has been successfully scheduled.`
+        `Your ${getConsultationLabel(
+          data.consultationType
+        )} appointment has been successfully scheduled.`
       );
       setShowForm(false);
     } catch (error) {
@@ -289,9 +228,25 @@ export default function AppointmentsPage() {
         }
       }
 
-      const serviceCategory = mockServiceCategories.find(
-        (s) => s.id === data.serviceCategoryId
-      );
+      // Get consultation type label
+      const getConsultationLabel = (type: ConsultationType): string => {
+        switch (type) {
+          case "general-checkup":
+            return "General Vehicle Checkup";
+          case "specific-issue":
+            return "Specific Issue Consultation";
+          case "maintenance-advice":
+            return "Maintenance Advice";
+          case "performance-issue":
+            return "Performance Issue";
+          case "safety-concern":
+            return "Safety Concern";
+          case "other":
+            return "Other Consultation";
+          default:
+            return "General Consultation";
+        }
+      };
 
       setAppointments((prev) =>
         prev.map((apt) =>
@@ -301,14 +256,11 @@ export default function AppointmentsPage() {
                 appointmentDate: data.appointmentDate ?? apt.appointmentDate,
                 startTime: data.startTime ?? apt.startTime,
                 endTime: data.endTime ?? apt.endTime,
-                serviceCategoryId:
-                  data.serviceCategoryId ?? apt.serviceCategoryId,
-                serviceName: serviceCategory?.name ?? apt.serviceName,
-                serviceDescription:
-                  serviceCategory?.description ?? apt.serviceDescription,
-                serviceDuration:
-                  serviceCategory?.duration ?? apt.serviceDuration,
-                description: data.description ?? apt.description,
+                consultationType: data.consultationType ?? apt.consultationType,
+                consultationTypeLabel: data.consultationType
+                  ? getConsultationLabel(data.consultationType)
+                  : apt.consultationTypeLabel,
+                customerIssue: data.customerIssue ?? apt.customerIssue,
                 notes: data.notes ?? apt.notes,
               }
             : apt
@@ -337,12 +289,12 @@ export default function AppointmentsPage() {
     const formData: AppointmentFormData = {
       id: appointment.id,
       vehicleId: appointment.vehicleId,
-      serviceCategoryId: appointment.serviceCategoryId,
+      consultationType: appointment.consultationType,
       appointmentDate: appointment.appointmentDate,
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       status: appointment.status,
-      description: appointment.description,
+      customerIssue: appointment.customerIssue,
       notes: appointment.notes,
     };
     setEditingAppointment(formData);
@@ -481,7 +433,6 @@ export default function AppointmentsPage() {
             <div className="max-w-3xl mx-auto">
               <AppointmentForm
                 vehicles={mockVehicles}
-                serviceCategories={mockServiceCategories}
                 onSubmit={handleFormSubmit}
                 onCancel={handleCancelForm}
                 editingAppointment={editingAppointment || undefined}
