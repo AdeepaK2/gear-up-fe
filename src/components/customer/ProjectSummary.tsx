@@ -17,6 +17,15 @@ import {
   ProjectSummary as ProjectSummaryType,
 } from "@/lib/types/Project";
 
+// Currency formatting function for LKR
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
 interface ProjectSummaryProps {
   acceptedServices: Service[];
   totalCost: number;
@@ -88,7 +97,7 @@ export default function ProjectSummary({
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">
-                ${totalCost.toFixed(2)}
+                {formatCurrency(totalCost)}
               </p>
               <p className="text-sm text-gray-600">Total Estimated Cost</p>
             </div>
@@ -135,7 +144,7 @@ export default function ProjectSummary({
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-gray-900">
-                    ${service.estimatedCost.toFixed(2)}
+                    {formatCurrency(service.estimatedCost)}
                   </p>
                   <p className="text-sm text-gray-600">
                     {service.estimatedDuration}
@@ -161,7 +170,7 @@ export default function ProjectSummary({
               <div className="text-right">
                 <p className="text-sm text-gray-600">Total Project Cost</p>
                 <p className="text-3xl font-bold text-green-600">
-                  ${totalCost.toFixed(2)}
+                  {formatCurrency(totalCost)}
                 </p>
               </div>
             </div>

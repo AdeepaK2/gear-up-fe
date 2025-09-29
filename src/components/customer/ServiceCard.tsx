@@ -16,6 +16,15 @@ import {
 import { cn } from "@/lib/utils";
 import { Service, ServiceStatus } from "@/lib/types/Project";
 
+// Currency formatting function for LKR
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
 interface ServiceCardProps {
   service: Service;
   onAccept: (serviceId: string) => void;
@@ -68,6 +77,12 @@ const statusConfig: Record<
     icon: <CheckCircle className="h-4 w-4" />,
     label: "Completed",
     bgColor: "bg-emerald-50 border-emerald-200",
+  },
+  cancelled: {
+    color: "text-gray-700",
+    icon: <XCircle className="h-4 w-4" />,
+    label: "Cancelled",
+    bgColor: "bg-gray-50 border-gray-200",
   },
 };
 
@@ -144,7 +159,9 @@ export default function ServiceCard({
                 Estimated Cost
               </p>
               <p className="text-sm text-gray-600">
-                ${service.estimatedCost.toFixed(2)}
+                <span className="text-2xl font-bold">
+                  {formatCurrency(service.estimatedCost)}
+                </span>
               </p>
             </div>
           </div>

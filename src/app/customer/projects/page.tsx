@@ -41,8 +41,8 @@ const mockProject: ProjectData = {
       description:
         "Replace engine oil and filter with high-quality synthetic oil. Includes inspection of oil levels and engine condition.",
       estimatedDuration: "45 minutes",
-      estimatedCost: 75.0,
-      status: "recommended",
+      estimatedCost: 15000.0,
+      status: "accepted",
       category: "Maintenance",
       priority: "high",
       notes:
@@ -56,8 +56,8 @@ const mockProject: ProjectData = {
       description:
         "Replace front brake pads with OEM parts. Includes rotor inspection and brake fluid level check.",
       estimatedDuration: "2 hours",
-      estimatedCost: 320.0,
-      status: "recommended",
+      estimatedCost: 45000.0,
+      status: "accepted",
       category: "Safety",
       priority: "medium",
       notes:
@@ -71,7 +71,7 @@ const mockProject: ProjectData = {
       description:
         "Replace engine air filter to improve air flow and engine efficiency.",
       estimatedDuration: "20 minutes",
-      estimatedCost: 45.0,
+      estimatedCost: 8500.0,
       status: "recommended",
       category: "Maintenance",
       priority: "low",
@@ -86,7 +86,7 @@ const mockProject: ProjectData = {
       description:
         "Test battery performance and clean battery terminals for optimal electrical connection.",
       estimatedDuration: "30 minutes",
-      estimatedCost: 25.0,
+      estimatedCost: 5000.0,
       status: "recommended",
       category: "Electrical",
       priority: "low",
@@ -95,7 +95,7 @@ const mockProject: ProjectData = {
     },
   ],
   additionalRequests: [],
-  totalEstimatedCost: 465.0,
+  totalEstimatedCost: 73500.0,
   totalAcceptedCost: 0,
   acceptedServicesCount: 0,
   createdAt: "2025-10-15T10:00:00Z",
@@ -143,9 +143,42 @@ const projectStatusConfig: Record<
   },
 };
 
+// Currency formatting function for LKR
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+// Service Progress Component
+const ServiceProgressBadge = ({
+  status,
+  progress,
+}: {
+  status: string;
+  progress: "not-started" | "in-progress" | "completed" | undefined;
+}) => {
+  if (status !== "accepted") return null;
+
+  const progressConfig = {
+    "not-started": { label: "Not Started", color: "bg-gray-100 text-gray-800" },
+    "in-progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
+    completed: { label: "Completed", color: "bg-green-100 text-green-800" },
+  };
+
+  const config = progressConfig[progress || "not-started"];
+
+  return <Badge className={`${config.color} border-0`}>{config.label}</Badge>;
+};
+
 export default function ProjectsPage() {
   const [project, setProject] = useState<ProjectData>(mockProject);
   const [isLoading, setIsLoading] = useState(false);
+  const [serviceProgress, setServiceProgress] = useState<
+    Record<string, "not-started" | "in-progress" | "completed">
+  >({});
 
   const statusInfo = projectStatusConfig[project.status];
   const acceptedServices = project.services.filter(
@@ -171,6 +204,12 @@ export default function ProjectsPage() {
         ),
         updatedAt: new Date().toISOString(),
       }));
+
+      // Initialize service progress as not-started
+      setServiceProgress((prev) => ({
+        ...prev,
+        [serviceId]: "not-started",
+      }));
     } catch (error) {
       console.error("Error accepting service:", error);
     } finally {
@@ -195,6 +234,51 @@ export default function ProjectsPage() {
       }));
     } catch (error) {
       console.error("Error rejecting service:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleServiceCancel = async (serviceId: string) => {
+    const service = project.services.find((s) => s.id === serviceId);
+    const progress = serviceProgress[serviceId] || "not-started";
+
+    if (progress !== "not-started") {
+      alert("Cannot cancel a service that has already started.");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to cancel "${service?.name}"? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setProject((prev) => ({
+        ...prev,
+        services: prev.services.map((service) =>
+          service.id === serviceId
+            ? { ...service, status: "cancelled" as const }
+            : service
+        ),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      // Remove from progress tracking
+      setServiceProgress((prev) => {
+        const newProgress = { ...prev };
+        delete newProgress[serviceId];
+        return newProgress;
+      });
+    } catch (error) {
+      console.error("Error cancelling service:", error);
     } finally {
       setIsLoading(false);
     }
@@ -374,18 +458,157 @@ export default function ProjectsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {project.services.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              onAccept={handleServiceAccept}
-              onReject={handleServiceReject}
-              isLoading={isLoading}
-              disabled={project.status !== "waiting-confirmation"}
-            />
-          ))}
+          {project.services
+            .filter((service) => service.status === "recommended")
+            .map((service) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                onAccept={handleServiceAccept}
+                onReject={handleServiceReject}
+                isLoading={isLoading}
+                disabled={project.status !== "waiting-confirmation"}
+              />
+            ))}
         </div>
       </div>
+
+      {/* Accepted Services with Progress */}
+      {acceptedServices.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Accepted Services
+            </h2>
+            <Badge variant="secondary" className="text-sm">
+              {acceptedServices.length} service
+              {acceptedServices.length !== 1 ? "s" : ""} confirmed
+            </Badge>
+          </div>
+
+          <div className="space-y-4">
+            {acceptedServices.map((service) => {
+              const progress = serviceProgress[service.id] || "not-started";
+              const canCancel =
+                progress === "not-started" &&
+                project.status === "waiting-confirmation";
+
+              return (
+                <Card
+                  key={service.id}
+                  className="border-l-4 border-l-green-500"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {service.name}
+                          </h3>
+                          <ServiceProgressBadge
+                            status={service.status}
+                            progress={progress}
+                          />
+                          {service.priority && (
+                            <Badge
+                              variant={
+                                service.priority === "high"
+                                  ? "destructive"
+                                  : service.priority === "medium"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {service.priority} priority
+                            </Badge>
+                          )}
+                        </div>
+
+                        <p className="text-gray-600 mb-3">
+                          {service.description}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-500" />
+                            <span>Duration: {service.estimatedDuration}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-green-600">
+                              Cost: {formatCurrency(service.estimatedCost)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500">
+                              Category: {service.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        {service.notes && (
+                          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                              <strong>Note:</strong> {service.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="ml-4 flex flex-col gap-2">
+                        {progress === "not-started" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              // Simulate service starting
+                              setServiceProgress((prev) => ({
+                                ...prev,
+                                [service.id]: "in-progress",
+                              }));
+                            }}
+                          >
+                            Start Service
+                          </Button>
+                        )}
+
+                        {canCancel && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleServiceCancel(service.id)}
+                            disabled={isLoading}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                        )}
+
+                        {progress === "in-progress" && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              // Simulate service completion
+                              setServiceProgress((prev) => ({
+                                ...prev,
+                                [service.id]: "completed",
+                              }));
+                            }}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mark Complete
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Additional Service Request */}
       {project.status === "waiting-confirmation" && (
@@ -436,6 +659,41 @@ export default function ProjectsPage() {
             </CardContent>
           </Card>
         )}
+
+      {/* Service Status Information */}
+      {(project.status === "confirmed" || acceptedServices.length > 0) && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <AlertTriangle className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Service Progress Information
+                </h3>
+                <div className="text-blue-800 text-sm space-y-1">
+                  <p>
+                    • <strong>Not Started:</strong> You can still cancel these
+                    services without any charges
+                  </p>
+                  <p>
+                    • <strong>In Progress:</strong> Service work has begun -
+                    cancellation may incur charges
+                  </p>
+                  <p>
+                    • <strong>Completed:</strong> Service has been finished and
+                    quality checked
+                  </p>
+                </div>
+                <p className="text-blue-700 text-sm mt-3 font-medium">
+                  All prices are displayed in Sri Lankan Rupees (LKR)
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

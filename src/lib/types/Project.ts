@@ -4,6 +4,7 @@ export type ServiceStatus =
   | "accepted"
   | "rejected"
   | "requested"
+  | "cancelled"
   | "in-progress"
   | "completed";
 
