@@ -10,7 +10,9 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === "/customer/login";
+  // Handle both /customer/login and /customer/login/ (with trailing slash)
+  const isLoginPage =
+    pathname === "/customer/login" || pathname === "/customer/login/";
 
   if (isLoginPage) {
     return <>{children}</>;
