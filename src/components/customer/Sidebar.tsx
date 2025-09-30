@@ -34,7 +34,7 @@ export default function CustomerSidebar() {
   console.log("Current pathname:", pathname, "Raw pathname:", rawPathname);
 
   return (
-    <aside className="w-64 min-h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col">
+    <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50">
       <div className="mb-6 text-center">
         <div className="inline-flex items-center justify-center bg-gray-100 rounded px-2 py-1 mx-auto">
           <Image
