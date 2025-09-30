@@ -14,6 +14,10 @@ import {
   Clock,
   X,
   Settings,
+  Wrench,
+  UserCog,
+  CalendarCheck,
+  Activity,
 } from "lucide-react";
 import ServiceCard from "@/components/customer/ServiceCard";
 import ProjectSummary from "@/components/customer/ProjectSummary";
@@ -113,20 +117,20 @@ const projectStatusConfig: Record<
 > = {
   "waiting-confirmation": {
     label: "Waiting for Confirmation",
-    color: "text-yellow-700",
-    bgColor: "bg-yellow-50 border-yellow-200",
+    color: "text-gray-600",
+    bgColor: "bg-gray-50 border-gray-300",
     icon: <Clock className="h-5 w-5" />,
   },
   confirmed: {
     label: "Confirmed",
-    color: "text-blue-700",
-    bgColor: "bg-blue-50 border-blue-200",
+    color: "text-primary",
+    bgColor: "bg-primary/20 border-primary/50",
     icon: <CheckCircle className="h-5 w-5" />,
   },
   "in-progress": {
     label: "In Progress",
-    color: "text-orange-700",
-    bgColor: "bg-orange-50 border-orange-200",
+    color: "text-primary",
+    bgColor: "bg-primary/30 border-primary/60",
     icon: <Settings className="h-5 w-5" />,
   },
   completed: {
@@ -387,15 +391,16 @@ export default function ProjectsPage() {
       </div>
 
       {/* Project Overview */}
-      <Card className="shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-primary to-secondary text-white">
-          <CardTitle className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <FileText className="h-6 w-6" />
+      <Card className="shadow-xl border-0 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-8">
+          <CardTitle className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+              <FileText className="h-8 w-8" />
             </div>
             <div>
-              <div className="text-xl font-bold">Project Overview</div>
-              <div className="text-sm text-white/90 font-normal">
+              <div className="text-2xl font-bold mb-1">Project Overview</div>
+              <div className="text-white/90 font-normal flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
                 Based on your consultation on{" "}
                 {new Date(project.consultationDate).toLocaleDateString()}
               </div>
@@ -403,55 +408,129 @@ export default function ProjectsPage() {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <Car className="h-8 w-8 text-primary" />
+            {/* Vehicle Info */}
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
+              <div className="p-3 bg-primary rounded-lg shadow-sm">
+                <Car className="h-8 w-8 text-white" />
+              </div>
               <div>
-                <p className="font-semibold text-gray-900">
+                <p className="font-bold text-gray-900 text-lg">
                   {project.vehicleName}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-primary font-medium">
                   {project.vehicleDetails}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <User className="h-8 w-8 text-green-600" />
+            {/* Technician Info */}
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
+              <div className="p-3 bg-primary rounded-lg shadow-sm">
+                <UserCog className="h-8 w-8 text-white" />
+              </div>
               <div>
-                <p className="font-semibold text-gray-900">
+                <p className="font-bold text-gray-900 text-lg">
                   {project.employeeName}
                 </p>
-                <p className="text-sm text-gray-600">Your Technician</p>
+                <p className="text-sm text-primary font-medium">
+                  Your Technician
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-blue-600" />
+            {/* Consultation Date */}
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
+              <div className="p-3 bg-primary rounded-lg shadow-sm">
+                <CalendarCheck className="h-8 w-8 text-white" />
+              </div>
               <div>
-                <p className="font-semibold text-gray-900">
+                <p className="font-bold text-gray-900 text-lg">
                   {new Date(project.consultationDate).toLocaleDateString()}
                 </p>
-                <p className="text-sm text-gray-600">Consultation Date</p>
+                <p className="text-sm text-primary font-medium">
+                  Consultation Date
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-lg", statusInfo.bgColor)}>
-                <div className={statusInfo.color}>{statusInfo.icon}</div>
+            {/* Status */}
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
+              <div className="p-3 bg-primary rounded-lg shadow-sm">
+                <div className="text-white">
+                  {project.status === "waiting-confirmation" ? (
+                    <Clock className="h-8 w-8" />
+                  ) : project.status === "confirmed" ? (
+                    <CheckCircle className="h-8 w-8" />
+                  ) : project.status === "in-progress" ? (
+                    <Activity className="h-8 w-8" />
+                  ) : project.status === "completed" ? (
+                    <CheckCircle className="h-8 w-8" />
+                  ) : (
+                    <X className="h-8 w-8" />
+                  )}
+                </div>
               </div>
               <div>
                 <Badge
                   className={cn(
-                    "border-2",
+                    "text-sm font-semibold px-3 py-1 mb-2",
                     statusInfo.color,
-                    statusInfo.bgColor
+                    statusInfo.bgColor,
+                    "border-2"
                   )}
                 >
                   {statusInfo.label}
                 </Badge>
-                <p className="text-sm text-gray-600 mt-1">Current Status</p>
+                <p className="text-sm text-primary font-medium">
+                  Current Status
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Project Stats */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-primary rounded-lg">
+                    <Wrench className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {project.services.length}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Services
+                </div>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-primary rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  {acceptedServices.length}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Accepted Services
+                </div>
+              </div>
+              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="p-2 bg-primary rounded-lg">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  {formatCurrency(totalAcceptedCost)}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Cost
+                </div>
               </div>
             </div>
           </div>
