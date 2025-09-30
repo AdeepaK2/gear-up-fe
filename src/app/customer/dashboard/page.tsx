@@ -119,7 +119,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 space-y-6">
       {/* Greeting and Overview Section */}
-      <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0">
+      <Card className="bg-gradient-to-r from-primary to-primary/90 text-white border-0">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -130,27 +130,21 @@ export default function DashboardPage() {
                 <h1 className="text-2xl font-bold">
                   Welcome back, {mockData.customer.name}!
                 </h1>
-                <p className="text-blue-100 mt-1">
+                <p className="text-white/80 mt-1">
                   Ready to keep your vehicles in top shape?
                 </p>
-                <div className="flex items-center space-x-4 mt-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-yellow-500 text-yellow-900"
-                  >
-                    <Star className="w-3 h-3 mr-1" />
-                    {mockData.customer.membershipLevel} Member
-                  </Badge>
-                  <span className="text-blue-100">
-                    {mockData.customer.loyaltyPoints.toLocaleString()} points
-                  </span>
-                </div>
               </div>
             </div>
-            <Button variant="secondary" size="sm">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
+            <Link href="/customer/profile">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white text-primary hover:bg-white/90"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
