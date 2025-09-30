@@ -12,9 +12,41 @@ import {
   Wrench,
   Star,
   Banknote,
+  Car,
+  Zap,
+  Shield,
+  Settings,
+  Filter,
+  Battery,
+  Gauge,
+  Droplets,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Service, ServiceStatus } from "@/lib/types/Project";
+
+// Get category icon
+const getCategoryIcon = (category: string) => {
+  const cat = category?.toLowerCase() || "";
+
+  if (cat.includes("electrical")) {
+    return <Zap className="h-4 w-4 text-yellow-500" />;
+  }
+  if (cat.includes("safety")) {
+    return <Shield className="h-4 w-4 text-red-500" />;
+  }
+  if (cat.includes("maintenance")) {
+    return <Settings className="h-4 w-4 text-blue-500" />;
+  }
+  if (cat.includes("performance")) {
+    return <Gauge className="h-4 w-4 text-green-500" />;
+  }
+  if (cat.includes("custom")) {
+    return <Star className="h-4 w-4 text-purple-500" />;
+  }
+
+  return <Car className="h-4 w-4 text-gray-500" />;
+};
 
 // Currency formatting function for LKR
 const formatCurrency = (amount: number) => {
@@ -27,8 +59,7 @@ const formatCurrency = (amount: number) => {
 
 interface ServiceCardProps {
   service: Service;
-  onAccept: (serviceId: string) => void;
-  onReject: (serviceId: string) => void;
+  onSelect: (serviceId: string) => void;
   isLoading?: boolean;
   disabled?: boolean;
 }
@@ -88,8 +119,7 @@ const statusConfig: Record<
 
 export default function ServiceCard({
   service,
-  onAccept,
-  onReject,
+  onSelect,
   isLoading = false,
   disabled = false,
 }: ServiceCardProps) {
@@ -108,16 +138,24 @@ export default function ServiceCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-gray-900 mb-2">
-              {service.name}
-            </CardTitle>
-            <Badge
-              className={cn("mb-2", statusInfo.color, "bg-transparent border")}
-              variant="outline"
-            >
-              <span className="mr-1">{statusInfo.icon}</span>
-              {statusInfo.label}
-            </Badge>
+            <div className="flex items-center gap-3 mb-2">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                {service.name}
+              </CardTitle>
+              <Badge
+                className={cn(
+                  service.status === "recommended"
+                    ? "bg-blue-100 text-blue-700 border-blue-200 px-3 py-1 rounded-full font-medium"
+                    : cn(statusInfo.color, "bg-transparent border")
+                )}
+                variant={
+                  service.status === "recommended" ? "default" : "outline"
+                }
+              >
+                <span className="mr-1">{statusInfo.icon}</span>
+                {statusInfo.label}
+              </Badge>
+            </div>
           </div>
           {service.priority && (
             <Badge
@@ -145,37 +183,26 @@ export default function ServiceCard({
 
         {/* Service Details Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-            <Clock className="h-5 w-5 text-blue-600" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Duration</p>
-              <p className="text-sm text-gray-600">
-                {service.estimatedDuration}
-              </p>
-            </div>
+          <div className="p-3 bg-white/50 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 mb-1">Duration</p>
+            <p className="text-sm text-gray-600">{service.estimatedDuration}</p>
           </div>
 
-          <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-            <Banknote className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">
-                Estimated Cost
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="text-2xl font-bold">
-                  {formatCurrency(service.estimatedCost)}
-                </span>
-              </p>
-            </div>
+          <div className="p-3 bg-white/50 rounded-lg">
+            <p className="text-sm font-medium text-gray-900 mb-1">
+              Estimated Cost
+            </p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(service.estimatedCost)}
+            </p>
           </div>
         </div>
 
         {/* Category & Notes */}
         {service.category && (
-          <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600">
-              Category: {service.category}
+          <div className="p-2 bg-gray-50 rounded-lg">
+            <span className="text-sm text-gray-700 font-medium">
+              {service.category}
             </span>
           </div>
         )}
@@ -189,26 +216,16 @@ export default function ServiceCard({
           </div>
         )}
 
-        {/* Action Buttons */}
+        {/* Action Button */}
         {canModify && (
-          <div className="flex gap-3 pt-2">
+          <div className="pt-2">
             <Button
-              onClick={() => onAccept(service.id)}
+              onClick={() => onSelect(service.id)}
               disabled={isLoading}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {isLoading ? "Processing..." : "Accept Service"}
-            </Button>
-
-            <Button
-              onClick={() => onReject(service.id)}
-              disabled={isLoading}
-              variant="outline"
-              className="flex-1 border-2 border-red-300 text-red-700 hover:bg-red-50"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              {isLoading ? "Processing..." : "Reject"}
+              {isLoading ? "Selecting..." : "Select Service"}
             </Button>
           </div>
         )}
@@ -218,16 +235,7 @@ export default function ServiceCard({
           <div className="flex items-center gap-2 p-2 bg-green-100 rounded-lg">
             <CheckCircle className="h-4 w-4 text-green-600" />
             <p className="text-sm text-green-700 font-medium">
-              Service accepted - will be included in your project
-            </p>
-          </div>
-        )}
-
-        {service.status === "rejected" && (
-          <div className="flex items-center gap-2 p-2 bg-red-100 rounded-lg">
-            <XCircle className="h-4 w-4 text-red-600" />
-            <p className="text-sm text-red-700 font-medium">
-              Service rejected - excluded from project
+              Service selected - review in confirmation section below
             </p>
           </div>
         )}

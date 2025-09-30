@@ -244,13 +244,20 @@ export default function ProjectsPage() {
         ...prev,
         services: prev.services.map((service) =>
           service.id === serviceId
-            ? { ...service, status: "rejected" as const }
+            ? { ...service, status: "recommended" as const }
             : service
         ),
         updatedAt: new Date().toISOString(),
       }));
+
+      // Remove from progress tracking when unselected
+      setServiceProgress((prev) => {
+        const newProgress = { ...prev };
+        delete newProgress[serviceId];
+        return newProgress;
+      });
     } catch (error) {
-      console.error("Error rejecting service:", error);
+      console.error("Error unselecting service:", error);
     } finally {
       setIsLoading(false);
     }
@@ -390,7 +397,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Project Overview */}
+      {/* Project Details */}
       <Card className="shadow-xl border-0 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-8">
           <CardTitle className="flex items-center gap-4">
@@ -398,7 +405,7 @@ export default function ProjectsPage() {
               <FileText className="h-8 w-8" />
             </div>
             <div>
-              <div className="text-2xl font-bold mb-1">Project Overview</div>
+              <div className="text-2xl font-bold mb-1">Project Details</div>
               <div className="text-white/90 font-normal flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Based on your consultation on{" "}
@@ -409,7 +416,8 @@ export default function ProjectsPage() {
         </CardHeader>
 
         <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Project Information Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Vehicle Info */}
             <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
               <div className="p-3 bg-primary rounded-lg shadow-sm">
@@ -490,46 +498,49 @@ export default function ProjectsPage() {
             </div>
           </div>
 
-          {/* Additional Project Stats */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
+          {/* Service Statistics */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Service Summary
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-primary rounded-lg">
+                  <div className="p-2 bg-[#163172] rounded-lg">
                     <Wrench className="h-5 w-5 text-white" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-[#163172]">
                   {project.services.length}
                 </div>
-                <div className="text-sm text-gray-600 font-medium">
-                  Total Services
+                <div className="text-sm text-gray-700 font-medium">
+                  Total Services Recommended
                 </div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-primary rounded-lg">
+                  <div className="p-2 bg-[#163172] rounded-lg">
                     <CheckCircle className="h-5 w-5 text-white" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-2xl font-bold text-[#163172]">
                   {acceptedServices.length}
                 </div>
-                <div className="text-sm text-gray-600 font-medium">
-                  Accepted Services
+                <div className="text-sm text-gray-700 font-medium">
+                  Services You've Selected
                 </div>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-primary rounded-lg">
+                  <div className="p-2 bg-[#163172] rounded-lg">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-2xl font-bold text-[#163172]">
                   {formatCurrency(totalAcceptedCost)}
                 </div>
-                <div className="text-sm text-gray-600 font-medium">
-                  Total Cost
+                <div className="text-sm text-gray-700 font-medium">
+                  Total Cost for Selected Services
                 </div>
               </div>
             </div>
@@ -538,163 +549,290 @@ export default function ProjectsPage() {
       </Card>
 
       {/* Recommended Services */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Recommended Services
-          </h2>
-          <Badge
-            variant="outline"
-            className="text-sm border-blue-200 text-blue-700 bg-blue-50"
-          >
-            {project.services.filter((s) => s.status === "recommended").length}{" "}
-            services pending review
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {project.services
-            .filter((service) => service.status === "recommended")
-            .map((service) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                onAccept={handleServiceAccept}
-                onReject={handleServiceReject}
-                isLoading={isLoading}
-                disabled={project.status !== "waiting-confirmation"}
-              />
-            ))}
-        </div>
-      </div>
-
-      {/* Accepted Services with Progress */}
-      {acceptedServices.length > 0 && (
-        <div className="space-y-6">
+      <Card className="shadow-lg border-0 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Accepted Services
-            </h2>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Wrench className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="text-xl font-bold">Recommended Services</div>
+                <div className="text-white/90 font-normal text-sm">
+                  Review and select services for your vehicle
+                </div>
+              </div>
+            </CardTitle>
             <Badge
               variant="outline"
-              className="text-sm border-green-200 text-green-700 bg-green-50"
+              className="text-sm border-white/30 text-white bg-white/20 backdrop-blur-sm"
             >
-              {acceptedServices.length} service
-              {acceptedServices.length !== 1 ? "s" : ""} confirmed
+              {
+                project.services.filter((s) => s.status === "recommended")
+                  .length
+              }{" "}
+              pending review
             </Badge>
           </div>
+        </CardHeader>
 
-          <div className="space-y-4">
-            {acceptedServices.map((service) => {
-              const progress = serviceProgress[service.id] || "not-started";
-              const canCancel =
-                progress === "not-started" &&
-                project.status === "waiting-confirmation";
-
-              return (
-                <Card
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {project.services
+              .filter((service) => service.status === "recommended")
+              .map((service) => (
+                <ServiceCard
                   key={service.id}
-                  className="border-l-4 border-l-green-500"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {service.name}
-                          </h3>
-                          <ServiceProgressBadge
-                            status={service.status}
-                            progress={progress}
-                          />
-                          {service.priority && (
-                            <Badge
-                              variant={
-                                service.priority === "high"
-                                  ? "destructive"
-                                  : service.priority === "medium"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="text-xs"
-                            >
-                              {service.priority} priority
-                            </Badge>
-                          )}
-                        </div>
+                  service={service}
+                  onSelect={handleServiceAccept}
+                  isLoading={isLoading}
+                  disabled={project.status !== "waiting-confirmation"}
+                />
+              ))}
+          </div>
+        </CardContent>
+      </Card>
 
-                        <p className="text-gray-600 mb-3">
-                          {service.description}
-                        </p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-500" />
-                            <span>Duration: {service.estimatedDuration}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-green-600">
-                              Cost: {formatCurrency(service.estimatedCost)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-500">
-                              Category: {service.category}
-                            </span>
-                          </div>
-                        </div>
-
-                        {service.notes && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                              <strong>Note:</strong> {service.notes}
-                            </p>
-                          </div>
+      {/* Service Confirmation */}
+      {acceptedServices.length > 0 &&
+        project.status === "waiting-confirmation" && (
+          <Card className="border-2 border-green-200 bg-green-50 shadow-lg">
+            <CardHeader className="bg-green-100 border-b border-green-200 pb-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-200 rounded-full">
+                  <CheckCircle className="h-8 w-8 text-green-700" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-green-800">
+                    Review Your Selection
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Review your selected services and confirm when ready
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              {/* Selected Services List */}
+              <div className="space-y-4 mb-6">
+                {acceptedServices.map((service) => (
+                  <div
+                    key={service.id}
+                    className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-semibold text-gray-900">
+                          {service.name}
+                        </h4>
+                        {service.priority && (
+                          <Badge
+                            className={
+                              service.priority === "high"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : service.priority === "medium"
+                                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                : "bg-green-50 text-green-700 border-green-200"
+                            }
+                            variant="outline"
+                          >
+                            {service.priority} priority
+                          </Badge>
                         )}
                       </div>
-
-                      <div className="ml-4 flex flex-col gap-2">
-                        {/* Only show cancel button if service hasn't started yet */}
-                        {progress === "not-started" && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleServiceCancel(service.id)}
-                            disabled={isLoading}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Cancel Service
-                          </Button>
-                        )}
-
-                        {/* Show status info for in-progress and completed */}
-                        {progress === "in-progress" && (
-                          <div className="text-center">
-                            <p className="text-sm text-blue-600 font-medium">
-                              Service in progress
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Cannot cancel
-                            </p>
-                          </div>
-                        )}
-
-                        {progress === "completed" && (
-                          <div className="text-center">
-                            <p className="text-sm text-green-600 font-medium">
-                              Service completed
-                            </p>
-                          </div>
-                        )}
+                      <p className="text-sm text-gray-600 mb-2">
+                        {service.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-gray-500">
+                          Duration: {service.estimatedDuration}
+                        </span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(service.estimatedCost)}
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                    <Button
+                      onClick={() => handleServiceReject(service.id)}
+                      disabled={isLoading}
+                      variant="outline"
+                      size="sm"
+                      className="ml-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Unselect
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Summary and Confirm */}
+              <div className="border-t border-green-200 pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold text-green-800">
+                      Total: {formatCurrency(totalAcceptedCost)}
+                    </p>
+                    <p className="text-sm text-green-700">
+                      {acceptedServices.length} service
+                      {acceptedServices.length !== 1 ? "s" : ""} selected
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleConfirmServices}
+                    disabled={isLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-3 text-lg"
+                  >
+                    {isLoading ? "Processing..." : "Confirm All Services"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+      {/* Accepted Services with Progress - Only show after confirmation */}
+      {acceptedServices.length > 0 &&
+        project.status !== "waiting-confirmation" && (
+          <Card className="shadow-lg border-0 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-green-500 text-white p-6">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <CheckCircle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold">Accepted Services</div>
+                    <div className="text-white/90 font-normal text-sm">
+                      Track progress of your confirmed services
+                    </div>
+                  </div>
+                </CardTitle>
+                <Badge
+                  variant="outline"
+                  className="text-sm border-white/30 text-white bg-white/20 backdrop-blur-sm"
+                >
+                  {acceptedServices.length} service
+                  {acceptedServices.length !== 1 ? "s" : ""} confirmed
+                </Badge>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {acceptedServices.map((service) => {
+                  const progress = serviceProgress[service.id] || "not-started";
+                  const canCancel =
+                    progress === "not-started" &&
+                    project.status === "waiting-confirmation";
+
+                  return (
+                    <Card
+                      key={service.id}
+                      className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow duration-200"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {service.name}
+                              </h3>
+                              <ServiceProgressBadge
+                                status={service.status}
+                                progress={progress}
+                              />
+                              {service.priority && (
+                                <Badge
+                                  variant={
+                                    service.priority === "high"
+                                      ? "destructive"
+                                      : service.priority === "medium"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {service.priority} priority
+                                </Badge>
+                              )}
+                            </div>
+
+                            <p className="text-gray-600 mb-3">
+                              {service.description}
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-gray-500" />
+                                <span>
+                                  Duration: {service.estimatedDuration}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-green-600">
+                                  Cost: {formatCurrency(service.estimatedCost)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500">
+                                  Category: {service.category}
+                                </span>
+                              </div>
+                            </div>
+
+                            {service.notes && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800">
+                                  <strong>Note:</strong> {service.notes}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="ml-4 flex flex-col gap-2">
+                            {/* Only show cancel button if service hasn't started yet */}
+                            {progress === "not-started" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleServiceCancel(service.id)}
+                                disabled={isLoading}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel Service
+                              </Button>
+                            )}
+
+                            {/* Show status info for in-progress and completed */}
+                            {progress === "in-progress" && (
+                              <div className="text-center">
+                                <p className="text-sm text-blue-600 font-medium">
+                                  Service in progress
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Cannot cancel
+                                </p>
+                              </div>
+                            )}
+
+                            {progress === "completed" && (
+                              <div className="text-center">
+                                <p className="text-sm text-green-600 font-medium">
+                                  Service completed
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Additional Service Request */}
       {project.status === "waiting-confirmation" &&
@@ -705,18 +843,6 @@ export default function ProjectsPage() {
             disabled={project.status !== "waiting-confirmation"}
           />
         )}
-
-      {/* Project Summary */}
-      <ProjectSummary
-        acceptedServices={acceptedServices}
-        totalCost={totalAcceptedCost}
-        onConfirmServices={handleConfirmServices}
-        isLoading={isLoading}
-        disabled={
-          project.status !== "waiting-confirmation" ||
-          acceptedServices.length === 0
-        }
-      />
 
       {/* Project Actions */}
       {project.status === "waiting-confirmation" &&
