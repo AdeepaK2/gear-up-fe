@@ -618,13 +618,14 @@ export default function ProjectsPage() {
       )}
 
       {/* Additional Service Request */}
-      {project.status === "waiting-confirmation" && (
-        <AdditionalServiceRequest
-          onSubmit={handleAdditionalServiceRequest}
-          isLoading={isLoading}
-          disabled={project.status !== "waiting-confirmation"}
-        />
-      )}
+      {project.status === "waiting-confirmation" &&
+        acceptedServices.length > 0 && (
+          <AdditionalServiceRequest
+            onSubmit={handleAdditionalServiceRequest}
+            isLoading={isLoading}
+            disabled={project.status !== "waiting-confirmation"}
+          />
+        )}
 
       {/* Project Summary */}
       <ProjectSummary
