@@ -30,6 +30,7 @@ import {
   X,
   AlertCircle,
   HelpCircle,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -82,6 +83,8 @@ export default function AppointmentList({
   isLoading = false,
 }: AppointmentListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewingAppointment, setViewingAppointment] =
+    useState<AppointmentData | null>(null);
 
   const handleDelete = async (appointmentId: string) => {
     try {
@@ -178,53 +181,25 @@ export default function AppointmentList({
 
       {/* Appointments List */}
       <Card className="w-full shadow-lg border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-secondary to-primary text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/5"></div>
-          <CardTitle className="flex items-center gap-3 text-lg relative z-10">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Calendar className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-xl font-bold">
-                My Consultation Appointments
-              </div>
-              <div className="text-sm text-white/90 font-normal">
-                {appointments.length}{" "}
-                {appointments.length === 1 ? "appointment" : "appointments"}{" "}
-                scheduled
-              </div>
-            </div>
-          </CardTitle>
-        </CardHeader>
-
         <CardContent className="p-0">
           {/* Desktop Table View */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150 border-b-2 border-gray-200">
-                  <TableHead className="font-bold text-gray-800 py-4 text-left">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-primary" />
-                      Vehicle
-                    </div>
+                <TableRow className="bg-primary hover:bg-primary/90 border-b-2 border-gray-200">
+                  <TableHead className="font-bold text-white py-3 px-4 pl-6 text-left text-base">
+                    Vehicle
                   </TableHead>
-                  <TableHead className="font-bold text-gray-800 py-4 text-left">
-                    <div className="flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4 text-primary" />
-                      Consultation
-                    </div>
+                  <TableHead className="font-bold text-white py-3 px-4 text-left text-base">
+                    Consultation
                   </TableHead>
-                  <TableHead className="font-bold text-gray-800 py-4 text-left">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      Date & Time
-                    </div>
+                  <TableHead className="font-bold text-white py-3 px-4 text-left text-base">
+                    Date & Time
                   </TableHead>
-                  <TableHead className="font-bold text-gray-800 py-4 text-left">
+                  <TableHead className="font-bold text-white py-3 px-4 text-left text-base">
                     Status
                   </TableHead>
-                  <TableHead className="font-bold text-gray-800 py-4 text-center">
+                  <TableHead className="font-bold text-white py-3 px-4 pr-6 text-center text-base">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -233,81 +208,39 @@ export default function AppointmentList({
                 {appointments.map((appointment) => (
                   <TableRow
                     key={appointment.id}
-                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-b border-gray-100 group"
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 border-b border-gray-200 group"
                   >
-                    <TableCell className="py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl group-hover:from-primary/20 group-hover:to-secondary/20 transition-all duration-200">
-                          <Car className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-base">
-                            {appointment.vehicleName}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {appointment.vehicleDetails}
-                          </p>
-                        </div>
+                    <TableCell className="py-8 px-4 pl-6">
+                      <p className="font-semibold text-gray-900 text-base">
+                        {appointment.vehicleName}
+                      </p>
+                    </TableCell>
+
+                    <TableCell className="py-8 px-4">
+                      <p className="font-semibold text-gray-900 text-base">
+                        {consultationTypeLabels[appointment.consultationType]}
+                      </p>
+                    </TableCell>
+
+                    <TableCell className="py-8 px-4">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-base">
+                          {new Date(
+                            appointment.appointmentDate
+                          ).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {formatTime(appointment.startTime)} -{" "}
+                          {formatTime(appointment.endTime)}
+                        </p>
                       </div>
                     </TableCell>
 
-                    <TableCell className="py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl group-hover:from-green-200 group-hover:to-emerald-200 transition-all duration-200">
-                          <HelpCircle className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-base">
-                            {
-                              consultationTypeLabels[
-                                appointment.consultationType
-                              ]
-                            }
-                          </p>
-                          {appointment.customerIssue && (
-                            <p className="text-sm text-gray-600 mt-1 max-w-xs truncate">
-                              <span className="font-medium">Issue:</span>{" "}
-                              {appointment.customerIssue}
-                            </p>
-                          )}
-                          {appointment.employeeName && (
-                            <p className="text-sm text-blue-600 mt-1">
-                              <span className="font-medium">Assigned to:</span>{" "}
-                              {appointment.employeeName}
-                            </p>
-                          )}
-                          {appointment.status === "completed" &&
-                            appointment.recommendedServices &&
-                            appointment.recommendedServices.length > 0 && (
-                              <p className="text-sm text-green-600 mt-1">
-                                <span className="font-medium">
-                                  Services recommended:
-                                </span>{" "}
-                                {appointment.recommendedServices.length} items
-                              </p>
-                            )}
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl group-hover:from-blue-200 group-hover:to-cyan-200 transition-all duration-200">
-                          <Clock className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-base">
-                            {formatDate(appointment.appointmentDate)}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {formatTime(appointment.startTime)} -{" "}
-                            {formatTime(appointment.endTime)}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="py-6">
+                    <TableCell className="py-8 px-4">
                       <div className="flex justify-center">
                         <Badge
                           className={cn(
@@ -321,8 +254,19 @@ export default function AppointmentList({
                       </div>
                     </TableCell>
 
-                    <TableCell className="py-6">
-                      <div className="flex justify-center gap-3">
+                    <TableCell className="py-8 px-4 pr-6">
+                      <div className="flex justify-center gap-2">
+                        {/* View Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewingAppointment(appointment)}
+                          className="hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm hover:shadow-md border-2"
+                          disabled={isLoading}
+                        >
+                          <Eye className="h-4 w-4 text-green-600" />
+                        </Button>
+
                         {canEditOrDelete(appointment.status) && (
                           <>
                             <Button
@@ -586,6 +530,157 @@ export default function AppointmentList({
           </div>
         </CardContent>
       </Card>
+
+      {/* Detailed View Modal */}
+      {/* Detailed View Modal */}
+      <Dialog
+        open={!!viewingAppointment}
+        onOpenChange={() => setViewingAppointment(null)}
+      >
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col [&>button]:hidden">
+          <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                Appointment Details
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingAppointment(null)}
+                className="h-8 w-8 p-0 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="overflow-y-auto flex-1 pt-4">
+            {viewingAppointment && (
+              <div className="space-y-6">
+                {/* Vehicle Information */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                    Vehicle Information
+                  </h3>
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-medium">Vehicle:</span>{" "}
+                      {viewingAppointment.vehicleName}
+                    </p>
+                    <p>
+                      <span className="font-medium">Details:</span>{" "}
+                      {viewingAppointment.vehicleDetails}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Appointment Information */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                    Appointment Information
+                  </h3>
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-medium">Consultation Type:</span>{" "}
+                      {
+                        consultationTypeLabels[
+                          viewingAppointment.consultationType
+                        ]
+                      }
+                    </p>
+                    <p>
+                      <span className="font-medium">Date:</span>{" "}
+                      {formatDate(viewingAppointment.appointmentDate)}
+                    </p>
+                    <p>
+                      <span className="font-medium">Time:</span>{" "}
+                      {formatTime(viewingAppointment.startTime)} -{" "}
+                      {formatTime(viewingAppointment.endTime)}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Status:</span>
+                      <Badge
+                        className={cn(
+                          "border-2 px-3 py-1 text-sm font-semibold rounded-full",
+                          statusColors[viewingAppointment.status]
+                        )}
+                        variant="outline"
+                      >
+                        {statusLabels[viewingAppointment.status]}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Issue & Notes */}
+                {(viewingAppointment.customerIssue ||
+                  viewingAppointment.notes) && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                      Additional Information
+                    </h3>
+                    <div className="space-y-3">
+                      {viewingAppointment.customerIssue && (
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            Customer Issue:
+                          </p>
+                          <p className="text-gray-700 mt-1">
+                            {viewingAppointment.customerIssue}
+                          </p>
+                        </div>
+                      )}
+                      {viewingAppointment.notes && (
+                        <div>
+                          <p className="font-medium text-gray-900">Notes:</p>
+                          <p className="text-gray-700 mt-1">
+                            {viewingAppointment.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Employee & Services (if applicable) */}
+                {(viewingAppointment.employeeName ||
+                  (viewingAppointment.recommendedServices &&
+                    viewingAppointment.recommendedServices.length > 0)) && (
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                      Service Information
+                    </h3>
+                    <div className="space-y-2">
+                      {viewingAppointment.employeeName && (
+                        <p>
+                          <span className="font-medium">
+                            Assigned Employee:
+                          </span>{" "}
+                          {viewingAppointment.employeeName}
+                        </p>
+                      )}
+                      {viewingAppointment.recommendedServices &&
+                        viewingAppointment.recommendedServices.length > 0 && (
+                          <div>
+                            <p className="font-medium">Recommended Services:</p>
+                            <ul className="mt-1 ml-4 list-disc text-gray-700">
+                              {viewingAppointment.recommendedServices.map(
+                                (service, index) => (
+                                  <li key={index}>{service}</li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

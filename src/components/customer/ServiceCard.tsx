@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Clock,
-  DollarSign,
   CheckCircle,
   XCircle,
   AlertCircle,
   Wrench,
   Star,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Service, ServiceStatus } from "@/lib/types/Project";
@@ -121,16 +121,19 @@ export default function ServiceCard({
           </div>
           {service.priority && (
             <Badge
-              variant={
+              className={cn(
+                "ml-2 border-2 font-medium",
                 service.priority === "high"
-                  ? "destructive"
+                  ? "bg-red-50 text-red-700 border-red-200"
                   : service.priority === "medium"
-                  ? "default"
-                  : "secondary"
-              }
-              className="ml-2"
+                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  : "bg-green-50 text-green-700 border-green-200"
+              )}
+              variant="outline"
             >
-              {service.priority.toUpperCase()}
+              {service.priority.charAt(0).toUpperCase() +
+                service.priority.slice(1)}{" "}
+              Priority
             </Badge>
           )}
         </div>
@@ -153,7 +156,7 @@ export default function ServiceCard({
           </div>
 
           <div className="flex items-center gap-2 p-3 bg-white/50 rounded-lg">
-            <DollarSign className="h-5 w-5 text-green-600" />
+            <Banknote className="h-5 w-5 text-green-600" />
             <div>
               <p className="text-sm font-medium text-gray-900">
                 Estimated Cost

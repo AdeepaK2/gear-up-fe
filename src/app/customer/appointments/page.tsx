@@ -396,24 +396,11 @@ export default function AppointmentsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/customer">
-              <Button
-                variant="outline"
-                className="border-2 border-primary text-primary hover:bg-primary hover:text-white"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-primary">
-                My Appointments
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Manage your service appointments
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-primary">My Appointments</h1>
+            <p className="text-gray-600 mt-1">
+              Manage your service appointments
+            </p>
           </div>
 
           {!showForm && (

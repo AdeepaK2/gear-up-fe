@@ -163,14 +163,27 @@ const ServiceProgressBadge = ({
   if (status !== "accepted") return null;
 
   const progressConfig = {
-    "not-started": { label: "Not Started", color: "bg-gray-100 text-gray-800" },
-    "in-progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
-    completed: { label: "Completed", color: "bg-green-100 text-green-800" },
+    "not-started": {
+      label: "Not Started",
+      color: "bg-gray-50 text-gray-700 border-gray-200",
+    },
+    "in-progress": {
+      label: "In Progress",
+      color: "bg-blue-50 text-blue-700 border-blue-200",
+    },
+    completed: {
+      label: "Completed",
+      color: "bg-green-50 text-green-700 border-green-200",
+    },
   };
 
   const config = progressConfig[progress || "not-started"];
 
-  return <Badge className={`${config.color} border-0`}>{config.label}</Badge>;
+  return (
+    <Badge variant="outline" className={`${config.color} border-2 font-medium`}>
+      {config.label}
+    </Badge>
+  );
 };
 
 export default function ProjectsPage() {
@@ -451,7 +464,10 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-bold text-gray-900">
             Recommended Services
           </h2>
-          <Badge variant="secondary" className="text-sm">
+          <Badge
+            variant="outline"
+            className="text-sm border-blue-200 text-blue-700 bg-blue-50"
+          >
             {project.services.filter((s) => s.status === "recommended").length}{" "}
             services pending review
           </Badge>
@@ -480,7 +496,10 @@ export default function ProjectsPage() {
             <h2 className="text-2xl font-bold text-gray-900">
               Accepted Services
             </h2>
-            <Badge variant="secondary" className="text-sm">
+            <Badge
+              variant="outline"
+              className="text-sm border-green-200 text-green-700 bg-green-50"
+            >
               {acceptedServices.length} service
               {acceptedServices.length !== 1 ? "s" : ""} confirmed
             </Badge>
@@ -556,23 +575,8 @@ export default function ProjectsPage() {
                       </div>
 
                       <div className="ml-4 flex flex-col gap-2">
+                        {/* Only show cancel button if service hasn't started yet */}
                         {progress === "not-started" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Simulate service starting
-                              setServiceProgress((prev) => ({
-                                ...prev,
-                                [service.id]: "in-progress",
-                              }));
-                            }}
-                          >
-                            Start Service
-                          </Button>
-                        )}
-
-                        {canCancel && (
                           <Button
                             size="sm"
                             variant="destructive"
@@ -580,25 +584,28 @@ export default function ProjectsPage() {
                             disabled={isLoading}
                           >
                             <X className="h-4 w-4 mr-1" />
-                            Cancel
+                            Cancel Service
                           </Button>
                         )}
 
+                        {/* Show status info for in-progress and completed */}
                         {progress === "in-progress" && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => {
-                              // Simulate service completion
-                              setServiceProgress((prev) => ({
-                                ...prev,
-                                [service.id]: "completed",
-                              }));
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Mark Complete
-                          </Button>
+                          <div className="text-center">
+                            <p className="text-sm text-blue-600 font-medium">
+                              Service in progress
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Cannot cancel
+                            </p>
+                          </div>
+                        )}
+
+                        {progress === "completed" && (
+                          <div className="text-center">
+                            <p className="text-sm text-green-600 font-medium">
+                              Service completed
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
