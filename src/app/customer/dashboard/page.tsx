@@ -152,7 +152,7 @@ export default function DashboardPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Link href="/customer/appointments">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+          <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                     Next: {mockData.summary.upcomingAppointments.nextDate}
                   </p>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-primary to-blue-700 rounded-2xl shadow-lg">
+                <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
                   <Calendar className="w-8 h-8 text-white" />
                 </div>
               </div>
@@ -175,21 +175,21 @@ export default function DashboardPage() {
         </Link>
 
         <Link href="/customer/projects">
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+          <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-700 font-medium">
                     Ongoing Projects
                   </p>
-                  <p className="text-3xl font-bold text-orange-600 mt-2">
+                  <p className="text-3xl font-bold text-primary mt-2">
                     {mockData.summary.ongoingProjects.count}
                   </p>
-                  <p className="text-xs text-orange-600/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
+                  <p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
                     {mockData.summary.ongoingProjects.status}
                   </p>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl shadow-lg">
+                <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
                   <Wrench className="w-8 h-8 text-white" />
                 </div>
               </div>
@@ -197,42 +197,42 @@ export default function DashboardPage() {
           </Card>
         </Link>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-700 font-medium">
                   Completed Services
                 </p>
-                <p className="text-3xl font-bold text-green-600 mt-2">
+                <p className="text-3xl font-bold text-primary mt-2">
                   {mockData.summary.completedServices.count}
                 </p>
-                <p className="text-xs text-green-600/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
+                <p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
                   All time
                 </p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
                 <CheckCircle className="w-8 h-8 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+        <Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-700 font-medium">
                   Pending Requests
                 </p>
-                <p className="text-3xl font-bold text-red-600 mt-2">
+                <p className="text-3xl font-bold text-primary mt-2">
                   {mockData.summary.pendingRequests.count}
                 </p>
-                <p className="text-xs text-red-600/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
+                <p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
                   Awaiting response
                 </p>
               </div>
-              <div className="p-3 bg-gradient-to-br from-red-500 to-red-700 rounded-2xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
                 <Clock className="w-8 h-8 text-white" />
               </div>
             </div>
@@ -298,13 +298,18 @@ export default function DashboardPage() {
                   Book New Appointment
                 </Button>
               </Link>
-              <Button
-                className="w-full justify-start h-12 border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-200"
-                variant="outline"
+              <Link
+                href="/customer/projects#additional-service-request"
+                className="block"
               >
-                <Plus className="w-5 h-5 mr-3" />
-                Request Custom Service
-              </Button>
+                <Button
+                  className="w-full justify-start h-12 border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-200"
+                  variant="outline"
+                >
+                  <Plus className="w-5 h-5 mr-3" />
+                  Request Custom Service
+                </Button>
+              </Link>
               <Link href="/customer/projects" className="block">
                 <Button
                   className="w-full justify-start h-12 border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white transition-all duration-200"
@@ -314,14 +319,15 @@ export default function DashboardPage() {
                   Track Ongoing Projects
                 </Button>
               </Link>
-              <Button
-                className="w-full justify-start h-12 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-all duration-200"
-                variant="outline"
-                onClick={() => setShowChatbot(true)}
-              >
-                <MessageCircle className="w-5 h-5 mr-3" />
-                Chat with Support
-              </Button>
+              <Link href="/customer/chatbot" className="block">
+                <Button
+                  className="w-full justify-start h-12 border-2 border-green-500 text-green-600 hover:bg-green-500 hover:text-white transition-all duration-200"
+                  variant="outline"
+                >
+                  <MessageCircle className="w-5 h-5 mr-3" />
+                  Chat with Support
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
