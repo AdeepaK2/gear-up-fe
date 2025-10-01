@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { authService } from "../../lib/services/authService";
+import { UserRole } from "../../lib/types/Auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,70 +29,36 @@ export default function LoginPage() {
     }
 
     try {
-      // Here you would typically make an API call to your backend
-      // For now, we'll simulate the login process and determine role from email
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the backend login API
+      const { user, token } = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Simulate determining role from backend response based on email domain or database lookup
-      let userRole = "customer"; // default role
-      let userName = "";
+      // Debug: Log user role
+      console.log("User logged in:", user);
+      console.log("User role:", user.role);
 
-      // Demo logic - in real app, this would come from your backend API response
-      if (formData.email.includes("admin@") || formData.email === "admin@gearup.com") {
-        userRole = "admin";
-        userName = "Administrator";
-      } else if (formData.email.includes("employee@") || formData.email === "employee@gearup.com") {
-        userRole = "employee";
-        userName = "Employee";
-      } else {
-        userRole = "customer";
-        userName = "Customer";
-      }
-
-      // Validate credentials (in real app, this would be done by backend)
-      const validCredentials = [
-        { email: "customer@gearup.com", password: "customer123", role: "customer" },
-        { email: "employee@gearup.com", password: "employee123", role: "employee" },
-        { email: "admin@gearup.com", password: "admin123", role: "admin" }
-      ];
-
-      const user = validCredentials.find(cred => 
-        cred.email === formData.email && cred.password === formData.password
-      );
-
-      if (!user) {
-        setError("Invalid email or password");
-        setIsLoading(false);
-        return;
-      }
-
-      // Route user based on their role
+      // Route user based on their role from backend
       switch (user.role) {
-        case "customer":
+        case UserRole.CUSTOMER:
           router.push("/customer");
           break;
-        case "employee":
+        case UserRole.EMPLOYEE:
           router.push("/employee");
           break;
-        case "admin":
+        case UserRole.ADMIN:
           router.push("/admin");
           break;
         default:
-          setError("Invalid user role");
+          setError(`Invalid user role: "${user.role}". Expected CUSTOMER, EMPLOYEE, or ADMIN. Please contact support.`);
+          console.error("Invalid role detected:", user.role);
           setIsLoading(false);
           return;
       }
 
-      // Store user info in localStorage (in a real app, you'd use proper auth tokens)
-      localStorage.setItem("user", JSON.stringify({
-        email: formData.email,
-        role: user.role,
-        name: userName,
-        isAuthenticated: true
-      }));
-
-    } catch (err) {
-      setError("Login failed. Please check your credentials.");
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
       setIsLoading(false);
     }
   };

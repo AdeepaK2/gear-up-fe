@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/customer", label: "Dashboard", icon: Home },
+  { href: "/customer/dashboard", label: "Dashboard", icon: Home },
   { href: "/customer/vehicles", label: "My Vehicles", icon: Car },
   { href: "/customer/appointments", label: "My Appointments", icon: Calendar },
   { href: "/customer/projects", label: "My Projects", icon: Folder },
@@ -24,10 +24,17 @@ const navItems = [
 ];
 
 export default function CustomerSidebar() {
-  const pathname = usePathname() || "/customer";
+  const rawPathname = usePathname() || "/customer/dashboard";
+  // Remove trailing slash to normalize the pathname
+  const pathname = rawPathname.endsWith("/")
+    ? rawPathname.slice(0, -1)
+    : rawPathname;
+
+  // Debug: Let's see what pathname we're getting
+  console.log("Current pathname:", pathname, "Raw pathname:", rawPathname);
 
   return (
-    <aside className="w-64 min-h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col">
+    <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50">
       <div className="mb-6 text-center">
         <div className="inline-flex items-center justify-center bg-gray-100 rounded px-2 py-1 mx-auto">
           <Image
@@ -44,10 +51,17 @@ export default function CustomerSidebar() {
 
       <nav className="space-y-2">
         {navItems.map((item) => {
+          // Proper logic: exact match OR sub-route match (except for dashboard which is exact only)
           const active =
             pathname === item.href ||
-            (pathname?.startsWith(item.href) && item.href !== "/customer") ||
-            (item.href === "/customer" && pathname === "/customer");
+            (pathname?.startsWith(item.href + "/") &&
+              item.href !== "/customer/dashboard");
+
+          // Debug: Let's see the active state for each item
+          console.log(
+            `Item: ${item.label}, href: ${item.href}, active: ${active}, pathname: ${pathname}`
+          );
+
           const Icon = item.icon;
           return (
             <Link
