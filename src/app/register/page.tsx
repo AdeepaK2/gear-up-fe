@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { authService } from "../../lib/services/authService";
+import { UserRole } from "../../lib/types/Auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,8 +15,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    phone: "",
-    role: "customer"
+    phone: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,23 +38,28 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    // Validate password requirements
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must be at least 8 characters and contain uppercase, lowercase, number, and special character (@$!%*?&#)");
       setIsLoading(false);
       return;
     }
 
     try {
-      // Here you would typically make an API call to your backend
-      // For now, we'll simulate the registration process
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Register user via backend API (backend automatically assigns CUSTOMER role)
+      await authService.register({
+        email: formData.email,
+        password: formData.password,
+        name: `${formData.firstName} ${formData.lastName}`,
+      });
 
-      // Simulate successful customer registration
-      alert("Customer account created successfully! Please login with your credentials.");
+      // Show success message
+      alert("Customer account created successfully! Please check your email to verify your account before logging in.");
       router.push("/login");
 
-    } catch (err) {
-      setError("Registration failed. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Registration failed. Please try again.");
       setIsLoading(false);
     }
   };
@@ -181,8 +187,11 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="At least 6 characters"
+                placeholder="Enter a strong password"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Must be at least 8 characters with uppercase, lowercase, number, and special character (@$!%*?&#)
+              </p>
             </div>
 
             {/* Confirm Password */}
