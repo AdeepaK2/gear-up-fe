@@ -137,7 +137,10 @@ export default function AdditionalServiceRequestForm({
   }
 
   return (
-    <Card className="border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50">
+    <Card
+      className="border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50"
+      id="additional-service-request"
+    >
       <CardHeader className="bg-gradient-to-r from-blue-100 to-indigo-100 border-b border-blue-200">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-blue-900">

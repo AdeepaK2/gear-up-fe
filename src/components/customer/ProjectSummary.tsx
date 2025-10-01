@@ -116,43 +116,18 @@ export default function ProjectSummary({
           </div>
         </div>
 
-        {/* Selected Services List */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            Selected Services
-          </h4>
-          <div className="space-y-2">
-            {acceptedServices.map((service) => (
-              <div
-                key={service.id}
-                className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200 shadow-sm"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <Badge className="bg-green-100 text-green-800 border-green-300">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Accepted
-                    </Badge>
-                    <h5 className="font-medium text-gray-900">
-                      {service.name}
-                    </h5>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1 max-w-md truncate">
-                    {service.description}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">
-                    {formatCurrency(service.estimatedCost)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {service.estimatedDuration}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+        {/* Quick Summary Reference */}
+        <div className="text-center p-4 bg-white rounded-lg border border-green-200">
+          <p className="text-sm text-gray-600 mb-1">
+            Review your{" "}
+            <span className="font-semibold">
+              {serviceCount} selected service{serviceCount !== 1 ? "s" : ""}
+            </span>{" "}
+            above before confirming
+          </p>
+          <p className="text-xs text-gray-500">
+            You can still cancel services that haven't started yet
+          </p>
         </div>
 
         {/* Confirmation Section */}

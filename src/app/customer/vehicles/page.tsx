@@ -126,35 +126,65 @@ export default function VehiclesPage() {
           {vehicles.map((v) => (
             <div
               key={v.id}
-              className="bg-custom rounded-lg shadow p-4 flex flex-col justify-between"
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
             >
-              <div>
-                <div className="flex items-center gap-2">
-                  <Car className="text-primary" />
-                  <h2 className="text-lg font-semibold">
-                    {v.make} {v.model}
-                  </h2>
+              <div className="flex flex-col h-full">
+                {/* Header with icon and title */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                      <Car className="text-primary w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
+                        {v.make} {v.model}
+                      </h2>
+                      <p className="text-sm text-gray-500 font-medium">
+                        {v.year}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">Year: {v.year}</p>
-                <p className="text-sm text-gray-600">Plate: {v.licensePlate}</p>
-              </div>
 
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => handleEdit(v.id)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-primary text-white hover:bg-secondary"
-                >
-                  <Edit2 size={16} />
-                  Edit
-                </button>
+                {/* Vehicle details */}
+                <div className="flex-1 space-y-3 mb-6">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-600">
+                      License Plate
+                    </span>
+                    <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
+                      {v.licensePlate}
+                    </span>
+                  </div>
 
-                <button
-                  onClick={() => handleDelete(v.id)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded bg-red-600 text-white hover:bg-red-500"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-600">
+                      Model Year
+                    </span>
+                    <span className="text-sm font-semibold text-primary">
+                      {v.year}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleEdit(v.id)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Edit2 size={18} />
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(v.id)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
+                  >
+                    <Trash2 size={18} />
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}

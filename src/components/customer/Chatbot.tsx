@@ -408,7 +408,7 @@ export default function Chatbot({
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto bg-white rounded-lg shadow-lg">
       {/* Context Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg">
+      <div className="bg-gradient-to-r from-primary to-primary/90 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -416,7 +416,7 @@ export default function Chatbot({
             </div>
             <div>
               <h3 className="font-semibold">{customerContext.name}</h3>
-              <div className="flex items-center space-x-4 text-sm text-blue-100">
+              <div className="flex items-center space-x-4 text-sm text-white/80">
                 {customerContext.currentProject && (
                   <span>Project: {customerContext.currentProject.name}</span>
                 )}
