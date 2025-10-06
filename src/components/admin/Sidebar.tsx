@@ -62,8 +62,8 @@ export default function Sidebar() {
         <Image
           src="/Logo.png"
           alt="Gear Up Logo"
-          width={120}
-          height={60}
+          width={70}
+          height={40}
           className="object-contain"
         />
       </div>
