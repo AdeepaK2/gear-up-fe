@@ -69,7 +69,7 @@ export default function AppointmentsPage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold mb-6 mt-6">Appointments</h1>
+      <h1 className="text-3xl font-bold mb-6 mt-6">Manage Appointments</h1>
 
       <div className="mb-8">
         <Calendar
@@ -84,9 +84,7 @@ export default function AppointmentsPage() {
         />
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">
-        All Appointments | Filtered Appointments
-      </h2>
+      <h2 className="text-xl font-semibold mb-4">Filtered Appointments</h2>
 
       <Tabs defaultValue="in-progress" className="w-full">
         <TabsList className="mb-4">

@@ -54,7 +54,9 @@ const requestsData = [
 export default function ModificationRequestsPage() {
   return (
     <>
-      <h1 className="text-3xl font-bold mb-6 mt-6">Modification Requests</h1>
+      <h1 className="text-3xl font-bold mb-6 mt-6">
+        Manage Modification Requests
+      </h1>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -73,7 +75,7 @@ export default function ModificationRequestsPage() {
       </div>
 
       <h2 className="text-xl font-semibold mb-4">
-        All Modification Requests | Filtered Modification Requests
+        Filtered Modification Requests
       </h2>
 
       {/* Tabs for different request statuses */}
