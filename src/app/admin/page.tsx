@@ -44,13 +44,22 @@ const projectsStatusData = [
   { status: "Cancelled", count: 2, percentage: 10, fill: "#ef4444" }, // red-500
 ];
 
-const lineChartData = [
-  { month: "Sep", value: 186 },
-  { month: "Oct", value: 305 },
-  { month: "Nov", value: 237 },
-  { month: "Dec", value: 173 },
-  { month: "Jan", value: 209 },
-  { month: "Feb", value: 214 },
+const customersChartData = [
+  { month: "Sep", value: 45 },
+  { month: "Oct", value: 62 },
+  { month: "Nov", value: 38 },
+  { month: "Dec", value: 71 },
+  { month: "Jan", value: 55 },
+  { month: "Feb", value: 83 },
+];
+
+const projectsChartData = [
+  { month: "Sep", value: 12 },
+  { month: "Oct", value: 18 },
+  { month: "Nov", value: 15 },
+  { month: "Dec", value: 22 },
+  { month: "Jan", value: 19 },
+  { month: "Feb", value: 25 },
 ];
 
 const chartConfig = {
@@ -127,7 +136,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Line Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>Registered Customers</CardTitle>
@@ -136,9 +145,9 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[200px] w-full">
+            <ChartContainer config={{}} className="h-[280px] w-full">
               <LineChart
-                data={lineChartData}
+                data={customersChartData}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <CartesianGrid vertical={false} />
@@ -153,9 +162,9 @@ export default function AdminDashboardPage() {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#3b82f6"
+                  stroke="#163172"
                   strokeWidth={2}
-                  dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                  dot={{ fill: "#163172", strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ChartContainer>
@@ -169,9 +178,9 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-[200px] w-full">
+            <ChartContainer config={{}} className="h-[280px] w-full">
               <LineChart
-                data={lineChartData}
+                data={projectsChartData}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <CartesianGrid vertical={false} />
@@ -186,9 +195,9 @@ export default function AdminDashboardPage() {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#10b981"
+                  stroke="#163172"
                   strokeWidth={2}
-                  dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
+                  dot={{ fill: "#163172", strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ChartContainer>
