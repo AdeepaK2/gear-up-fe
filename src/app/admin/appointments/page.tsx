@@ -234,7 +234,7 @@ export default function AppointmentsPage() {
           <CardContent className="px-8 pb-8">
             <div className="w-full relative">
               {/* Global Navigation Controls */}
-              <div className="absolute top-20 left-0 right-0 flex justify-between items-center pointer-events-none px-4 z-10">
+              <div className="absolute top-20 left-4 right-4 flex justify-between items-center pointer-events-none z-10">
                 <button
                   onClick={() => {
                     const newMonth = new Date(displayMonth);
@@ -281,47 +281,50 @@ export default function AppointmentsPage() {
                 </button>
               </div>
 
-              <Calendar
-                mode="single"
-                selected={undefined}
-                onSelect={undefined}
-                month={displayMonth}
-                onMonthChange={setDisplayMonth}
-                numberOfMonths={3}
-                fixedWeeks
-                showOutsideDays={false}
-                className="rounded-lg border-0 bg-gray-50 p-6 w-full"
-                classNames={{
-                  months:
-                    "flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-center items-start",
-                  month: "space-y-4 flex-1 max-w-sm",
-                  caption: "flex justify-center items-center mb-6 relative",
-                  caption_label:
-                    "text-lg font-semibold text-gray-700 text-center",
-                  nav: "hidden", // Hide default navigation since we have global navigation
-                  nav_button: "hidden",
-                  nav_button_previous: "hidden",
-                  nav_button_next: "hidden",
-                  table: "w-full border-collapse",
-                  head_row: "flex w-full mb-3",
-                  head_cell:
-                    "text-gray-500 w-full font-medium text-sm text-center py-2 mx-1",
-                  row: "flex w-full mt-2",
-                  cell: "h-12 w-full text-center text-sm p-0 relative mx-1",
-                  day: "h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default",
-                  day_today: "bg-gray-200 text-gray-900 font-semibold",
-                  day_outside: "text-gray-300 opacity-50",
-                  day_disabled: "text-gray-300 opacity-50",
-                  day_hidden: "invisible",
-                }}
-                modifiers={{
-                  appointment: appointmentDates,
-                }}
-                modifiersClassNames={{
-                  appointment:
-                    "bg-primary text-white font-semibold hover:bg-primary",
-                }}
-              />
+              {/* Calendar Container with proper spacing */}
+              <div className="px-16">
+                <Calendar
+                  mode="single"
+                  selected={undefined}
+                  onSelect={undefined}
+                  month={displayMonth}
+                  onMonthChange={setDisplayMonth}
+                  numberOfMonths={3}
+                  fixedWeeks
+                  showOutsideDays={false}
+                  className="rounded-lg border-0 bg-gray-50 p-6 w-full"
+                  classNames={{
+                    months:
+                      "flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start",
+                    month: "space-y-4 flex-1 min-w-0",
+                    caption: "flex justify-center items-center mb-6 relative",
+                    caption_label:
+                      "text-lg font-semibold text-gray-700 text-center",
+                    nav: "hidden", // Hide default navigation since we have global navigation
+                    nav_button: "hidden",
+                    nav_button_previous: "hidden",
+                    nav_button_next: "hidden",
+                    table: "w-full border-collapse",
+                    head_row: "flex w-full mb-3",
+                    head_cell:
+                      "text-gray-500 w-full font-medium text-sm text-center py-2 mx-1",
+                    row: "flex w-full mt-2",
+                    cell: "h-12 w-full text-center text-sm p-0 relative mx-1",
+                    day: "h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default",
+                    day_today: "bg-gray-200 text-gray-900 font-semibold",
+                    day_outside: "text-gray-300 opacity-50",
+                    day_disabled: "text-gray-300 opacity-50",
+                    day_hidden: "invisible",
+                  }}
+                  modifiers={{
+                    appointment: appointmentDates,
+                  }}
+                  modifiersClassNames={{
+                    appointment:
+                      "bg-primary text-white font-semibold hover:bg-primary",
+                  }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
