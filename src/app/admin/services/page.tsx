@@ -205,9 +205,6 @@ export default function ServicesPage() {
             <TableHeader>
               <TableRow className="border-gray-200">
                 <TableHead className="font-semibold text-gray-700">
-                  Service ID
-                </TableHead>
-                <TableHead className="font-semibold text-gray-700">
                   Service Name
                 </TableHead>
                 <TableHead className="font-semibold text-gray-700">
@@ -230,9 +227,6 @@ export default function ServicesPage() {
                   key={service.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell className="font-medium py-6 text-gray-900">
-                    {service.id}
-                  </TableCell>
                   <TableCell className="py-6 text-gray-900 font-medium">
                     {service.name}
                   </TableCell>
