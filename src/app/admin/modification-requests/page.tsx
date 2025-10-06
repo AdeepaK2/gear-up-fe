@@ -1,4 +1,5 @@
 import React from "react";
+import { Check, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -134,46 +135,44 @@ function TableWrapper({
             <TableHead>Start Time</TableHead>
             <TableHead>End Time</TableHead>
             {showActions && (
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-left w-28">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((request, index) => (
-            <TableRow key={index}>
-              <TableCell className="font-medium">{request.customer}</TableCell>
-              <TableCell>{request.vehicle}</TableCell>
-              <TableCell>{request.date}</TableCell>
-              <TableCell>{request.startTime}</TableCell>
-              <TableCell>{request.endTime}</TableCell>
+            <TableRow key={index} className="align-top">
+              <TableCell className="font-medium py-4">
+                {request.customer}
+              </TableCell>
+              <TableCell className="py-4">{request.vehicle}</TableCell>
+              <TableCell className="py-4">{request.date}</TableCell>
+              <TableCell className="py-4">{request.startTime}</TableCell>
+              <TableCell className="py-4">{request.endTime}</TableCell>
               {showActions && (
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
-                  >
-                    Reject
-                  </Button>
+                <TableCell className="text-right py-4 w-28">
+                  <div className="flex gap-4 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full"
+                    >
+                      <Check className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </TableCell>
               )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      {showActions && (
-        <p className="text-sm text-gray-500 mt-4">
-          // For pending approval, there should be a column to approve or reject
-          appointments
-        </p>
-      )}
     </Card>
   );
 }
