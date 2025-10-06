@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -6,25 +6,50 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 // Dummy data to populate the table
 const customersData = [
-  { name: 'Sophia Carter', email: 'sophia.carter@email.com', phone: '0711234567', membership: '3 years' },
-  { name: 'Ethan Bennett', email: 'ethan.bennett@email.com', phone: '0711234567', membership: '2 years' },
-  { name: 'Olivia Hayes', email: 'olivia.hayes@email.com', phone: '0711234567', membership: '4 years' },
-  { name: 'Liam Foster', email: 'liam.foster@email.com', phone: '0711234567', membership: '1 years' },
-  { name: 'Ava Morgan', email: 'ava.morgan@email.com', phone: '0711234567', membership: '5 years' },
+  {
+    name: "Sophia Carter",
+    email: "sophia.carter@email.com",
+    phone: "0711234567",
+    membership: "3 years",
+  },
+  {
+    name: "Ethan Bennett",
+    email: "ethan.bennett@email.com",
+    phone: "0711234567",
+    membership: "2 years",
+  },
+  {
+    name: "Olivia Hayes",
+    email: "olivia.hayes@email.com",
+    phone: "0711234567",
+    membership: "4 years",
+  },
+  {
+    name: "Liam Foster",
+    email: "liam.foster@email.com",
+    phone: "0711234567",
+    membership: "1 years",
+  },
+  {
+    name: "Ava Morgan",
+    email: "ava.morgan@email.com",
+    phone: "0711234567",
+    membership: "5 years",
+  },
 ];
 
 export default function CustomersPage() {
   return (
     <>
-      <h1 className="text-3xl font-bold mb-6">Manage Customers</h1>
+      <h1 className="text-3xl font-bold mb-6 mt-6">Manage Customers</h1>
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -54,7 +79,10 @@ export default function CustomersPage() {
                 <TableCell>{customer.phone}</TableCell>
                 <TableCell>{customer.membership}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="link" className="text-red-600 hover:text-red-800">
+                  <Button
+                    variant="link"
+                    className="text-red-600 hover:text-red-800"
+                  >
                     Deactivate Account
                   </Button>
                 </TableCell>

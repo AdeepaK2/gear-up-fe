@@ -1,8 +1,8 @@
-"use client"; 
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calendar';
+"use client";
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -10,37 +10,66 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { } from 'lucide-react';
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {} from "lucide-react";
 
 // Dummy data for the tables
 const appointmentsData = [
-  { customer: 'Sophia Clark', vehicle: 'Consultation', employee: 'Support', date: '2024-07-20', startTime: '10:00 AM', endTime: '11:00 AM' },
-  { customer: 'Olivia Bennett', vehicle: 'Support', employee: 'Support', date: '2024-07-22', startTime: '11:00 AM', endTime: '12:00 PM' },
-  { customer: 'Olivia Bennett', vehicle: 'Support', employee: 'Support', date: '2024-07-22', startTime: '11:00 AM', endTime: '12:00 PM' },
+  {
+    customer: "Sophia Clark",
+    vehicle: "Consultation",
+    employee: "Support",
+    date: "2024-07-20",
+    startTime: "10:00 AM",
+    endTime: "11:00 AM",
+  },
+  {
+    customer: "Olivia Bennett",
+    vehicle: "Support",
+    employee: "Support",
+    date: "2024-07-22",
+    startTime: "11:00 AM",
+    endTime: "12:00 PM",
+  },
+  {
+    customer: "Olivia Bennett",
+    vehicle: "Support",
+    employee: "Support",
+    date: "2024-07-22",
+    startTime: "11:00 AM",
+    endTime: "12:00 PM",
+  },
 ];
 
 export default function AppointmentsPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   // Set initial month to October 2024 to match the mockup
-  const [displayMonth, setDisplayMonth] = React.useState<Date>(new Date(2024, 9)); 
+  const [displayMonth, setDisplayMonth] = React.useState<Date>(
+    new Date(2024, 9)
+  );
 
   const handlePrevMonth = () => {
-    setDisplayMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
+    setDisplayMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1)
+    );
   };
 
   const handleNextMonth = () => {
-    setDisplayMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+    setDisplayMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1)
+    );
   };
-  
-  
 
   return (
     <>
-      <h1 className="text-3xl font-bold mb-6">Appointments</h1>
-
-      
+      <h1 className="text-3xl font-bold mb-6 mt-6">Appointments</h1>
 
       <div className="mb-8">
         <Calendar
@@ -55,7 +84,9 @@ export default function AppointmentsPage() {
         />
       </div>
 
-      <h2 className="text-xl font-semibold mb-4">All Appointments | Filtered Appointments</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        All Appointments | Filtered Appointments
+      </h2>
 
       <Tabs defaultValue="in-progress" className="w-full">
         <TabsList className="mb-4">
@@ -67,7 +98,8 @@ export default function AppointmentsPage() {
         <TabsContent value="pending-approval">
           <TableWrapper data={appointmentsData} />
           <p className="text-sm text-gray-500 mt-4">
-            // For pending approval, there should be a column to approve or reject appointments
+            // For pending approval, there should be a column to approve or
+            reject appointments
           </p>
         </TabsContent>
         <TabsContent value="in-progress">
@@ -114,7 +146,9 @@ function TableWrapper({ data }: { data: typeof appointmentsData }) {
         <TableBody>
           {data.map((appointment, index) => (
             <TableRow key={index}>
-              <TableCell className="font-medium">{appointment.customer}</TableCell>
+              <TableCell className="font-medium">
+                {appointment.customer}
+              </TableCell>
               <TableCell>{appointment.vehicle}</TableCell>
               <TableCell>{appointment.employee}</TableCell>
               <TableCell>{appointment.date}</TableCell>

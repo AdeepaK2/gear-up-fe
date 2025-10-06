@@ -1,6 +1,6 @@
 "use client"; // This is a client component to manage the dialog state
 
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -8,11 +8,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,54 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Search, PlusCircle } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, PlusCircle } from "lucide-react";
 
 // Dummy data for the services table
 const servicesData = [
-  { id: '#12345', name: 'Tech Solutions Inc.', type: 'Software Development', hours: 'In Progress', created: '2024-08-15' },
-  { id: '#12346', name: 'Global Innovations Ltd.', type: 'IT Consulting', hours: 'In Progress', created: '2024-08-20' },
-  { id: '#12347', name: 'Future Dynamics Corp.', type: 'Web Design', hours: 'In Progress', created: '2024-08-25' },
-  { id: '#12348', name: 'Pinnacle Enterprises', type: 'Mobile App Development', hours: 'In Progress', created: '2024-09-01' },
-  { id: '#12349', name: 'Strategic Ventures LLC', type: 'Data Analysis', hours: 'In Progress', created: '2024-09-05' },
+  {
+    id: "#12345",
+    name: "Tech Solutions Inc.",
+    type: "Software Development",
+    hours: "In Progress",
+    created: "2024-08-15",
+  },
+  {
+    id: "#12346",
+    name: "Global Innovations Ltd.",
+    type: "IT Consulting",
+    hours: "In Progress",
+    created: "2024-08-20",
+  },
+  {
+    id: "#12347",
+    name: "Future Dynamics Corp.",
+    type: "Web Design",
+    hours: "In Progress",
+    created: "2024-08-25",
+  },
+  {
+    id: "#12348",
+    name: "Pinnacle Enterprises",
+    type: "Mobile App Development",
+    hours: "In Progress",
+    created: "2024-09-01",
+  },
+  {
+    id: "#12349",
+    name: "Strategic Ventures LLC",
+    type: "Data Analysis",
+    hours: "In Progress",
+    created: "2024-09-05",
+  },
 ];
 
 export default function ServicesPage() {
   return (
     <>
       {/* Header Section */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 mt-6">
         <h1 className="text-3xl font-bold">Manage Services</h1>
         <Dialog>
           <DialogTrigger asChild>
@@ -51,25 +81,50 @@ export default function ServicesPage() {
             <DialogHeader>
               <DialogTitle>Add New Service</DialogTitle>
               <DialogDescription>
-                Fill in the details for the new service. Click save when you're done.
+                Fill in the details for the new service. Click save when you're
+                done.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">Description</Label>
-                <Input id="description" placeholder="Enter a description" className="col-span-3" />
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input
+                  id="description"
+                  placeholder="Enter a description"
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="type" className="text-right">Service Type</Label>
-                <Input id="type" placeholder="Choose the service type" className="col-span-3" />
+                <Label htmlFor="type" className="text-right">
+                  Service Type
+                </Label>
+                <Input
+                  id="type"
+                  placeholder="Choose the service type"
+                  className="col-span-3"
+                />
               </div>
-               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">Status</Label>
-                <Input id="status" placeholder="Enter your role" className="col-span-3" />
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">
+                  Status
+                </Label>
+                <Input
+                  id="status"
+                  placeholder="Enter your role"
+                  className="col-span-3"
+                />
               </div>
-               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="hours" className="text-right">Estimated Hours</Label>
-                <Input id="hours" placeholder="Enter the estimated hours" className="col-span-3" />
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="hours" className="text-right">
+                  Estimated Hours
+                </Label>
+                <Input
+                  id="hours"
+                  placeholder="Enter the estimated hours"
+                  className="col-span-3"
+                />
               </div>
             </div>
             <DialogFooter>
@@ -113,7 +168,10 @@ export default function ServicesPage() {
                 </TableCell>
                 <TableCell>{service.created}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="link" className="text-red-600 hover:text-red-800 px-0">
+                  <Button
+                    variant="link"
+                    className="text-red-600 hover:text-red-800 px-0"
+                  >
                     Delete Service
                   </Button>
                 </TableCell>

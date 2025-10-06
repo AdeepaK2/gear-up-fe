@@ -52,7 +52,7 @@ export default function Sidebar() {
     {
       href: "/admin/modification-requests",
       icon: <FileText className="h-4 w-4" />,
-      text: "Modification Requests",
+      text: "Modify Requests",
     },
   ];
 
