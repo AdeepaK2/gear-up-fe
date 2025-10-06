@@ -123,9 +123,8 @@ export default function ServicesPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="name"
-                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    className="text-sm font-semibold text-gray-700"
                   >
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                     Service Name
                   </Label>
                   <Input
@@ -138,9 +137,8 @@ export default function ServicesPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="type"
-                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    className="text-sm font-semibold text-gray-700"
                   >
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                     Service Type
                   </Label>
                   <Input
@@ -153,9 +151,8 @@ export default function ServicesPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="hours"
-                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                    className="text-sm font-semibold text-gray-700"
                   >
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                     Estimated Hours
                   </Label>
                   <Input
