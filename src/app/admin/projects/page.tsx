@@ -143,42 +143,50 @@ function PendingApprovalTable({ data }: { data: typeof projectsData }) {
             <TableHead>Customer</TableHead>
             <TableHead>Vehicle</TableHead>
             <TableHead>Assigned Employee(s)</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-center">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.length > 0 ? (
             data.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell className="font-medium">
-                  {project.projectName}
+              <TableRow key={project.id} className="align-top">
+                <TableCell className="font-medium py-4 max-w-40">
+                  <div className="text-sm leading-relaxed whitespace-normal break-words">
+                    {project.projectName}
+                  </div>
                 </TableCell>
-                <TableCell className="max-w-xs">
-                  <div className="truncate" title={project.description}>
+                <TableCell className="max-w-48 py-4">
+                  <div className="text-sm leading-relaxed whitespace-normal break-words">
                     {project.description}
                   </div>
                 </TableCell>
-                <TableCell>{project.estimatedHours}h</TableCell>
-                <TableCell>{project.customer}</TableCell>
-                <TableCell>{project.vehicle}</TableCell>
-                <TableCell>{project.assigned.join(", ")}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex gap-2 justify-end">
+                <TableCell className="py-4">
+                  {project.estimatedHours}h
+                </TableCell>
+                <TableCell className="py-4">{project.customer}</TableCell>
+                <TableCell className="py-4">{project.vehicle}</TableCell>
+                <TableCell className="py-4 max-w-36">
+                  <div className="text-sm leading-relaxed whitespace-normal break-words">
+                    {project.assigned.join(", ")}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right py-4">
+                  <div className="flex gap-4 justify-end">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleApprove(project.id)}
-                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-5 w-5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleReject(project.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-5 w-5" />
                     </Button>
                   </div>
                 </TableCell>
@@ -215,19 +223,23 @@ function StandardProjectTable({ data }: { data: typeof projectsData }) {
         <TableBody>
           {data.length > 0 ? (
             data.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell className="font-medium">
+              <TableRow key={project.id} className="align-top">
+                <TableCell className="font-medium py-4">
                   {project.projectName}
                 </TableCell>
-                <TableCell className="max-w-xs">
-                  <div className="truncate" title={project.description}>
+                <TableCell className="max-w-48 py-4">
+                  <div className="text-sm leading-relaxed whitespace-normal break-words">
                     {project.description}
                   </div>
                 </TableCell>
-                <TableCell>{project.estimatedHours}h</TableCell>
-                <TableCell>{project.customer}</TableCell>
-                <TableCell>{project.vehicle}</TableCell>
-                <TableCell>{project.assigned.join(", ")}</TableCell>
+                <TableCell className="py-4">
+                  {project.estimatedHours}h
+                </TableCell>
+                <TableCell className="py-4">{project.customer}</TableCell>
+                <TableCell className="py-4">{project.vehicle}</TableCell>
+                <TableCell className="py-4">
+                  {project.assigned.join(", ")}
+                </TableCell>
               </TableRow>
             ))
           ) : (
