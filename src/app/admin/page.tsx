@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
           Admin Dashboard
         </h1>
         <p className="text-lg text-gray-600">
-          Welcome to the admin dashboard!!
+          Welcome to the admin dashboard !
         </p>
       </div>
 
