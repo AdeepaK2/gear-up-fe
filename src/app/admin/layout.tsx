@@ -12,11 +12,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="admin-layout min-h-screen bg-gray-50 overflow-x-hidden w-full max-w-full">
       <Sidebar />
       <Header />
-      <main className="ml-64 pt-24 p-6 overflow-y-auto min-h-screen">
-        {children}
+      <main className="ml-64 pt-24 p-6 overflow-y-auto overflow-x-hidden min-h-screen">
+        <div className="overflow-x-hidden w-full max-w-full">{children}</div>
       </main>
     </div>
   );
