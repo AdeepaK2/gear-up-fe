@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check, X, FolderOpen, Clock, User, Car } from "lucide-react";
 
 // Updated dummy data for the projects table with new structure
 const projectsData = [
@@ -77,46 +77,193 @@ const projectsData = [
 ];
 
 export default function ProjectsPage() {
+  const getStatusCounts = () => {
+    return {
+      pending: projectsData.filter((p) => p.status === "Pending Approval")
+        .length,
+      inProgress: projectsData.filter((p) => p.status === "In Progress").length,
+      awaitingParts: projectsData.filter((p) => p.status === "Awaiting Parts")
+        .length,
+      completed: projectsData.filter((p) => p.status === "Completed").length,
+      cancelled: projectsData.filter((p) => p.status === "Cancelled").length,
+    };
+  };
+
+  const statusCounts = getStatusCounts();
+
   return (
-    <>
-      <h1 className="text-3xl font-bold mb-6 mt-6">Manage Projects</h1>
+    <div className="space-y-8 p-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight text-primary">
+          Manage Projects
+        </h1>
+        <p className="text-lg text-gray-600">
+          Track and manage all the projects
+        </p>
+      </div>
 
-      <Tabs defaultValue="in-progress" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="pending-approval">Pending Approval</TabsTrigger>
-          <TabsTrigger value="in-progress">In Progress</TabsTrigger>
-          <TabsTrigger value="awaiting-parts">Awaiting Parts</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
+      {/* Stats Cards */}
+      <div className="space-y-6">
+        {/* First Row - 3 Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-700 text-base font-semibold mb-1">
+                    Pending Approval
+                  </p>
+                  <div className="text-4xl font-extrabold text-primary">
+                    {statusCounts.pending}
+                  </div>
+                </div>
+                <div className="p-3 bg-primary rounded-lg shadow-sm">
+                  <Clock className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <TabsContent value="pending-approval">
-          <PendingApprovalTable
-            data={projectsData.filter((p) => p.status === "Pending Approval")}
-          />
-        </TabsContent>
-        <TabsContent value="in-progress">
-          <StandardProjectTable
-            data={projectsData.filter((p) => p.status === "In Progress")}
-          />
-        </TabsContent>
-        <TabsContent value="awaiting-parts">
-          <StandardProjectTable
-            data={projectsData.filter((p) => p.status === "Awaiting Parts")}
-          />
-        </TabsContent>
-        <TabsContent value="completed">
-          <StandardProjectTable
-            data={projectsData.filter((p) => p.status === "Completed")}
-          />
-        </TabsContent>
-        <TabsContent value="cancelled">
-          <StandardProjectTable
-            data={projectsData.filter((p) => p.status === "Cancelled")}
-          />
-        </TabsContent>
-      </Tabs>
-    </>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-700 text-base font-semibold mb-1">
+                    In Progress
+                  </p>
+                  <div className="text-4xl font-extrabold text-primary">
+                    {statusCounts.inProgress}
+                  </div>
+                </div>
+                <div className="p-3 bg-primary rounded-lg shadow-sm">
+                  <FolderOpen className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-700 text-base font-semibold mb-1">
+                    Awaiting Parts
+                  </p>
+                  <div className="text-4xl font-extrabold text-primary">
+                    {statusCounts.awaitingParts}
+                  </div>
+                </div>
+                <div className="p-3 bg-primary rounded-lg shadow-sm">
+                  <Car className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Second Row - 2 Cards (Same width as first row cards, centered) */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-700 text-base font-semibold mb-1">
+                    Completed
+                  </p>
+                  <div className="text-4xl font-extrabold text-primary">
+                    {statusCounts.completed}
+                  </div>
+                </div>
+                <div className="p-3 bg-primary rounded-lg shadow-sm">
+                  <Check className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-700 text-base font-semibold mb-1">
+                    Cancelled
+                  </p>
+                  <div className="text-4xl font-extrabold text-primary">
+                    {statusCounts.cancelled}
+                  </div>
+                </div>
+                <div className="p-3 bg-primary rounded-lg shadow-sm">
+                  <X className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="mt-16">
+        <Tabs defaultValue="in-progress" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100">
+            <TabsTrigger
+              value="pending-approval"
+              className="data-[state=active]:bg-white data-[state=active]:text-orange-600"
+            >
+              Pending Approval
+            </TabsTrigger>
+            <TabsTrigger
+              value="in-progress"
+              className="data-[state=active]:bg-white data-[state=active]:text-primary"
+            >
+              In Progress
+            </TabsTrigger>
+            <TabsTrigger
+              value="awaiting-parts"
+              className="data-[state=active]:bg-white data-[state=active]:text-yellow-600"
+            >
+              Awaiting Parts
+            </TabsTrigger>
+            <TabsTrigger
+              value="completed"
+              className="data-[state=active]:bg-white data-[state=active]:text-green-600"
+            >
+              Completed
+            </TabsTrigger>
+            <TabsTrigger
+              value="cancelled"
+              className="data-[state=active]:bg-white data-[state=active]:text-red-600"
+            >
+              Cancelled
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending-approval" className="mt-6">
+            <PendingApprovalTable
+              data={projectsData.filter((p) => p.status === "Pending Approval")}
+            />
+          </TabsContent>
+          <TabsContent value="in-progress" className="mt-6">
+            <StandardProjectTable
+              data={projectsData.filter((p) => p.status === "In Progress")}
+            />
+          </TabsContent>
+          <TabsContent value="awaiting-parts" className="mt-6">
+            <StandardProjectTable
+              data={projectsData.filter((p) => p.status === "Awaiting Parts")}
+            />
+          </TabsContent>
+          <TabsContent value="completed" className="mt-6">
+            <StandardProjectTable
+              data={projectsData.filter((p) => p.status === "Completed")}
+            />
+          </TabsContent>
+          <TabsContent value="cancelled" className="mt-6">
+            <StandardProjectTable
+              data={projectsData.filter((p) => p.status === "Cancelled")}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }
 
@@ -133,124 +280,244 @@ function PendingApprovalTable({ data }: { data: typeof projectsData }) {
   };
 
   return (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Project Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Estimated Hours</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Assigned Employee(s)</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length > 0 ? (
-            data.map((project) => (
-              <TableRow key={project.id} className="align-top">
-                <TableCell className="font-medium py-4 max-w-40">
-                  <div className="text-sm leading-relaxed whitespace-normal break-words">
-                    {project.projectName}
-                  </div>
-                </TableCell>
-                <TableCell className="max-w-48 py-4">
-                  <div className="text-sm leading-relaxed whitespace-normal break-words">
-                    {project.description}
-                  </div>
-                </TableCell>
-                <TableCell className="py-4">
-                  {project.estimatedHours}h
-                </TableCell>
-                <TableCell className="py-4">{project.customer}</TableCell>
-                <TableCell className="py-4">{project.vehicle}</TableCell>
-                <TableCell className="py-4 max-w-36">
-                  <div className="text-sm leading-relaxed whitespace-normal break-words">
-                    {project.assigned.join(", ")}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right py-4">
-                  <div className="flex gap-4 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleApprove(project.id)}
-                      className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full"
+    <Card className="bg-white shadow-lg border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <Clock className="h-5 w-5 text-orange-600" />
+          Projects Pending Approval
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">
+                Project Name
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Description
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Estimated Hours
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Customer
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Vehicle
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Assigned Employee(s)
+              </TableHead>
+              <TableHead className="text-center font-semibold text-gray-700">
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length > 0 ? (
+              data.map((project) => (
+                <TableRow
+                  key={project.id}
+                  className="align-top hover:bg-gray-50 transition-colors"
+                >
+                  <TableCell className="font-medium py-4 max-w-40">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-900">
+                      {project.projectName}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-48 py-4">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-600">
+                      {project.description}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200"
                     >
-                      <Check className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleReject(project.id)}
-                      className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full"
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
+                      {project.estimatedHours}h
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4 text-gray-900">
+                    {project.customer}
+                  </TableCell>
+                  <TableCell className="py-4 text-gray-600">
+                    {project.vehicle}
+                  </TableCell>
+                  <TableCell className="py-4 max-w-36">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-700 flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {project.assigned.join(", ")}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <div className="flex gap-3 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleApprove(project.id)}
+                        className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        <Check className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReject(project.id)}
+                        className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-gray-500"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Clock className="h-8 w-8 text-gray-300" />
+                    <span>No projects pending approval.</span>
                   </div>
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center">
-                No projects pending approval.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
     </Card>
   );
 }
 
 // Standard table component for other statuses (In Progress, Awaiting Parts, Completed, Cancelled)
 function StandardProjectTable({ data }: { data: typeof projectsData }) {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "In Progress":
+        return <FolderOpen className="h-5 w-5 text-primary" />;
+      case "Awaiting Parts":
+        return <Car className="h-5 w-5 text-yellow-600" />;
+      case "Completed":
+        return <Check className="h-5 w-5 text-green-600" />;
+      case "Cancelled":
+        return <X className="h-5 w-5 text-red-600" />;
+      default:
+        return <FolderOpen className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "In Progress":
+        return "text-primary";
+      case "Awaiting Parts":
+        return "text-yellow-600";
+      case "Completed":
+        return "text-green-600";
+      case "Cancelled":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
+  const status = data[0]?.status || "Projects";
+
   return (
-    <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Project Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Estimated Hours</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Vehicle</TableHead>
-            <TableHead>Assigned Employee(s)</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length > 0 ? (
-            data.map((project) => (
-              <TableRow key={project.id} className="align-top">
-                <TableCell className="font-medium py-4">
-                  {project.projectName}
-                </TableCell>
-                <TableCell className="max-w-48 py-4">
-                  <div className="text-sm leading-relaxed whitespace-normal break-words">
-                    {project.description}
+    <Card className="bg-white shadow-lg border-0">
+      <CardHeader className="pb-4">
+        <CardTitle
+          className={`text-xl font-bold flex items-center gap-2 ${getStatusColor(
+            status
+          )}`}
+        >
+          {getStatusIcon(status)}
+          {status} Projects
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">
+                Project Name
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Description
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Estimated Hours
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Customer
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Vehicle
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Assigned Employee(s)
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.length > 0 ? (
+              data.map((project) => (
+                <TableRow
+                  key={project.id}
+                  className="align-top hover:bg-gray-50 transition-colors"
+                >
+                  <TableCell className="font-medium py-4 text-gray-900">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words">
+                      {project.projectName}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-48 py-4">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-600">
+                      {project.description}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200"
+                    >
+                      {project.estimatedHours}h
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4 text-gray-900">
+                    {project.customer}
+                  </TableCell>
+                  <TableCell className="py-4 text-gray-600">
+                    {project.vehicle}
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-700 flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {project.assigned.join(", ")}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center py-8 text-gray-500"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    {getStatusIcon(status)}
+                    <span>No {status.toLowerCase()} projects found.</span>
                   </div>
                 </TableCell>
-                <TableCell className="py-4">
-                  {project.estimatedHours}h
-                </TableCell>
-                <TableCell className="py-4">{project.customer}</TableCell>
-                <TableCell className="py-4">{project.vehicle}</TableCell>
-                <TableCell className="py-4">
-                  {project.assigned.join(", ")}
-                </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                No projects found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
     </Card>
   );
 }
