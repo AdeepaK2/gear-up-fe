@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress"; // We'll use this for the bar chart section
 import {
   ChartContainer,
   ChartTooltip,
@@ -39,17 +38,10 @@ const statsData = [
 ];
 
 const projectsStatusData = [
-  { status: "Active", value: 40, fill: "var(--color-active)" },
-  { status: "Completed", value: 75, fill: "var(--color-completed)" },
-  { status: "Pending", value: 20, fill: "var(--color-pending)" },
-  { status: "Cancelled", value: 90, fill: "var(--color-cancelled)" },
-];
-
-const projectsStatusPieData = [
-  { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-  { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },
-  { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
+  { status: "Active", count: 8, percentage: 40, fill: "#10b981" }, // emerald-500
+  { status: "Completed", count: 15, percentage: 60, fill: "#3b82f6" }, // blue-500
+  { status: "Pending", count: 3, percentage: 15, fill: "#f59e0b" }, // amber-500
+  { status: "Cancelled", count: 2, percentage: 10, fill: "#ef4444" }, // red-500
 ];
 
 const lineChartData = [
@@ -62,11 +54,11 @@ const lineChartData = [
 ];
 
 const chartConfig = {
-  visitors: { label: "Visitors" },
-  chrome: { label: "Chrome", color: "hsl(var(--chart-1))" },
-  safari: { label: "Safari", color: "hsl(var(--chart-2))" },
-  firefox: { label: "Firefox", color: "hsl(var(--chart-3))" },
-  edge: { label: "Edge", color: "hsl(var(--chart-4))" },
+  projects: { label: "Projects" },
+  active: { label: "Active", color: "#10b981" },
+  completed: { label: "Completed", color: "#3b82f6" },
+  pending: { label: "Pending", color: "#f59e0b" },
+  cancelled: { label: "Cancelled", color: "#ef4444" },
 };
 
 export default function AdminDashboardPage() {
@@ -90,43 +82,46 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Projects by Status Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mb-8">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Projects by Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {projectsStatusData.map((item) => (
-              <div key={item.status}>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium">{item.status}</span>
-                </div>
-                <Progress value={item.value} className="h-2" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Card className="col-span-3">
+      {/* Projects by Status - Doughnut Chart */}
+      <div className="mb-8">
+        <Card>
           <CardHeader>
             <CardTitle>Projects by Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer
-              config={chartConfig}
-              className="mx-auto aspect-square h-[250px]"
-            >
-              <PieChart>
-                <ChartTooltip
-                  content={<ChartTooltipContent nameKey="visitors" hideLabel />}
-                />
-                <Pie
-                  data={projectsStatusPieData}
-                  dataKey="visitors"
-                  nameKey="browser"
-                />
-              </PieChart>
-            </ChartContainer>
+            <div className="flex items-center justify-center gap-8">
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-square h-[300px]"
+              >
+                <PieChart>
+                  <ChartTooltip
+                    content={<ChartTooltipContent nameKey="count" hideLabel />}
+                  />
+                  <Pie
+                    data={projectsStatusData}
+                    dataKey="count"
+                    nameKey="status"
+                    innerRadius={60}
+                    outerRadius={120}
+                    strokeWidth={2}
+                  />
+                </PieChart>
+              </ChartContainer>
+              <div className="space-y-4">
+                {projectsStatusData.map((item) => (
+                  <div key={item.status} className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: item.fill }}
+                    ></div>
+                    <span className="text-sm font-medium">
+                      {item.status} - {item.percentage}% ({item.count} projects)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -144,7 +139,7 @@ export default function AdminDashboardPage() {
             <ChartContainer config={{}} className="h-[200px] w-full">
               <LineChart
                 data={lineChartData}
-                margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <CartesianGrid vertical={false} />
                 <XAxis
@@ -153,12 +148,14 @@ export default function AdminDashboardPage() {
                   axisLine={false}
                   tickMargin={8}
                 />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent />} />
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="hsl(var(--primary))"
+                  stroke="#3b82f6"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ChartContainer>
@@ -175,7 +172,7 @@ export default function AdminDashboardPage() {
             <ChartContainer config={{}} className="h-[200px] w-full">
               <LineChart
                 data={lineChartData}
-                margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <CartesianGrid vertical={false} />
                 <XAxis
@@ -184,12 +181,14 @@ export default function AdminDashboardPage() {
                   axisLine={false}
                   tickMargin={8}
                 />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent />} />
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="hsl(var(--primary))"
+                  stroke="#10b981"
                   strokeWidth={2}
-                  dot={false}
+                  dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ChartContainer>
