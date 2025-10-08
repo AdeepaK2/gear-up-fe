@@ -76,7 +76,7 @@ export default function EmployeesPage() {
     <div className="space-y-8 p-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-primary">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           Manage Employees
         </h1>
         <p className="text-lg text-gray-600">

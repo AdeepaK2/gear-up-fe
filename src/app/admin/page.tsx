@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-8 p-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-primary">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           Admin Dashboard
         </h1>
         <p className="text-lg text-gray-600">
@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
       {/* Projects by Status - Doughnut Chart */}
       <Card className="bg-white shadow-lg border-0">
         <CardHeader className="pb-6">
-          <CardTitle className="text-3xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-gray-900">
             Projects by Status
           </CardTitle>
           <CardDescription className="text-gray-600 text-base">
@@ -176,7 +176,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-10">
         <Card className="bg-white shadow-lg border-0">
           <CardHeader className="pb-6">
-            <CardTitle className="text-3xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-gray-900">
               Registered Customers
             </CardTitle>
             <CardDescription className="text-gray-600 text-base">
@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
 
         <Card className="bg-white shadow-lg border-0">
           <CardHeader className="pb-6">
-            <CardTitle className="text-3xl font-bold text-gray-900">
+            <CardTitle className="text-2xl font-bold text-gray-900">
               Completed Projects
             </CardTitle>
             <CardDescription className="text-gray-600 text-base">
