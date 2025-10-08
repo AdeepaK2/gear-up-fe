@@ -123,7 +123,7 @@ export default function EmployeeProjects() {
 	};
 
 	return (
-		<div className="min-h-screen px-4 py-8">
+		<div className="min-h-screen space-y-8 p-6">
 			<h1 className="text-3xl font-bold mb-8 text-primary">Assigned Projects</h1>
 			<div className="bg-white rounded-xl border overflow-x-auto">
 				<table className="min-w-full text-sm">
@@ -161,7 +161,7 @@ export default function EmployeeProjects() {
 								<td className="px-4 py-3">
 									<button
 										type="button"
-										className="p-2 rounded-lg bg-white border border-blue-200 text-blue-800 hover:bg-blue-100 transition-colors duration-200"
+										className="p-2 rounded-lg bg-white border border-blue-200 text-blue-900 hover:bg-blue-100 transition-colors duration-200"
 										aria-label="Edit"
 										onClick={() => handleEditClick(i)}
 									>
@@ -181,57 +181,57 @@ export default function EmployeeProjects() {
 					{/* Dialog */}
 					<div className="fixed inset-0 flex items-center justify-center z-50">
 						<div
-							className="bg-white rounded-2xl p-8 shadow-2xl w-full max-w-md max-h-[80vh] overflow-y-auto mx-4 relative"
+							className="bg-white rounded-lg p-8 shadow-2xl w-[26rem] min-h-[20rem] relative"
 							onClick={e => e.stopPropagation()}
 						>
-							<h2 className="text-xl font-bold  mb-8">Update Logs</h2>
-							<form onSubmit={handleSave}>
-								<div className="mb-6">
-									<label className="block mb-2 font-medium text-lg" htmlFor="start">Start time</label>
+							<h2 className="text-xl font-bold mb-6">Update Logs</h2>
+							<form onSubmit={handleSave} className="space-y-6">
+								<div>
+									<label className="block mb-2 font-medium text-base text-gray-700" htmlFor="start">Start time</label>
 									<input
 										id="start"
 										name="start"
 										type="text"
 										value={form.start}
 										onChange={handleChange}
-										className="w-full border-primary border-2 rounded px-4 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-primary"
+										className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
 										autoComplete="off"
 									/>
 								</div>
-								<div className="mb-6">
-									<label className="block mb-2 font-medium text-lg" htmlFor="end">End time</label>
+								<div>
+									<label className="block mb-2 font-medium text-base text-gray-700" htmlFor="end">End time</label>
 									<input
 										id="end"
 										name="end"
 										type="text"
 										value={form.end}
 										onChange={handleChange}
-										className="w-full border-primary border-2 rounded px-4 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-primary"
+										className="w-full border border-gray-300 rounded px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
 										autoComplete="off"
 									/>
 								</div>
-								<div className="mb-8">
-									<label className="block mb-2 font-medium text-lg" htmlFor="status">Status</label>
+								<div>
+									<label className="block mb-2 font-medium text-base text-gray-700" htmlFor="status">Status</label>
 									<div className="relative">
 										<select
 											id="status"
 											name="status"
 											value={form.status}
 											onChange={handleChange}
-											className="w-full border-primary border-2 rounded px-4 py-3 pr-12 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+											className="w-full border border-gray-300 rounded px-4 py-3 pr-10 text-base text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
 										>
-											<option value="" className="text-sm text-gray-400">Select Status</option>
+											<option value="" className="text-gray-400">Select Status</option>
 											{statusOptions.map(opt => (
-												<option key={opt} value={opt} className="text-sm text-gray-700">{opt}</option>
+												<option key={opt} value={opt} className="text-gray-700">{opt}</option>
 											))}
 										</select>
 										<ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
 									</div>
 								</div>
-								<div className="flex justify-end">
+								<div className="flex justify-end pt-4">
 									<button
 										type="submit"
-										className="bg-primary hover:bg-secondary text-white rounded px-6 py-2 font-medium text-lg transition-colors duration-200"
+										className="bg-primary hover:bg-secondary text-white rounded px-6 py-3 font-medium text-base transition-colors duration-200"
 									>
 										Save
 									</button>
@@ -239,7 +239,7 @@ export default function EmployeeProjects() {
 							</form>
 							<button
 								type="button"
-								className="absolute top-5 right-6 text-gray-400 hover:text-gray-600 text-2xl"
+								className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 text-xl"
 								onClick={handleClose}
 								aria-label="Close"
 							>

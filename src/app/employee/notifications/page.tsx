@@ -86,9 +86,14 @@ export default function EmployeeNotifications() {
 	};
 
 	return (
-		<div className="min-h-screen px-4 py-8">
+		<div className="min-h-screen space-y-8 p-6">
 			<div className="flex justify-between items-center mb-6">
-				<h1 className="text-3xl font-bold text-primary">Notifications</h1>
+				<div className="flex items-center gap-3">
+					<h1 className="text-3xl font-bold text-primary">Notifications</h1>
+					<div className="w-8 h-8 bg-primary text-white text-lg rounded-full flex items-center justify-center font-semibold">
+						{notifications.length}
+					</div>
+				</div>
 				<button
 					className="text-sm font-medium text-gray-600 hover:underline"
 					onClick={handleMarkAllAsRead}
@@ -100,15 +105,18 @@ export default function EmployeeNotifications() {
 				{/* New Notifications Divider */}
 				<div className="flex items-center my-6">
 					<div className="flex-1 h-px bg-gray-300"></div>
-					<span className="px-4 text-sm font-medium text-gray-00 ">
-						New
-					</span>
+					<div className="flex items-center gap-2 px-4">
+						<span className="text-sm font-medium text-gray-600">New</span>
+						<div className="w-6 h-6 bg-primary text-white text-xs rounded-full flex items-center justify-center font-semibold">
+							{newNotifications.length}
+						</div>
+					</div>
 					<div className="flex-1 h-px bg-gray-300"></div>
 				</div>
 
 				{newNotifications.length === 0 ? (
-					<div className="flex items-center justify-center py-8">
-						<span className="text-gray-500 text-sm">There are no new messages</span>
+					<div className="flex items-center justify-center py-4">
+						<span className="text-gray-500 text-lg">No new notifications</span>
 					</div>
 				) : (
 					newNotifications.map((n, idx) => {
@@ -149,9 +157,12 @@ export default function EmployeeNotifications() {
 				{/* Old Notifications Divider */}
 				<div className="flex items-center my-6">
 					<div className="flex-1 h-px bg-gray-300"></div>
-					<span className="px-4 text-sm font-medium text-gray-00 ">
-						Old
-					</span>
+					<div className="flex items-center gap-2 px-4">
+						<span className="text-sm font-medium text-gray-600">Old</span>
+						<div className="w-6 h-6 bg-gray-400 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+							{oldNotifications.length}
+						</div>
+					</div>
 					<div className="flex-1 h-px bg-gray-300"></div>
 				</div>
 

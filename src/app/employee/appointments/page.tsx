@@ -24,7 +24,7 @@ const calendarEvents = [
 		date: new Date(2025, 7, 20), // August 20, 2025
 		title: "Drain oil engine",
 		description: "Oil\n10.00AM - 11.00AM",
-		color: "#756eafff"
+		color: "#e1e0e8ff"
 	}
 ];
 
@@ -35,7 +35,7 @@ export default function EmployeeAppointments() {
 	const [calendarMonth, setCalendarMonth] = React.useState<Date>(new Date(2025, 7)); // August 2025
 
 	return (
-		<div className="min-h-screen px-4 py-8">
+		<div className="min-h-screen space-y-8 p-6">
 			<h1 className="text-3xl font-bold text-primary mb-6">Appointments</h1>
 			<div className="flex gap-8">
 				{/* Left Sidebar - Fixed width on large screens, full width on mobile */}
@@ -77,7 +77,7 @@ export default function EmployeeAppointments() {
 								</div>
 							))}
 						</div>
-						<button className="w-full mt-4 py-2 rounded-full bg-black text-white font-semibold text-sm">See All</button>
+						<button className="w-full mt-4 py-2 rounded-full bg-primary hover:bg-secondary text-white font-semibold text-sm">See All</button>
 					</div>
 				</div>
 				{/* Right Calendar Grid */}

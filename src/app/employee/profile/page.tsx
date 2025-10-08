@@ -17,7 +17,7 @@ export default function EmployeeProfile() {
   const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
 
   return (
-    <div className="container mx-auto p-8 h-full">
+    <div className="container space-y-8 p-6 h-full">
       <h1 className="text-3xl font-bold mb-8 text-primary">Employee Settings</h1>
       {/* Tabs */}
       <div className="flex border-b mb-8">

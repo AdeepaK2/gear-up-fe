@@ -89,120 +89,87 @@ export default function EmployeeDashboard() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-50 p-4 space-y-6">
-			{/* Welcome Card */}
-			<Card className="mb-8 bg-gradient-to-r from-primary to-primary/90 text-white border-0">
-				<CardContent className="p-6">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center space-x-4">
-							<div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-								<User className="w-8 h-8 text-white" />
-							</div>
-							<div>
-								<h1 className="text-2xl font-bold">
-									Welcome back, John Smith!
-								</h1>
-								<p className="text-white/80 mt-1">
-									Here's what's happening with your work today.
-								</p>
-							</div>
-						</div>
-						<Link href="/employee/profile">
-							<Button
-								variant="secondary"
-								size="sm"
-								className="bg-white text-primary hover:bg-white/90"
-							>
-								<Edit className="w-4 h-4 mr-2" />
-								Edit Profile
-							</Button>
-						</Link>
-					</div>
-				</CardContent>
-			</Card>
+		<div className="space-y-8 p-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
+          Employee Dashboard
+        </h1>
+        <p className="text-lg text-gray-600">
+          Here's what's happening with your work today.
+        </p>
+      </div>
 
 			{/* Stat Cards */}
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-				<Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+				<Card className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:shadow-lg transition-all duration-300">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-gray-700 font-medium">
+								<p className="text-gray-700 text-base font-semibold mb-1">
 									Assigned Services
 								</p>
-								<p className="text-3xl font-bold text-primary mt-2">
+								<div className="text-4xl font-extrabold text-primary">
 									12
-								</p>
-								<p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
-									Active tasks
-								</p>
+								</div>
 							</div>
-							<div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
-								<Calendar className="w-8 h-8 text-white" />
+							<div className="p-3 bg-primary rounded-lg shadow-sm">
+								<Calendar className="h-8 w-8 text-white" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+				<Card className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:shadow-lg transition-all duration-300">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-gray-700 font-medium">
+								<p className="text-gray-700 text-base font-semibold mb-1">
 									In progress
 								</p>
-								<p className="text-3xl font-bold text-primary mt-2">
+								<div className="text-4xl font-extrabold text-primary">
 									4
-								</p>
-								<p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
-									Currently working
-								</p>
+								</div>
 							</div>
-							<div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
-								<Wrench className="w-8 h-8 text-white" />
+							<div className="p-3 bg-primary rounded-lg shadow-sm">
+								<Wrench className="h-8 w-8 text-white" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+				<Card className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:shadow-lg transition-all duration-300">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-gray-700 font-medium">
+								<p className="text-gray-700 text-base font-semibold mb-1">
 									Completed Today
 								</p>
-								<p className="text-3xl font-bold text-primary mt-2">
+								<div className="text-4xl font-extrabold text-primary">
 									7
-								</p>
-								<p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
-									Today's work
-								</p>
+								</div>
 							</div>
-							<div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
-								<CheckCircle className="w-8 h-8 text-white" />
+							<div className="p-3 bg-primary rounded-lg shadow-sm">
+								<CheckCircle className="h-8 w-8 text-white" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
 
 				{/* Daily Progress Card */}
-				<Card className="bg-gradient-to-br from-primary/10 to-secondary/10 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+				<Card className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:shadow-lg transition-all duration-300">
 					<CardContent className="p-6">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-gray-700 font-medium">
+								<p className="text-gray-700 text-base font-semibold mb-1">
 									Daily Progress
 								</p>
-								<p className="text-3xl font-bold text-primary mt-2">
+								<div className="text-4xl font-extrabold text-primary">
 									{Math.round((dailyProgress.completed / dailyProgress.total) * 100)}%
-								</p>
-								<p className="text-xs text-primary/70 mt-2 bg-white/50 px-2 py-1 rounded-full inline-block">
-									{dailyProgress.completed} of {dailyProgress.total} Appointments
-								</p>
+								</div>
 							</div>
-							<div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg">
-								<Clock className="w-8 h-8 text-white" />
+							<div className="p-3 bg-primary rounded-lg shadow-sm">
+								<Clock className="h-8 w-8 text-white" />
 							</div>
 						</div>
 					</CardContent>
@@ -211,10 +178,10 @@ export default function EmployeeDashboard() {
 
 			{/* Upcoming Appointments */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
-					<CardTitle className="text-xl font-semibold text-white">Upcoming Appointments</CardTitle>
+				<CardHeader className="">
+					<CardTitle className="text-2xl font-bold text-gray-900">Upcoming Appointments</CardTitle>
 				</CardHeader>
-				<CardContent className="overflow-x-auto p-6">
+				<CardContent className="overflow-x-auto px-4 pb-6">
 					<table className="min-w-full text-sm">
 						<thead>
 							<tr className="border-b">
@@ -246,17 +213,17 @@ export default function EmployeeDashboard() {
 
 			{/* Projects by Status */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
-					<CardTitle className="text-xl font-semibold text-white">Projects by Status</CardTitle>
+				<CardHeader className="">
+					<CardTitle className="text-2xl font-bold text-gray-900">Projects by Status</CardTitle>
 				</CardHeader>
-				<CardContent className="p-6">
+				<CardContent className="">
 					<div className="space-y-4">
 						{projectsStatusData.map((item) => (
 							<div key={item.status}>
 								<div className="flex justify-between mb-1">
 									<span className="text-sm font-medium">{item.status}</span>
 								</div>
-								<Progress value={item.value} className="h-2 bg-gray-200 [&>div]:bg-blue-500" />
+								<Progress value={item.value} className="h-2 bg-gray-200 [&>div]:bg-primary" />
 							</div>
 						))}
 					</div>
@@ -265,10 +232,10 @@ export default function EmployeeDashboard() {
 
 			{/* Recent Activity */}
 			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
-					<CardTitle className="text-xl font-semibold text-white">Recent Activity</CardTitle>
+				<CardHeader className="">
+					<CardTitle className="text-2xl font-bold text-gray-900">Recent Activity</CardTitle>
 				</CardHeader>
-				<CardContent className="p-6">
+				<CardContent className="">
 					{activities.map((activity, idx) => (
 						<div key={idx} className="mb-4 last:mb-0 p-3 rounded-lg hover:bg-blue-50 hover:backdrop-blur-sm hover:shadow-md transition-all duration-200 cursor-pointer relative group">
 							<div className="font-medium">{activity.text}</div>

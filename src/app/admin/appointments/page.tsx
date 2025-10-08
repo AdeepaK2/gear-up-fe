@@ -136,7 +136,7 @@ export default function AppointmentsPage() {
     <div className="space-y-8 p-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-primary">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           Manage Appointments
         </h1>
         <p className="text-lg text-gray-600">
@@ -223,7 +223,7 @@ export default function AppointmentsPage() {
       <div className="mt-16">
         <Card className="bg-white shadow-lg border-0">
           <CardHeader className="pb-6">
-            <CardTitle className="text-3xl font-bold text-gray-900 flex items-center gap-6">
+            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-6">
               <CalendarIcon className="h-8 w-8 text-primary" />
               Calendar View
             </CardTitle>
@@ -333,7 +333,7 @@ export default function AppointmentsPage() {
       {/* Appointments Tables */}
       <div className="space-y-6 mt-16">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900">
             Filtered Appointments
           </h2>
           <p className="text-lg text-gray-600">Manage appointments by status</p>
