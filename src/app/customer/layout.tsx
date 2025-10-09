@@ -3,6 +3,9 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/customer/Sidebar";
+import Header from "@/components/customer/Header";
+import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import { UserRole } from "@/lib/types/Auth";
 
 export default function CustomerLayout({
   children,
@@ -19,12 +22,14 @@ export default function CustomerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Sidebar */}
-      <Sidebar />
+    <ProtectedRoute requiredRole={UserRole.CUSTOMER} redirectTo="/login">
+      <div className="min-h-screen bg-gray-50">
+        {/* Fixed Sidebar */}
+        <Sidebar />
 
-      {/* Main content with left padding to accommodate fixed sidebar */}
-      <main className="ml-64 p-8">{children}</main>
-    </div>
+        {/* Main content with left padding to accommodate fixed sidebar */}
+        <main className="ml-64 p-8">{children}</main>
+      </div>
+    </ProtectedRoute>
   );
 }

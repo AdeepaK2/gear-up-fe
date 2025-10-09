@@ -245,6 +245,15 @@ class AuthService {
     return userRole ? roles.includes(userRole) : false;
   }
 
+  // Check if password change is required (from JWT token)
+  requiresPasswordChange(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    
+    const decoded = decodeToken(token);
+    return decoded?.requiresPasswordChange === true;
+  }
+
   // Make authenticated request
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
     let token = this.getAccessToken();

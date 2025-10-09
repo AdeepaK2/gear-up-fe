@@ -24,7 +24,7 @@ const calendarEvents = [
 		date: new Date(2025, 7, 20), // August 20, 2025
 		title: "Drain oil engine",
 		description: "Oil\n10.00AM - 11.00AM",
-		color: "#756eafff"
+		color: "#e1e0e8ff"
 	}
 ];
 
@@ -35,11 +35,11 @@ export default function EmployeeAppointments() {
 	const [calendarMonth, setCalendarMonth] = React.useState<Date>(new Date(2025, 7)); // August 2025
 
 	return (
-		<div className="min-h-screen bg-[#F6F6F6] px-2 py-8">
-			<h1 className="text-3xl font-bold mb-6">Appointments</h1>
+		<div className="min-h-screen space-y-8 p-6">
+			<h1 className="text-3xl font-bold text-primary mb-6">Appointments</h1>
 			<div className="flex gap-8">
-				{/* Left Sidebar */}
-				<div className="flex flex-col gap-4 w-[320px]">
+				{/* Left Sidebar - Fixed width on large screens, full width on mobile */}
+				<div className="flex flex-col gap-4 w-full lg:w-[320px] lg:flex-shrink-0">
 					{/* Filter and Month */}
 					<div className="flex gap-2">
 						<button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border font-medium text-sm">
@@ -77,7 +77,7 @@ export default function EmployeeAppointments() {
 								</div>
 							))}
 						</div>
-						<button className="w-full mt-4 py-2 rounded-full bg-black text-white font-semibold text-sm">See All</button>
+						<button className="w-full mt-4 py-2 rounded-full bg-primary hover:bg-secondary text-white font-semibold text-sm">See All</button>
 					</div>
 				</div>
 				{/* Right Calendar Grid */}
@@ -114,7 +114,7 @@ export default function EmployeeAppointments() {
 								</button>
 							</div>
 							{/* ...existing code for Today button... */}
-							<button className="ml-2 px-3 py-1 rounded-full bg-white border text-sm font-medium">Today</button>
+							
 						</div>
 						<div className="flex items-center gap-2">
 							<div className="flex items-center bg-white rounded-full px-3 py-1 border">

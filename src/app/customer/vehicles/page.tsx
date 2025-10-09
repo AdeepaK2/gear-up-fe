@@ -112,7 +112,12 @@ export default function VehiclesPage() {
     <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-primary font-bold text-2xl">My Vehicles</h1>
+          <div>
+            <h1 className="text-primary font-bold text-3xl">My Vehicles</h1>
+            <p className="text-gray-600 mt-1">
+              Manage your registered vehicles
+            </p>
+          </div>
           <button
             onClick={openModal}
             className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"

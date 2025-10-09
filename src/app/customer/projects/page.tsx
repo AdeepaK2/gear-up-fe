@@ -390,7 +390,7 @@ export default function ProjectsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Project Details</h1>
+          <h1 className="text-primary font-bold text-3xl">Project Details</h1>
           <p className="text-gray-600 mt-1">
             Review and manage your vehicle service project
           </p>
