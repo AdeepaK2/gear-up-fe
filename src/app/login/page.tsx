@@ -89,18 +89,33 @@ export default function LoginPage() {
 
     try {
       // Perform demo login (creates mock token)
-      performDemoLogin(demo);
+      const token = performDemoLogin(demo);
 
       console.log("✅ Demo login successful:", demo.name);
+      console.log("🔍 Demo account role:", demo.roleEnum);
+      console.log("🔍 Token created:", token.substring(0, 50) + "...");
+      
+      // Verify token was stored correctly
+      const storedToken = localStorage.getItem('accessToken');
+      console.log("🔍 Token stored in localStorage:", storedToken ? "YES" : "NO");
+      
+      // Decode and verify token role
+      if (storedToken) {
+        const payload = JSON.parse(atob(storedToken.split('.')[1]));
+        console.log("🔍 Token payload role:", payload.role);
+        console.log("🔍 Token payload full:", payload);
+      }
 
       // Small delay for better UX
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Route user based on their role
       const redirectPath = getRedirectPath(demo.roleEnum);
+      console.log("🔍 Redirecting to:", redirectPath);
       router.push(redirectPath);
 
     } catch (err: any) {
+      console.error("❌ Demo login error:", err);
       setError(err.message || "Demo login failed");
       setIsLoading(false);
     }

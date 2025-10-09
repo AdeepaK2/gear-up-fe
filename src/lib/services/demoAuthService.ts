@@ -29,10 +29,10 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     role: "admin",
     email: "admin@gearup.com",
-    password: "admin123",
+    password: "Admin@123", // Real backend password
     roleEnum: UserRole.ADMIN,
-    name: "Admin Demo",
-    description: "Full system access, manage users, view analytics"
+    name: "System Administrator",
+    description: "Full system access (Uses real backend credentials)"
   }
 ];
 
