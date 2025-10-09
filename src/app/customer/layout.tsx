@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/customer/Sidebar";
+import Header from "@/components/customer/Header";
 
 export default function CustomerLayout({
   children,
@@ -22,9 +23,12 @@ export default function CustomerLayout({
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Sidebar */}
       <Sidebar />
+      <Header />
 
       {/* Main content with left padding to accommodate fixed sidebar */}
-      <main className="ml-64 p-8">{children}</main>
+      <main className="ml-64 pt-24 p-6 overflow-y-auto overflow-x-hidden min-h-screen">
+        <div className="overflow-x-hidden w-full max-w-full">{children}</div>
+      </main>
     </div>
   );
 }
