@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/customer/Sidebar";
+import Header from "@/components/customer/Header";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
 import { UserRole } from "@/lib/types/Auth";
 

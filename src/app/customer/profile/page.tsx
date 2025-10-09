@@ -100,12 +100,12 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <Card className="bg-gradient-to-r from-primary to-primary/90 text-white border-0">
+        <Card className="bg-white border-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-white">My Profile</h1>
-                <p className="text-white/80 mt-1">
+                <h1 className="text-primary font-bold text-3xl">My Profile</h1>
+                <p className="text-gray-600 mt-1">
                   Manage your account information and preferences
                 </p>
               </div>
