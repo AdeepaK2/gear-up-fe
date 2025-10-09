@@ -47,8 +47,6 @@ export default function CustomerSidebar() {
         </div>
       </div>
 
-      <div className="mb-4 text-center font-semibold">User Name</div>
-
       <nav className="space-y-2">
         {navItems.map((item) => {
           // Proper logic: exact match OR sub-route match (except for dashboard which is exact only)
