@@ -35,16 +35,14 @@ export default function CustomerSidebar() {
 
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50">
-      <div className="mb-6 text-center">
-        <div className="inline-flex items-center justify-center bg-gray-100 rounded px-2 py-1 mx-auto">
-          <Image
-            src="/Logo.png"
-            alt="Company Logo"
-            width={110}
-            height={32}
-            className="block"
-          />
-        </div>
+      <div className="mb-8 flex justify-center">
+        <Image
+          src="/Logo.png"
+          alt="Company Logo"
+          width={70}
+          height={40}
+          className="object-contain"
+        />
       </div>
 
       <nav className="space-y-2">
