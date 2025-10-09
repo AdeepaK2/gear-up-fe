@@ -44,6 +44,18 @@ export interface UserResponse {
 export interface JwtPayload {
   sub: string; // email
   role: UserRole;
+  requiresPasswordChange?: boolean; // Flag for temporary passwords
   exp: number;
   iat: number;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface PasswordChangeResponse {
+  message: string;
+  requiresPasswordChange: boolean;
 }
