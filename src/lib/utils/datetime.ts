@@ -91,3 +91,21 @@ export function formatTime(timeString: string): string {
   const displayHours = hours % 12 || 12;
   return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
+
+/**
+ * Formats an ISO date string for display in Sri Lankan locale.
+ * 
+ * @param isoString - ISO 8601 date string
+ * @returns Formatted date string (e.g., "15/10/2025")
+ * 
+ * @example
+ * formatDateLK("2025-10-15T10:00:00Z") // "15/10/2025"
+ */
+export function formatDateLK(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
