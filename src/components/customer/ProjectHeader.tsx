@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * ProjectHeader - Page title and subtitle for projects page.
- * 
+ *
  * @description Simple header component following SRP.
  * Provides consistent page-level heading structure.
  */

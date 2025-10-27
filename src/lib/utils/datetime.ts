@@ -94,10 +94,10 @@ export function formatTime(timeString: string): string {
 
 /**
  * Formats an ISO date string for display in Sri Lankan locale.
- * 
+ *
  * @param isoString - ISO 8601 date string
  * @returns Formatted date string (e.g., "15/10/2025")
- * 
+ *
  * @example
  * formatDateLK("2025-10-15T10:00:00Z") // "15/10/2025"
  */

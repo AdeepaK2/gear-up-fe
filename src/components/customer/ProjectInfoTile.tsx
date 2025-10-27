@@ -3,10 +3,10 @@ import { LucideIcon } from "lucide-react";
 
 /**
  * ProjectInfoTile - Reusable information tile component.
- * 
+ *
  * @description Displays a single piece of project information with
  * icon, label, and value in a consistent styled card.
- * 
+ *
  * @param {LucideIcon} Icon - Lucide icon component
  * @param {string} label - Primary information label
  * @param {string} sublabel - Secondary descriptive text

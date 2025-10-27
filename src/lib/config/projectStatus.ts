@@ -10,7 +10,7 @@ import {
 
 /**
  * Configuration for project status display.
- * 
+ *
  * @description Centralized status configuration to avoid inline conditionals.
  * Maps each status to its display properties (label, colors).
  */

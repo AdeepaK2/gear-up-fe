@@ -26,7 +26,6 @@ import { formatDateLK } from "@/lib/utils/datetime";
 import { projectStatusConfig, getStatusIcon } from "@/lib/config/projectStatus";
 import type { ServiceProgress } from "@/components/customer/ServiceProgressBadge";
 
-
 /**
  * Mock project data - acts as initial state until backend integration.
  * Keep this structure stable to maintain UI contract with future API endpoints.
@@ -113,7 +112,7 @@ const mockProject: ProjectData = {
 
 /**
  * ProjectsPage - Customer project management dashboard.
- * 
+ *
  * @description Orchestrates state for project service selection and management.
  * Delegates presentation to extracted components following SRP. Uses mock data
  * until backend API endpoints are available.
@@ -148,7 +147,8 @@ export default function ProjectsPage() {
    * Sums up costs only when accepted services change.
    */
   const totalAcceptedCost = useMemo(
-    () => acceptedServices.reduce((sum, service) => sum + service.estimatedCost, 0),
+    () =>
+      acceptedServices.reduce((sum, service) => sum + service.estimatedCost, 0),
     [acceptedServices]
   );
 
@@ -344,7 +344,6 @@ export default function ProjectsPage() {
     }
   }, [acceptedServices.length]);
 
-
   return (
     <div className="min-h-screen space-y-6">
       {/* Page Header */}
@@ -354,7 +353,10 @@ export default function ProjectsPage() {
       <Card className="shadow-xl border-0 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-8">
           <CardTitle className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm" aria-hidden="true">
+            <div
+              className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"
+              aria-hidden="true"
+            >
               <FileText className="h-8 w-8" />
             </div>
             <div>
@@ -389,7 +391,11 @@ export default function ProjectsPage() {
               sublabel="Consultation Date"
             />
 
-            <ProjectInfoTile Icon={getStatusIcon(project.status) as any} label="" sublabel="Current Status">
+            <ProjectInfoTile
+              Icon={getStatusIcon(project.status) as any}
+              label=""
+              sublabel="Current Status"
+            >
               <Badge
                 className={cn(
                   "text-sm font-semibold px-3 py-1 mb-2",

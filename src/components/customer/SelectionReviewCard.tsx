@@ -8,10 +8,10 @@ import { formatCurrencyLKR } from "@/lib/utils/currency";
 
 /**
  * SelectionReviewCard - Review accepted services before final confirmation.
- * 
+ *
  * @description Displays selected services with ability to unselect before
  * confirming. Shows total cost and provides confirmation action.
- * 
+ *
  * @param {Service[]} acceptedServices - Services customer has accepted
  * @param {number} totalCost - Sum of accepted service costs
  * @param {function} onUnselect - Handler to remove a service from selection
@@ -43,7 +43,10 @@ const SelectionReviewCard: React.FC<SelectionReviewCardProps> = React.memo(
               <CheckCircle className="h-8 w-8 text-green-700" />
             </div>
             <div>
-              <h2 id="review-selection-heading" className="text-xl font-bold text-green-800">
+              <h2
+                id="review-selection-heading"
+                className="text-xl font-bold text-green-800"
+              >
                 Review Your Selection
               </h2>
               <p className="text-sm text-green-700">

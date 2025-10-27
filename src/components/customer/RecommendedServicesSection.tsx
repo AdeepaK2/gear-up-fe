@@ -7,10 +7,10 @@ import { Service, ProjectStatus } from "@/lib/types/Project";
 
 /**
  * RecommendedServicesSection - Displays list of recommended services.
- * 
+ *
  * @description Renders a card containing recommended services that await
  * customer review. Filters and maps services to ServiceCard components.
- * 
+ *
  * @param {Service[]} services - All project services
  * @param {ProjectStatus} projectStatus - Current project status
  * @param {function} onSelect - Handler for service selection
@@ -35,7 +35,10 @@ const RecommendedServicesSection: React.FC<RecommendedServicesSectionProps> =
         <Card className="shadow-lg border-0 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-6">
             <CardTitle className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm" aria-hidden="true">
+              <div
+                className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
+                aria-hidden="true"
+              >
                 <Wrench className="h-6 w-6" />
               </div>
               <div>
@@ -60,7 +63,10 @@ const RecommendedServicesSection: React.FC<RecommendedServicesSectionProps> =
         <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-6">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm" aria-hidden="true">
+              <div
+                className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"
+                aria-hidden="true"
+              >
                 <Wrench className="h-6 w-6" />
               </div>
               <div>

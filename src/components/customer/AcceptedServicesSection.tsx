@@ -11,11 +11,11 @@ import ServiceProgressBadge, {
 
 /**
  * AcceptedServicesSection - Displays confirmed services with progress tracking.
- * 
+ *
  * @description Shows accepted services with their progress status and allows
  * cancellation of services that haven't started yet. Implements inline
  * confirmation pattern for service cancellation.
- * 
+ *
  * @param {Service[]} acceptedServices - Confirmed services
  * @param {ProjectStatus} projectStatus - Current project status
  * @param {Record<string, ServiceProgress>} serviceProgress - Progress tracking map
@@ -189,8 +189,8 @@ const AcceptedServicesSection: React.FC<AcceptedServicesSectionProps> =
                                 id={`cancel-desc-${service.id}`}
                                 className="text-sm text-red-800 mb-4"
                               >
-                                Are you sure you want to cancel "
-                                {service.name}"? This action cannot be undone.
+                                Are you sure you want to cancel "{service.name}
+                                "? This action cannot be undone.
                               </p>
                               <div className="flex gap-3">
                                 <Button
@@ -221,19 +221,23 @@ const AcceptedServicesSection: React.FC<AcceptedServicesSectionProps> =
 
                         <div className="ml-4 flex flex-col gap-2">
                           {/* Show cancel button only if not started and not confirming */}
-                          {progress === "not-started" && !isConfirmingCancel && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleCancelClick(service.id)}
-                              disabled={isLoading}
-                              aria-label={`Cancel ${service.name}`}
-                              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
-                            >
-                              <X className="h-4 w-4 mr-1" aria-hidden="true" />
-                              Cancel Service
-                            </Button>
-                          )}
+                          {progress === "not-started" &&
+                            !isConfirmingCancel && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleCancelClick(service.id)}
+                                disabled={isLoading}
+                                aria-label={`Cancel ${service.name}`}
+                                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+                              >
+                                <X
+                                  className="h-4 w-4 mr-1"
+                                  aria-hidden="true"
+                                />
+                                Cancel Service
+                              </Button>
+                            )}
 
                           {/* Status info for in-progress */}
                           {progress === "in-progress" && (

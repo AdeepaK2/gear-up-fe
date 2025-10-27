@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 
 /**
  * ServiceProgressBadge - Displays the progress status of an accepted service.
- * 
+ *
  * @description Shows progress state with appropriate styling. Only renders
  * for accepted services. Memoized to prevent unnecessary re-renders.
- * 
+ *
  * @param {string} status - Service status (only shows for "accepted")
  * @param {ServiceProgress} progress - Current progress state
  */

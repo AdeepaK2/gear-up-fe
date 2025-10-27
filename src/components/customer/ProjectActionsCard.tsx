@@ -5,10 +5,10 @@ import { AlertTriangle, X } from "lucide-react";
 
 /**
  * ProjectActionsCard - Warning card for project with no selected services.
- * 
+ *
  * @description Shows when customer hasn't selected any services and offers
  * option to cancel the project. Provides clear messaging about project status.
- * 
+ *
  * @param {function} onCancelProject - Handler for project cancellation
  * @param {boolean} isLoading - Loading state for button interaction
  */
@@ -33,7 +33,10 @@ const ProjectActionsCard: React.FC<ProjectActionsCardProps> = React.memo(
               aria-hidden="true"
             />
             <div className="flex-1">
-              <h3 id="no-services-heading" className="font-semibold text-red-900">
+              <h3
+                id="no-services-heading"
+                className="font-semibold text-red-900"
+              >
                 No Services Selected
               </h3>
               <p className="text-red-700 text-sm">
