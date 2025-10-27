@@ -50,8 +50,8 @@ export default function ChatbotPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 h-full">
-      <div className="mb-6">
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
+      <div className="mb-4 flex-shrink-0">
         <h1 className="text-3xl font-bold text-primary">
           Customer Support Chat
         </h1>
@@ -61,7 +61,7 @@ export default function ChatbotPage() {
         </p>
       </div>
 
-      <div className="h-[calc(100vh-200px)]">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Chatbot
           customerContext={customerContext}
           onActionClick={handleActionClick}

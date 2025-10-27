@@ -30,7 +30,7 @@ export default function CustomerLayout({
         {/* Page wrapper: reserve top space for header (h-16) and apply left margin on md+ to avoid sidebar overlap */}
         <div className="ml-0 md:ml-64 pt-16">
           <Header />
-          <main className="p-6 max-w-full">{children}</main>
+          <main className="p-4 max-w-full">{children}</main>
         </div>
       </div>
     </ProtectedRoute>

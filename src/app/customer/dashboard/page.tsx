@@ -117,7 +117,7 @@ export default function DashboardPage() {
   const [showChatbot, setShowChatbot] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 space-y-6">
+    <div className="min-h-screen space-y-6">
       {/* Greeting and Overview Section */}
       <Card className="bg-gradient-to-r from-primary to-primary/90 text-white border-0">
         <CardContent className="p-6">

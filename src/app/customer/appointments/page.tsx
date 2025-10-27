@@ -360,7 +360,7 @@ export default function AppointmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-custom p-6">
+    <div className="min-h-screen space-y-6">
       {/* Notifications */}
       {notifications.length > 0 && (
         <div className="fixed top-4 right-4 z-50 space-y-2">
@@ -393,49 +393,45 @@ export default function AppointmentsPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">My Appointments</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your service appointments
-            </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-primary">My Appointments</h1>
+          <p className="text-gray-600 mt-1">Manage your service appointments</p>
+        </div>
+
+        {!showForm && (
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-primary hover:bg-primary/90 text-white font-medium"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Book New Appointment
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-8">
+        {/* Appointment Form */}
+        {showForm && (
+          <div className="max-w-3xl mx-auto">
+            <AppointmentForm
+              vehicles={mockVehicles}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCancelForm}
+              editingAppointment={editingAppointment || undefined}
+              isLoading={isLoading}
+            />
           </div>
+        )}
 
-          {!showForm && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-primary hover:bg-primary/90 text-white font-medium"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Book New Appointment
-            </Button>
-          )}
-        </div>
-
-        <div className="space-y-8">
-          {/* Appointment Form */}
-          {showForm && (
-            <div className="max-w-3xl mx-auto">
-              <AppointmentForm
-                vehicles={mockVehicles}
-                onSubmit={handleFormSubmit}
-                onCancel={handleCancelForm}
-                editingAppointment={editingAppointment || undefined}
-                isLoading={isLoading}
-              />
-            </div>
-          )}
-
-          {/* Appointment List */}
-          <AppointmentList
-            appointments={appointments}
-            onEdit={handleEditAppointment}
-            onDelete={handleDeleteAppointment}
-            isLoading={isLoading}
-          />
-        </div>
+        {/* Appointment List */}
+        <AppointmentList
+          appointments={appointments}
+          onEdit={handleEditAppointment}
+          onDelete={handleDeleteAppointment}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

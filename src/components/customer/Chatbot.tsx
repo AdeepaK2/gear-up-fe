@@ -406,7 +406,7 @@ export default function Chatbot({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-full max-w-6xl mx-auto bg-white rounded-lg shadow-lg">
       {/* Context Header */}
       <div className="bg-gradient-to-r from-primary to-primary/90 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between">
@@ -470,10 +470,7 @@ export default function Chatbot({
       </div>
 
       {/* Chat Messages */}
-      <div
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-        style={{ maxHeight: "400px" }}
-      >
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}

@@ -109,91 +109,87 @@ export default function VehiclesPage() {
   };
 
   return (
-    <>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-primary font-bold text-3xl">My Vehicles</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your registered vehicles
-            </p>
-          </div>
-          <button
-            onClick={openModal}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"
-          >
-            <Plus size={16} />
-            Add Vehicle
-          </button>
+    <div className="min-h-screen space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-primary font-bold text-3xl">My Vehicles</h1>
+          <p className="text-gray-600 mt-1">Manage your registered vehicles</p>
         </div>
+        <button
+          onClick={openModal}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"
+        >
+          <Plus size={16} />
+          Add Vehicle
+        </button>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((v) => (
-            <div
-              key={v.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
-            >
-              <div className="flex flex-col h-full">
-                {/* Header with icon and title */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                      <Car className="text-primary w-6 h-6" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
-                        {v.make} {v.model}
-                      </h2>
-                      <p className="text-sm text-gray-500 font-medium">
-                        {v.year}
-                      </p>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {vehicles.map((v) => (
+          <div
+            key={v.id}
+            className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
+          >
+            <div className="flex flex-col h-full">
+              {/* Header with icon and title */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                    <Car className="text-primary w-6 h-6" />
                   </div>
-                </div>
-
-                {/* Vehicle details */}
-                <div className="flex-1 space-y-3 mb-6">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-600">
-                      License Plate
-                    </span>
-                    <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
-                      {v.licensePlate}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-600">
-                      Model Year
-                    </span>
-                    <span className="text-sm font-semibold text-primary">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
+                      {v.make} {v.model}
+                    </h2>
+                    <p className="text-sm text-gray-500 font-medium">
                       {v.year}
-                    </span>
+                    </p>
                   </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleEdit(v.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-                  >
-                    <Edit2 size={18} />
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(v.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
-                  >
-                    <Trash2 size={18} />
-                    Delete
-                  </button>
                 </div>
               </div>
+
+              {/* Vehicle details */}
+              <div className="flex-1 space-y-3 mb-6">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-600">
+                    License Plate
+                  </span>
+                  <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
+                    {v.licensePlate}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-600">
+                    Model Year
+                  </span>
+                  <span className="text-sm font-semibold text-primary">
+                    {v.year}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleEdit(v.id)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                >
+                  <Edit2 size={18} />
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleDelete(v.id)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
+                >
+                  <Trash2 size={18} />
+                  Delete
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {isModalOpen && (
@@ -275,6 +271,6 @@ export default function VehiclesPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
