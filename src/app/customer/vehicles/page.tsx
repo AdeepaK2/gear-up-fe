@@ -1,16 +1,16 @@
 "use client";
 
-import React from "react";
-import { Car, Edit2, Trash2, Plus } from "lucide-react";
+import React, { useState, useCallback, useMemo } from "react";
+import { Plus, Car } from "lucide-react";
+import VehicleCard, { type Vehicle } from "@/components/customer/VehicleCard";
+import VehicleFormModal, {
+  type VehicleFormData,
+} from "@/components/customer/VehicleFormModal";
 
-type Vehicle = {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-};
-
+/**
+ * Mock vehicle data - acts as initial state until backend integration.
+ * Keep this structure stable to maintain UI contract with future API endpoints.
+ */
 const mockVehicles: Vehicle[] = [
   {
     id: "1",
@@ -44,233 +44,236 @@ const mockVehicles: Vehicle[] = [
   { id: "6", make: "Audi", model: "A4", year: 2021, licensePlate: "AUD-404" },
 ];
 
+/**
+ * VehiclesPage - Customer vehicle management dashboard.
+ *
+ * @description Orchestrates state for vehicle CRUD operations. Delegated presentation
+ * to VehicleCard and VehicleFormModal for separation of concerns. Uses mock data
+ * until backend API endpoints are available.
+ */
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = React.useState<Vehicle[]>(mockVehicles);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [form, setForm] = React.useState({
-    make: "",
-    model: "",
-    year: "",
-    licensePlate: "",
-  });
+  const [vehicles, setVehicles] = useState<Vehicle[]>(mockVehicles);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  /**
+   * Opens modal in create mode (no default values).
+   */
+  const openCreateModal = useCallback(() => {
+    setEditingVehicle(null);
+    setIsModalOpen(true);
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
+  /**
+   * Opens modal in edit mode with pre-filled vehicle data.
+   */
+  const openEditModal = useCallback((vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setIsModalOpen(true);
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Basic validation
-    if (!form.make || !form.model || !form.year || !form.licensePlate) {
-      alert("Please fill all fields");
-      return;
+  /**
+   * Closes modal and resets editing state.
+   */
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
+    setEditingVehicle(null);
+  }, []);
+
+  /**
+   * Handles form submission for both create and edit operations.
+   * Generates client-side ID for new vehicles until backend provides proper IDs.
+   */
+  const submitForm = useCallback(
+    (data: VehicleFormData) => {
+      if (editingVehicle) {
+        // Update existing vehicle
+        setVehicles((prev) =>
+          prev.map((v) =>
+            v.id === editingVehicle.id
+              ? {
+                  ...v,
+                  make: data.make,
+                  model: data.model,
+                  year: Number(data.year),
+                  licensePlate: data.licensePlate,
+                }
+              : v
+          )
+        );
+      } else {
+        // Create new vehicle with temporary client-generated ID
+        const newVehicle: Vehicle = {
+          id: String(Date.now()),
+          make: data.make,
+          model: data.model,
+          year: Number(data.year),
+          licensePlate: data.licensePlate,
+        };
+        setVehicles((prev) => [newVehicle, ...prev]);
+      }
+
+      closeModal();
+    },
+    [editingVehicle, closeModal]
+  );
+
+  /**
+   * Deletes a vehicle after user confirmation.
+   * In production, this should make a DELETE API call.
+   */
+  const confirmDelete = useCallback((id: string) => {
+    // Use native confirm for now; could be replaced with custom confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this vehicle? This action cannot be undone."
+    );
+
+    if (confirmed) {
+      setVehicles((prev) => prev.filter((v) => v.id !== id));
+    }
+  }, []);
+
+  /**
+   * Filters and sorts vehicles based on search query and sort order.
+   * Memoized to avoid recalculation on every render.
+   */
+  const filteredAndSortedVehicles = useMemo(() => {
+    let result = vehicles;
+
+    // Filter by search query (case-insensitive across make, model, and license plate)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (v) =>
+          v.make.toLowerCase().includes(query) ||
+          v.model.toLowerCase().includes(query) ||
+          v.licensePlate.toLowerCase().includes(query)
+      );
     }
 
-    const newVehicle: Vehicle = {
-      id: String(Date.now()),
-      make: form.make,
-      model: form.model,
-      year: Number(form.year),
-      licensePlate: form.licensePlate,
+    // Sort by year
+    result = [...result].sort((a, b) => {
+      return sortOrder === "desc" ? b.year - a.year : a.year - b.year;
+    });
+
+    return result;
+  }, [vehicles, searchQuery, sortOrder]);
+
+  /**
+   * Prepare default values for edit modal.
+   * Convert Vehicle to VehicleFormData (year as string).
+   */
+  const modalDefaultValues: VehicleFormData | null = useMemo(() => {
+    if (!editingVehicle) return null;
+    return {
+      make: editingVehicle.make,
+      model: editingVehicle.model,
+      year: String(editingVehicle.year),
+      licensePlate: editingVehicle.licensePlate,
     };
-
-    setVehicles((prev) => [newVehicle, ...prev]);
-    setForm({ make: "", model: "", year: "", licensePlate: "" });
-    closeModal();
-  };
-
-  const handleAdd = () => {
-    // Placeholder: open modal or navigate to add vehicle form
-    // For now, just log and add a dummy vehicle
-    console.log("Add Vehicle clicked");
-    const newVehicle: Vehicle = {
-      id: String(Date.now()),
-      make: "New",
-      model: "Vehicle",
-      year: 2025,
-      licensePlate: "NEW-000",
-    };
-    setVehicles((prev) => [newVehicle, ...prev]);
-  };
-
-  const handleEdit = (id: string) => {
-    // Placeholder: open edit form/modal
-    console.log("Edit vehicle", id);
-  };
-
-  const handleDelete = (id: string) => {
-    // Placeholder: confirm and delete
-    console.log("Delete vehicle", id);
-    setVehicles((prev) => prev.filter((v) => v.id !== id));
-  };
+  }, [editingVehicle]);
 
   return (
     <div className="min-h-screen space-y-6">
+      {/* Header section */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-primary font-bold text-3xl">My Vehicles</h1>
           <p className="text-gray-600 mt-1">Manage your registered vehicles</p>
         </div>
         <button
-          onClick={openModal}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          aria-label="Add new vehicle"
         >
-          <Plus size={16} />
+          <Plus size={16} aria-hidden="true" />
           Add Vehicle
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vehicles.map((v) => (
-          <div
-            key={v.id}
-            className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
+      {/* Search and sort controls */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <label htmlFor="search" className="sr-only">
+            Search vehicles
+          </label>
+          <input
+            id="search"
+            type="text"
+            placeholder="Search by make, model, or license plate..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label htmlFor="sort" className="sr-only">
+            Sort by year
+          </label>
+          <select
+            id="sort"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
           >
-            <div className="flex flex-col h-full">
-              {/* Header with icon and title */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                    <Car className="text-primary w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
-                      {v.make} {v.model}
-                    </h2>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {v.year}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Vehicle details */}
-              <div className="flex-1 space-y-3 mb-6">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-600">
-                    License Plate
-                  </span>
-                  <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
-                    {v.licensePlate}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-600">
-                    Model Year
-                  </span>
-                  <span className="text-sm font-semibold text-primary">
-                    {v.year}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleEdit(v.id)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-                >
-                  <Edit2 size={18} />
-                  Edit
-                </button>
-
-                <button
-                  onClick={() => handleDelete(v.id)}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
-                >
-                  <Trash2 size={18} />
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
+          </select>
+        </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-custom rounded-lg shadow-lg p-6 w-full max-w-md animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-primary font-bold text-xl">Add Vehicle</h3>
-              <button onClick={closeModal} className="hover:text-secondary">
-                ✕
-              </button>
+      {/* Vehicle grid or empty state */}
+      {filteredAndSortedVehicles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center border border-gray-100">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Car className="w-8 h-8 text-primary" aria-hidden="true" />
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-300">
-                  Make
-                </label>
-                <input
-                  name="make"
-                  value={form.make}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Model
-                </label>
-                <input
-                  name="model"
-                  value={form.model}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Year
-                </label>
-                <input
-                  name="year"
-                  value={form.year}
-                  onChange={handleChange}
-                  type="number"
-                  className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  License Plate
-                </label>
-                <input
-                  name="licensePlate"
-                  value={form.licensePlate}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {searchQuery ? "No vehicles found" : "No vehicles yet"}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {searchQuery
+                ? "Try adjusting your search criteria"
+                : "Get started by adding your first vehicle"}
+            </p>
+            {!searchQuery && (
+              <button
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Plus size={18} aria-hidden="true" />
+                Add Your First Vehicle
+              </button>
+            )}
           </div>
         </div>
+      ) : (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          role="list"
+          aria-label="Your vehicles"
+        >
+          {filteredAndSortedVehicles.map((vehicle) => (
+            <VehicleCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              onEdit={openEditModal}
+              onDelete={confirmDelete}
+            />
+          ))}
+        </div>
       )}
+
+      {/* Modal for create/edit */}
+      <VehicleFormModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSubmit={submitForm}
+        defaultValues={modalDefaultValues}
+      />
     </div>
   );
 }
