@@ -4,7 +4,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://135.171.192.76/api}
     networks:
       - frontend-network
     healthcheck:
