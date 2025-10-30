@@ -1,31 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Car,
   Calendar,
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  X,
-  Settings,
-  Wrench,
   UserCog,
   CalendarCheck,
-  Activity,
+  AlertTriangle,
 } from "lucide-react";
-import ServiceCard from "@/components/customer/ServiceCard";
-import ProjectSummary from "@/components/customer/ProjectSummary";
+import ProjectHeader from "@/components/customer/ProjectHeader";
+import ProjectInfoTile from "@/components/customer/ProjectInfoTile";
+import ServiceStatsRow from "@/components/customer/ServiceStatsRow";
+import RecommendedServicesSection from "@/components/customer/RecommendedServicesSection";
+import SelectionReviewCard from "@/components/customer/SelectionReviewCard";
+import AcceptedServicesSection from "@/components/customer/AcceptedServicesSection";
+import ProjectActionsCard from "@/components/customer/ProjectActionsCard";
 import AdditionalServiceRequest from "@/components/customer/AdditionalServiceRequest";
-import { ProjectData, Service, ProjectStatus } from "@/lib/types/Project";
+import { ProjectData, Service } from "@/lib/types/Project";
 import { cn } from "@/lib/utils";
+import { formatCurrencyLKR } from "@/lib/utils/currency";
+import { formatDateLK } from "@/lib/utils/datetime";
+import { projectStatusConfig, getStatusIcon } from "@/lib/config/projectStatus";
+import type { ServiceProgress } from "@/components/customer/ServiceProgressBadge";
 
-// Mock data - replace with actual API call
+/**
+ * Mock project data - acts as initial state until backend integration.
+ * Keep this structure stable to maintain UI contract with future API endpoints.
+ */
 const mockProject: ProjectData = {
   id: "proj_001",
   appointmentId: "apt_001",
@@ -106,110 +110,55 @@ const mockProject: ProjectData = {
   updatedAt: "2025-10-15T10:00:00Z",
 };
 
-const projectStatusConfig: Record<
-  ProjectStatus,
-  {
-    label: string;
-    color: string;
-    bgColor: string;
-    icon: React.ReactNode;
-  }
-> = {
-  "waiting-confirmation": {
-    label: "Waiting for Confirmation",
-    color: "text-gray-600",
-    bgColor: "bg-gray-50 border-gray-300",
-    icon: <Clock className="h-5 w-5" />,
-  },
-  confirmed: {
-    label: "Confirmed",
-    color: "text-primary",
-    bgColor: "bg-primary/20 border-primary/50",
-    icon: <CheckCircle className="h-5 w-5" />,
-  },
-  "in-progress": {
-    label: "In Progress",
-    color: "text-primary",
-    bgColor: "bg-primary/30 border-primary/60",
-    icon: <Settings className="h-5 w-5" />,
-  },
-  completed: {
-    label: "Completed",
-    color: "text-green-700",
-    bgColor: "bg-green-50 border-green-200",
-    icon: <CheckCircle className="h-5 w-5" />,
-  },
-  cancelled: {
-    label: "Cancelled",
-    color: "text-red-700",
-    bgColor: "bg-red-50 border-red-200",
-    icon: <X className="h-5 w-5" />,
-  },
-};
-
-// Currency formatting function for LKR
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: "LKR",
-    minimumFractionDigits: 2,
-  }).format(amount);
-};
-
-// Service Progress Component
-const ServiceProgressBadge = ({
-  status,
-  progress,
-}: {
-  status: string;
-  progress: "not-started" | "in-progress" | "completed" | undefined;
-}) => {
-  if (status !== "accepted") return null;
-
-  const progressConfig = {
-    "not-started": {
-      label: "Not Started",
-      color: "bg-gray-50 text-gray-700 border-gray-200",
-    },
-    "in-progress": {
-      label: "In Progress",
-      color: "bg-blue-50 text-blue-700 border-blue-200",
-    },
-    completed: {
-      label: "Completed",
-      color: "bg-green-50 text-green-700 border-green-200",
-    },
-  };
-
-  const config = progressConfig[progress || "not-started"];
-
-  return (
-    <Badge variant="outline" className={`${config.color} border-2 font-medium`}>
-      {config.label}
-    </Badge>
-  );
-};
-
+/**
+ * ProjectsPage - Customer project management dashboard.
+ *
+ * @description Orchestrates state for project service selection and management.
+ * Delegates presentation to extracted components following SRP. Uses mock data
+ * until backend API endpoints are available.
+ */
 export default function ProjectsPage() {
   const [project, setProject] = useState<ProjectData>(mockProject);
   const [isLoading, setIsLoading] = useState(false);
   const [serviceProgress, setServiceProgress] = useState<
-    Record<string, "not-started" | "in-progress" | "completed">
+    Record<string, ServiceProgress>
   >({});
 
-  const statusInfo = projectStatusConfig[project.status];
-  const acceptedServices = project.services.filter(
-    (s) => s.status === "accepted"
-  );
-  const totalAcceptedCost = acceptedServices.reduce(
-    (sum, service) => sum + service.estimatedCost,
-    0
+  /**
+   * Memoized status configuration lookup.
+   * Avoids repeated object lookups on every render.
+   */
+  const statusInfo = useMemo(
+    () => projectStatusConfig[project.status],
+    [project.status]
   );
 
-  const handleServiceAccept = async (serviceId: string) => {
+  /**
+   * Memoized list of accepted services.
+   * Recalculates only when services array changes.
+   */
+  const acceptedServices = useMemo(
+    () => project.services.filter((s) => s.status === "accepted"),
+    [project.services]
+  );
+
+  /**
+   * Memoized total cost calculation.
+   * Sums up costs only when accepted services change.
+   */
+  const totalAcceptedCost = useMemo(
+    () =>
+      acceptedServices.reduce((sum, service) => sum + service.estimatedCost, 0),
+    [acceptedServices]
+  );
+
+  /**
+   * Accepts a recommended service, adding it to customer's selection.
+   */
+  const acceptService = useCallback(async (serviceId: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
+      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setProject((prev) => ({
@@ -232,12 +181,15 @@ export default function ProjectsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleServiceReject = async (serviceId: string) => {
+  /**
+   * Rejects an accepted service, removing it from selection.
+   */
+  const rejectService = useCallback(async (serviceId: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
+      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setProject((prev) => ({
@@ -261,57 +213,58 @@ export default function ProjectsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleServiceCancel = async (serviceId: string) => {
-    const service = project.services.find((s) => s.id === serviceId);
-    const progress = serviceProgress[serviceId] || "not-started";
+  /**
+   * Cancels an accepted service with validation.
+   * Only allows cancellation if service hasn't started.
+   */
+  const cancelService = useCallback(
+    async (serviceId: string) => {
+      const progress = serviceProgress[serviceId] || "not-started";
 
-    if (progress !== "not-started") {
-      alert("Cannot cancel a service that has already started.");
-      return;
-    }
+      // Business rule: cannot cancel services that have started
+      if (progress !== "not-started") {
+        return;
+      }
 
-    if (
-      !confirm(
-        `Are you sure you want to cancel "${service?.name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+      setIsLoading(true);
+      try {
+        // Simulate API call delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
+        setProject((prev) => ({
+          ...prev,
+          services: prev.services.map((service) =>
+            service.id === serviceId
+              ? { ...service, status: "cancelled" as const }
+              : service
+          ),
+          updatedAt: new Date().toISOString(),
+        }));
+
+        // Remove from progress tracking
+        setServiceProgress((prev) => {
+          const newProgress = { ...prev };
+          delete newProgress[serviceId];
+          return newProgress;
+        });
+      } catch (error) {
+        console.error("Error cancelling service:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [serviceProgress]
+  );
+
+  /**
+   * Confirms all selected services, moving project to confirmed status.
+   */
+  const confirmServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setProject((prev) => ({
-        ...prev,
-        services: prev.services.map((service) =>
-          service.id === serviceId
-            ? { ...service, status: "cancelled" as const }
-            : service
-        ),
-        updatedAt: new Date().toISOString(),
-      }));
-
-      // Remove from progress tracking
-      setServiceProgress((prev) => {
-        const newProgress = { ...prev };
-        delete newProgress[serviceId];
-        return newProgress;
-      });
-    } catch (error) {
-      console.error("Error cancelling service:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConfirmServices = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
+      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       setProject((prev) => ({
@@ -326,51 +279,57 @@ export default function ProjectsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [totalAcceptedCost, acceptedServices.length]);
 
-  const handleAdditionalServiceRequest = async (request: {
-    customRequest: string;
-    referenceFile?: File;
-  }) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  /**
+   * Handles additional service request submission.
+   */
+  const submitAdditionalRequest = useCallback(
+    async (request: { customRequest: string; referenceFile?: File }) => {
+      setIsLoading(true);
+      try {
+        // Simulate API call delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const newService: Service = {
-        id: `srv_${Date.now()}`,
-        name: "Custom Service Request",
-        description: request.customRequest,
-        estimatedDuration: "TBD",
-        estimatedCost: 0,
-        status: "requested",
-        category: "Custom",
-        requestedBy: "customer",
-        createdAt: new Date().toISOString(),
-      };
+        const newService: Service = {
+          id: crypto.randomUUID ? crypto.randomUUID() : `srv_${Date.now()}`,
+          name: "Custom Service Request",
+          description: request.customRequest,
+          estimatedDuration: "TBD",
+          estimatedCost: 0,
+          status: "requested",
+          category: "Custom",
+          requestedBy: "customer",
+          createdAt: new Date().toISOString(),
+        };
 
-      setProject((prev) => ({
-        ...prev,
-        services: [...prev.services, newService],
-        updatedAt: new Date().toISOString(),
-      }));
-    } catch (error) {
-      console.error("Error submitting additional service request:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setProject((prev) => ({
+          ...prev,
+          services: [...prev.services, newService],
+          updatedAt: new Date().toISOString(),
+        }));
+      } catch (error) {
+        console.error("Error submitting additional service request:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
-  const handleCancelProject = async () => {
+  /**
+   * Cancels the entire project.
+   * Only allowed if no services have been accepted.
+   */
+  const cancelProject = useCallback(async () => {
+    // Business rule: cannot cancel if services accepted
     if (acceptedServices.length > 0) {
-      alert(
-        "Cannot cancel project with accepted services. Please reject all services first."
-      );
       return;
     }
 
     setIsLoading(true);
     try {
+      // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setProject((prev) => ({
@@ -383,31 +342,27 @@ export default function ProjectsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [acceptedServices.length]);
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-primary font-bold text-3xl">Project Details</h1>
-          <p className="text-gray-600 mt-1">
-            Review and manage your vehicle service project
-          </p>
-        </div>
-      </div>
+      <ProjectHeader />
 
-      {/* Project Details */}
+      {/* Project Details Card */}
       <Card className="shadow-xl border-0 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-8">
           <CardTitle className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+            <div
+              className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"
+              aria-hidden="true"
+            >
               <FileText className="h-8 w-8" />
             </div>
             <div>
-              <div className="text-2xl font-bold mb-1">Project Details</div>
+              <h2 className="text-2xl font-bold mb-1">Project Details</h2>
               <div className="text-white/90 font-normal flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-4 w-4" aria-hidden="true" />
                 Based on your consultation on{" "}
                 {new Date(project.consultationDate).toLocaleDateString()}
               </div>
@@ -418,459 +373,101 @@ export default function ProjectsPage() {
         <CardContent className="p-8">
           {/* Project Information Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Vehicle Info */}
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
-              <div className="p-3 bg-primary rounded-lg shadow-sm">
-                <Car className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-lg">
-                  {project.vehicleName}
-                </p>
-                <p className="text-sm text-primary font-medium">
-                  {project.vehicleDetails}
-                </p>
-              </div>
-            </div>
+            <ProjectInfoTile
+              Icon={Car}
+              label={project.vehicleName}
+              sublabel={project.vehicleDetails}
+            />
 
-            {/* Technician Info */}
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
-              <div className="p-3 bg-primary rounded-lg shadow-sm">
-                <UserCog className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-lg">
-                  {project.employeeName}
-                </p>
-                <p className="text-sm text-primary font-medium">
-                  Your Technician
-                </p>
-              </div>
-            </div>
+            <ProjectInfoTile
+              Icon={UserCog}
+              label={project.employeeName}
+              sublabel="Your Technician"
+            />
 
-            {/* Consultation Date */}
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
-              <div className="p-3 bg-primary rounded-lg shadow-sm">
-                <CalendarCheck className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-lg">
-                  {new Date(project.consultationDate).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-primary font-medium">
-                  Consultation Date
-                </p>
-              </div>
-            </div>
+            <ProjectInfoTile
+              Icon={CalendarCheck}
+              label={new Date(project.consultationDate).toLocaleDateString()}
+              sublabel="Consultation Date"
+            />
 
-            {/* Status */}
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 hover:shadow-lg transition-all duration-300">
-              <div className="p-3 bg-primary rounded-lg shadow-sm">
-                <div className="text-white">
-                  {project.status === "waiting-confirmation" ? (
-                    <Clock className="h-8 w-8" />
-                  ) : project.status === "confirmed" ? (
-                    <CheckCircle className="h-8 w-8" />
-                  ) : project.status === "in-progress" ? (
-                    <Activity className="h-8 w-8" />
-                  ) : project.status === "completed" ? (
-                    <CheckCircle className="h-8 w-8" />
-                  ) : (
-                    <X className="h-8 w-8" />
-                  )}
-                </div>
-              </div>
-              <div>
-                <Badge
-                  className={cn(
-                    "text-sm font-semibold px-3 py-1 mb-2",
-                    statusInfo.color,
-                    statusInfo.bgColor,
-                    "border-2"
-                  )}
-                >
-                  {statusInfo.label}
-                </Badge>
-                <p className="text-sm text-primary font-medium">
-                  Current Status
-                </p>
-              </div>
-            </div>
+            <ProjectInfoTile
+              Icon={getStatusIcon(project.status) as any}
+              label=""
+              sublabel="Current Status"
+            >
+              <Badge
+                className={cn(
+                  "text-sm font-semibold px-3 py-1 mb-2",
+                  statusInfo.color,
+                  statusInfo.bgColor,
+                  "border-2"
+                )}
+                aria-label={`Project status: ${statusInfo.label}`}
+              >
+                {statusInfo.label}
+              </Badge>
+            </ProjectInfoTile>
           </div>
 
           {/* Service Statistics */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Service Summary
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-[#163172] rounded-lg">
-                    <Wrench className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-[#163172]">
-                  {project.services.length}
-                </div>
-                <div className="text-sm text-gray-700 font-medium">
-                  Total Services Recommended
-                </div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-[#163172] rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-[#163172]">
-                  {acceptedServices.length}
-                </div>
-                <div className="text-sm text-gray-700 font-medium">
-                  Services You've Selected
-                </div>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="p-2 bg-[#163172] rounded-lg">
-                    <FileText className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-[#163172]">
-                  {formatCurrency(totalAcceptedCost)}
-                </div>
-                <div className="text-sm text-gray-700 font-medium">
-                  Total Cost for Selected Services
-                </div>
-              </div>
-            </div>
-          </div>
+          <ServiceStatsRow
+            totalServices={project.services.length}
+            selectedServices={acceptedServices.length}
+            totalCost={totalAcceptedCost}
+          />
         </CardContent>
       </Card>
 
       {/* Recommended Services */}
-      <Card className="shadow-lg border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-6">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Wrench className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="text-xl font-bold">Recommended Services</div>
-                <div className="text-white/90 font-normal text-sm">
-                  Review and select services for your vehicle
-                </div>
-              </div>
-            </CardTitle>
-            <Badge
-              variant="outline"
-              className="text-sm border-white/30 text-white bg-white/20 backdrop-blur-sm"
-            >
-              {
-                project.services.filter((s) => s.status === "recommended")
-                  .length
-              }{" "}
-              pending review
-            </Badge>
-          </div>
-        </CardHeader>
+      <RecommendedServicesSection
+        services={project.services}
+        projectStatus={project.status}
+        onSelect={acceptService}
+        isLoading={isLoading}
+      />
 
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {project.services
-              .filter((service) => service.status === "recommended")
-              .map((service) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  onSelect={handleServiceAccept}
-                  isLoading={isLoading}
-                  disabled={project.status !== "waiting-confirmation"}
-                />
-              ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Service Confirmation */}
+      {/* Service Confirmation Review */}
       {acceptedServices.length > 0 &&
         project.status === "waiting-confirmation" && (
-          <Card className="border-2 border-green-200 bg-green-50 shadow-lg">
-            <CardHeader className="bg-green-100 border-b border-green-200 pb-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-200 rounded-full">
-                  <CheckCircle className="h-8 w-8 text-green-700" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-green-800">
-                    Review Your Selection
-                  </h3>
-                  <p className="text-sm text-green-700">
-                    Review your selected services and confirm when ready
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              {/* Selected Services List */}
-              <div className="space-y-4 mb-6">
-                {acceptedServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-semibold text-gray-900">
-                          {service.name}
-                        </h4>
-                        {service.priority && (
-                          <Badge
-                            className={
-                              service.priority === "high"
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : service.priority === "medium"
-                                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                : "bg-green-50 text-green-700 border-green-200"
-                            }
-                            variant="outline"
-                          >
-                            {service.priority} priority
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {service.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-gray-500">
-                          Duration: {service.estimatedDuration}
-                        </span>
-                        <span className="font-semibold text-green-600">
-                          {formatCurrency(service.estimatedCost)}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleServiceReject(service.id)}
-                      disabled={isLoading}
-                      variant="outline"
-                      size="sm"
-                      className="ml-4 border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Unselect
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Summary and Confirm */}
-              <div className="border-t border-green-200 pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-semibold text-green-800">
-                      Total: {formatCurrency(totalAcceptedCost)}
-                    </p>
-                    <p className="text-sm text-green-700">
-                      {acceptedServices.length} service
-                      {acceptedServices.length !== 1 ? "s" : ""} selected
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleConfirmServices}
-                    disabled={isLoading}
-                    className="bg-green-600 hover:bg-green-700 text-white font-medium px-8 py-3 text-lg"
-                  >
-                    {isLoading ? "Processing..." : "Confirm All Services"}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SelectionReviewCard
+            acceptedServices={acceptedServices}
+            totalCost={totalAcceptedCost}
+            onUnselect={rejectService}
+            onConfirm={confirmServices}
+            isLoading={isLoading}
+          />
         )}
 
-      {/* Accepted Services with Progress - Only show after confirmation */}
+      {/* Accepted Services with Progress */}
       {acceptedServices.length > 0 &&
         project.status !== "waiting-confirmation" && (
-          <Card className="shadow-lg border-0 overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-green-600 to-green-500 text-white p-6">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <CheckCircle className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold">Accepted Services</div>
-                    <div className="text-white/90 font-normal text-sm">
-                      Track progress of your confirmed services
-                    </div>
-                  </div>
-                </CardTitle>
-                <Badge
-                  variant="outline"
-                  className="text-sm border-white/30 text-white bg-white/20 backdrop-blur-sm"
-                >
-                  {acceptedServices.length} service
-                  {acceptedServices.length !== 1 ? "s" : ""} confirmed
-                </Badge>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {acceptedServices.map((service) => {
-                  const progress = serviceProgress[service.id] || "not-started";
-                  const canCancel =
-                    progress === "not-started" &&
-                    project.status === "waiting-confirmation";
-
-                  return (
-                    <Card
-                      key={service.id}
-                      className="border-l-4 border-l-green-500 hover:shadow-md transition-shadow duration-200"
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {service.name}
-                              </h3>
-                              <ServiceProgressBadge
-                                status={service.status}
-                                progress={progress}
-                              />
-                              {service.priority && (
-                                <Badge
-                                  variant={
-                                    service.priority === "high"
-                                      ? "destructive"
-                                      : service.priority === "medium"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                  className="text-xs"
-                                >
-                                  {service.priority} priority
-                                </Badge>
-                              )}
-                            </div>
-
-                            <p className="text-gray-600 mb-3">
-                              {service.description}
-                            </p>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span>
-                                  Duration: {service.estimatedDuration}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-green-600">
-                                  Cost: {formatCurrency(service.estimatedCost)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-500">
-                                  Category: {service.category}
-                                </span>
-                              </div>
-                            </div>
-
-                            {service.notes && (
-                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                <p className="text-sm text-blue-800">
-                                  <strong>Note:</strong> {service.notes}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="ml-4 flex flex-col gap-2">
-                            {/* Only show cancel button if service hasn't started yet */}
-                            {progress === "not-started" && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleServiceCancel(service.id)}
-                                disabled={isLoading}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel Service
-                              </Button>
-                            )}
-
-                            {/* Show status info for in-progress and completed */}
-                            {progress === "in-progress" && (
-                              <div className="text-center">
-                                <p className="text-sm text-blue-600 font-medium">
-                                  Service in progress
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Cannot cancel
-                                </p>
-                              </div>
-                            )}
-
-                            {progress === "completed" && (
-                              <div className="text-center">
-                                <p className="text-sm text-green-600 font-medium">
-                                  Service completed
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <AcceptedServicesSection
+            acceptedServices={acceptedServices}
+            projectStatus={project.status}
+            serviceProgress={serviceProgress}
+            onCancel={cancelService}
+            isLoading={isLoading}
+          />
         )}
 
       {/* Additional Service Request */}
       {project.status === "waiting-confirmation" &&
         acceptedServices.length > 0 && (
           <AdditionalServiceRequest
-            onSubmit={handleAdditionalServiceRequest}
+            onSubmit={submitAdditionalRequest}
             isLoading={isLoading}
             disabled={project.status !== "waiting-confirmation"}
           />
         )}
 
-      {/* Project Actions */}
+      {/* Project Actions - No Services Selected */}
       {project.status === "waiting-confirmation" &&
         acceptedServices.length === 0 && (
-          <Card className="border-2 border-red-200 bg-red-50">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-red-900">
-                    No Services Selected
-                  </h3>
-                  <p className="text-red-700 text-sm">
-                    If you don't need any of the recommended services, you can
-                    cancel this project.
-                  </p>
-                </div>
-                <Button
-                  onClick={handleCancelProject}
-                  variant="destructive"
-                  disabled={isLoading}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel Project
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ProjectActionsCard
+            onCancelProject={cancelProject}
+            isLoading={isLoading}
+          />
         )}
 
       {/* Service Status Information */}
@@ -878,7 +475,7 @@ export default function ProjectsPage() {
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-2 bg-blue-100 rounded-lg" aria-hidden="true">
                 <AlertTriangle className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
