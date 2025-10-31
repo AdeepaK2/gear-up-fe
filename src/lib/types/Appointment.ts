@@ -1,3 +1,12 @@
+// API Response wrapper
+export interface ApiResponse<T> {
+  status: string;
+  message: string;
+  data: T;
+  timestamp: string;
+  path: string;
+}
+
 // Frontend types for appointment system
 export type AppointmentStatus =
   | "pending"
@@ -74,4 +83,32 @@ export interface Notification {
   title: string;
   message: string;
   timestamp: Date;
+}
+
+// Backend API types (matching backend DTOs)
+export interface Appointment {
+  id: number;
+  date: string; // LocalDate as string
+  status: string;
+  notes: string | null;
+  startTime: string | null; // LocalTime as string
+  endTime: string | null; // LocalTime as string
+  vehicleId: number;
+  customerId: number;
+  employeeId: number | null;
+  taskIds: number[] | null;
+}
+
+export interface AppointmentCreateRequest {
+  date: string; // YYYY-MM-DD format
+  notes?: string;
+  vehicleId: number;
+}
+
+export interface AppointmentUpdateRequest {
+  date?: string;
+  status?: string;
+  notes?: string;
+  startTime?: string; // HH:MM:SS format
+  endTime?: string; // HH:MM:SS format
 }

@@ -2,9 +2,9 @@ name: CI - Frontend
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ prod, dev ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ prod, dev ]
 
 jobs:
   ci:
@@ -23,9 +23,23 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build
+      - name: Build (PR - use localhost for testing)
+        if: github.event_name == 'pull_request'
         run: npm run build --if-present
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
 
+      - name: Build (Production - use GitHub secret)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+        run: npm run build --if-present
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_API_URL }}
+
+      - name: Build (Dev - use localhost or dev API)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        run: npm run build --if-present
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
 
       - name: Run tests
         run: npm test --if-present

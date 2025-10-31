@@ -1,291 +1,322 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, Plus } from "lucide-react";
 import AppointmentForm from "@/components/customer/AppointmentForm";
 import AppointmentList from "@/components/customer/AppointmentList";
+import NotificationCenter, {
+  createNotification,
+  type Notification,
+  type NotificationType,
+} from "@/components/customer/NotificationCenter";
 import {
-  ArrowLeft,
-  Plus,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-} from "lucide-react";
-import Link from "next/link";
+  getConsultationLabel,
+  type ConsultationType,
+} from "@/lib/utils/appointments";
 import {
-  AppointmentStatus,
   AppointmentData,
   AppointmentFormData,
   Vehicle,
-  ConsultationType,
+  Appointment,
 } from "@/lib/types/Appointment";
+import { appointmentService } from "@/lib/services/appointmentService";
+import { vehicleService } from "@/lib/services/vehicleService";
+import type { Vehicle as BackendVehicle } from "@/lib/types/Vehicle";
+import { useToast } from "@/contexts/ToastContext";
 
-// Mock data - Replace with your actual data
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    name: "2020 Toyota Camry",
-    details: "License: ABC-123 | Silver | Gasoline",
-  },
-  {
-    id: "2",
-    name: "2019 Honda CR-V",
-    details: "License: XYZ-789 | Blue | Gasoline",
-  },
-  {
-    id: "3",
-    name: "2021 Tesla Model 3",
-    details: "License: EV-456 | White | Electric",
-  },
-];
+/**
+ * Helper function to convert backend vehicle to UI vehicle format
+ */
+const convertVehicleToUIFormat = (vehicle: BackendVehicle): Vehicle => ({
+  id: String(vehicle.id),
+  name: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+  details: `License: ${vehicle.licensePlate} | VIN: ${vehicle.vin}`,
+  make: vehicle.make,
+  model: vehicle.model,
+  year: vehicle.year,
+  licensePlate: vehicle.licensePlate,
+});
 
-const mockAppointments: AppointmentData[] = [
-  {
-    id: "1",
-    vehicleId: "1",
-    vehicleName: "2020 Toyota Camry",
-    vehicleDetails: "License: ABC-123",
-    consultationType: "general-checkup",
-    consultationTypeLabel: "General Vehicle Checkup",
-    appointmentDate: "2025-10-15",
-    startTime: "09:00",
-    endTime: "09:30",
-    status: "pending",
-    customerIssue: "Regular maintenance check",
-    notes: "Please check tire pressure as well",
-  },
-  {
-    id: "2",
-    vehicleId: "2",
-    vehicleName: "2019 Honda CR-V",
-    vehicleDetails: "License: XYZ-789",
-    consultationType: "specific-issue",
-    consultationTypeLabel: "Specific Issue Consultation",
-    appointmentDate: "2025-10-20",
-    startTime: "14:00",
-    endTime: "15:00",
-    status: "confirmed",
-    customerIssue: "Brake pedal feels soft",
-  },
-];
+/**
+ * Helper function to convert backend appointment to UI appointment format
+ */
+const convertAppointmentToUIFormat = (
+  appointment: Appointment,
+  vehicles: BackendVehicle[]
+): AppointmentData => {
+  const vehicle = vehicles.find((v) => v.id === appointment.vehicleId);
+  const vehicleUI = vehicle ? convertVehicleToUIFormat(vehicle) : null;
 
-type NotificationType = "success" | "error" | "info";
+  return {
+    id: String(appointment.id),
+    vehicleId: String(appointment.vehicleId),
+    vehicleName: vehicleUI?.name || "Unknown Vehicle",
+    vehicleDetails: vehicleUI?.details || "",
+    consultationType: "general-checkup", // Default since backend doesn't have this field
+    consultationTypeLabel: "General Service",
+    appointmentDate: appointment.date,
+    startTime: appointment.startTime || "09:00",
+    endTime: appointment.endTime || "10:00",
+    status: appointment.status as any,
+    customerIssue: appointment.notes || "",
+    notes: appointment.notes || "",
+  };
+};
 
-interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-}
-
+/**
+ * AppointmentsPage - Customer appointment management dashboard.
+ *
+ * @description Orchestrates state for appointment CRUD operations with validation.
+ * Delegates presentation to AppointmentForm, AppointmentList, and NotificationCenter.
+ * Implements business rules for overlap detection and time validation.
+ */
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] =
-    useState<AppointmentData[]>(mockAppointments);
+  const toast = useToast();
+  const [appointments, setAppointments] = useState<AppointmentData[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [backendVehicles, setBackendVehicles] = useState<BackendVehicle[]>([]);
   const [editingAppointment, setEditingAppointment] =
     useState<AppointmentFormData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = (
-    type: NotificationType,
-    title: string,
-    message: string
-  ) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const notification = { id, type, title, message };
-    setNotifications((prev) => [...prev, notification]);
+  // Ref to track the "Book New Appointment" button for focus management
+  const bookButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Auto-remove notification after 5 seconds
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    }, 5000);
-  };
+  /**
+   * Fetch vehicles and appointments from backend on mount
+   */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setInitialLoading(true);
 
-  const removeNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+        // Fetch vehicles
+        const vehiclesData = await vehicleService.getAllVehicles();
+        setBackendVehicles(vehiclesData);
+        const uiVehicles = vehiclesData.map(convertVehicleToUIFormat);
+        setVehicles(uiVehicles);
 
-  const handleCreateAppointment = async (data: AppointmentFormData) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Validate no overlapping appointments
-      const overlapping = appointments.find(
-        (apt) =>
-          apt.vehicleId === data.vehicleId &&
-          apt.appointmentDate === data.appointmentDate &&
-          apt.status !== "cancelled" &&
-          ((data.startTime >= apt.startTime && data.startTime < apt.endTime) ||
-            (data.endTime > apt.startTime && data.endTime <= apt.endTime) ||
-            (data.startTime <= apt.startTime && data.endTime >= apt.endTime))
-      );
-
-      if (overlapping) {
-        addNotification(
-          "error",
-          "Booking Failed",
-          "There is already an appointment for this vehicle at the selected time."
+        // Fetch appointments
+        const appointmentsData = await appointmentService.getAllAppointments();
+        const uiAppointments = appointmentsData.map((apt) =>
+          convertAppointmentToUIFormat(apt, vehiclesData)
         );
-        return;
+        setAppointments(uiAppointments);
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load appointments and vehicles");
+      } finally {
+        setInitialLoading(false);
       }
+    };
 
-      const vehicle = mockVehicles.find((v) => v.id === data.vehicleId);
+    fetchData();
+  }, [toast]);
 
-      if (!vehicle) {
-        addNotification("error", "Booking Failed", "Invalid vehicle selected.");
-        return;
-      }
+  /**
+   * Adds a notification to the queue.
+   * Uses factory function to ensure consistent notification structure.
+   */
+  const addNotification = useCallback(
+    (type: NotificationType, title: string, message: string) => {
+      const notification = createNotification(type, title, message);
+      setNotifications((prev) => [...prev, notification]);
+    },
+    []
+  );
 
-      // Get consultation type label
-      const getConsultationLabel = (type: ConsultationType): string => {
-        switch (type) {
-          case "general-checkup":
-            return "General Vehicle Checkup";
-          case "specific-issue":
-            return "Specific Issue Consultation";
-          case "maintenance-advice":
-            return "Maintenance Advice";
-          case "performance-issue":
-            return "Performance Issue";
-          case "safety-concern":
-            return "Safety Concern";
-          case "other":
-            return "Other Consultation";
-          default:
-            return "General Consultation";
-        }
-      };
+  /**
+   * Removes a notification by ID.
+   */
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
 
-      const newAppointment: AppointmentData = {
-        id: Math.random().toString(36).substr(2, 9),
-        vehicleId: data.vehicleId,
-        vehicleName: vehicle.name,
-        vehicleDetails: vehicle.details,
-        consultationType: data.consultationType,
-        consultationTypeLabel: getConsultationLabel(data.consultationType),
-        appointmentDate: data.appointmentDate,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        status: "pending",
-        customerIssue: data.customerIssue,
-        notes: data.notes,
-      };
-
-      setAppointments((prev) => [...prev, newAppointment]);
-      addNotification(
-        "success",
-        "Appointment Booked!",
-        `Your ${getConsultationLabel(
-          data.consultationType
-        )} appointment has been successfully scheduled.`
+  /**
+   * Checks if a new appointment overlaps with existing appointments on the same day.
+   * Only checks date since endTime is set by backend/employee.
+   *
+   * @returns The overlapping appointment or undefined if no overlap
+   */
+  const findOverlappingAppointment = useCallback(
+    (
+      vehicleId: string,
+      appointmentDate: string,
+      excludeId?: string
+    ): AppointmentData | undefined => {
+      return appointments.find(
+        (apt) =>
+          apt.id !== excludeId &&
+          apt.vehicleId === vehicleId &&
+          apt.appointmentDate === appointmentDate &&
+          apt.status !== "cancelled"
       );
-      setShowForm(false);
-    } catch (error) {
-      addNotification(
-        "error",
-        "Booking Failed",
-        "An error occurred while booking your appointment. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [appointments]
+  );
 
-  const handleUpdateAppointment = async (data: AppointmentFormData) => {
-    if (!editingAppointment) return;
-
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Check for overlapping appointments (excluding the current one)
-      if (data.appointmentDate && data.startTime && data.endTime) {
-        const overlapping = appointments.find(
-          (apt) =>
-            apt.id !== editingAppointment.id &&
-            apt.vehicleId === editingAppointment.vehicleId &&
-            apt.appointmentDate === data.appointmentDate &&
-            apt.status !== "cancelled" &&
-            ((data.startTime! >= apt.startTime &&
-              data.startTime! < apt.endTime) ||
-              (data.endTime! > apt.startTime && data.endTime! <= apt.endTime) ||
-              (data.startTime! <= apt.startTime &&
-                data.endTime! >= apt.endTime))
+  /**
+   * Creates a new appointment after validation.
+   */
+  const createAppointment = useCallback(
+    async (data: AppointmentFormData) => {
+      setIsLoading(true);
+      try {
+        // Validate no overlapping appointments (one per day per vehicle)
+        const overlapping = findOverlappingAppointment(
+          data.vehicleId,
+          data.appointmentDate
         );
 
         if (overlapping) {
           addNotification(
             "error",
-            "Update Failed",
-            "There is already an appointment for this vehicle at the selected time."
+            "Booking Failed",
+            "There is already an appointment for this vehicle on the selected date. Please choose a different date."
           );
           return;
         }
-      }
 
-      // Get consultation type label
-      const getConsultationLabel = (type: ConsultationType): string => {
-        switch (type) {
-          case "general-checkup":
-            return "General Vehicle Checkup";
-          case "specific-issue":
-            return "Specific Issue Consultation";
-          case "maintenance-advice":
-            return "Maintenance Advice";
-          case "performance-issue":
-            return "Performance Issue";
-          case "safety-concern":
-            return "Safety Concern";
-          case "other":
-            return "Other Consultation";
-          default:
-            return "General Consultation";
+        const vehicle = vehicles.find((v: Vehicle) => v.id === data.vehicleId);
+
+        if (!vehicle) {
+          addNotification(
+            "error",
+            "Booking Failed",
+            "Invalid vehicle selected."
+          );
+          return;
         }
-      };
 
-      setAppointments((prev) =>
-        prev.map((apt) =>
-          apt.id === editingAppointment.id
-            ? {
-                ...apt,
-                appointmentDate: data.appointmentDate ?? apt.appointmentDate,
-                startTime: data.startTime ?? apt.startTime,
-                endTime: data.endTime ?? apt.endTime,
-                consultationType: data.consultationType ?? apt.consultationType,
-                consultationTypeLabel: data.consultationType
-                  ? getConsultationLabel(data.consultationType)
-                  : apt.consultationTypeLabel,
-                customerIssue: data.customerIssue ?? apt.customerIssue,
-                notes: data.notes ?? apt.notes,
-              }
-            : apt
-        )
-      );
+        // Call backend API to create appointment
+        const createdAppointment = await appointmentService.createAppointment({
+          date: data.appointmentDate,
+          notes: data.notes || data.customerIssue,
+          vehicleId: Number(data.vehicleId),
+        });
 
-      addNotification(
-        "success",
-        "Appointment Updated!",
-        "Your appointment has been successfully updated."
-      );
-      setEditingAppointment(null);
-      setShowForm(false);
-    } catch (error) {
-      addNotification(
-        "error",
-        "Update Failed",
-        "An error occurred while updating your appointment. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Convert backend response to UI format
+        const newAppointment = convertAppointmentToUIFormat(
+          createdAppointment,
+          backendVehicles
+        );
 
-  const handleEditAppointment = (appointment: AppointmentData) => {
+        setAppointments((prev) => [...prev, newAppointment]);
+        toast.success("Appointment booked successfully!");
+        addNotification(
+          "success",
+          "Appointment Booked!",
+          `Your appointment has been successfully scheduled.`
+        );
+        setShowForm(false);
+
+        // Return focus to booking button after successful creation
+        setTimeout(() => bookButtonRef.current?.focus(), 100);
+      } catch (error: any) {
+        const errorMessage = error.message || "An error occurred while booking your appointment. Please try again.";
+        toast.error(errorMessage);
+        addNotification(
+          "error",
+          "Booking Failed",
+          errorMessage
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [findOverlappingAppointment, addNotification, vehicles, backendVehicles, toast]
+  );
+
+  /**
+   * Updates an existing appointment after validation.
+   */
+  const updateAppointment = useCallback(
+    async (data: AppointmentFormData) => {
+      if (!editingAppointment) return;
+
+      setIsLoading(true);
+      try {
+        // Check for overlapping appointments (excluding the current one, one per day per vehicle)
+        if (data.appointmentDate) {
+          const overlapping = findOverlappingAppointment(
+            editingAppointment.vehicleId,
+            data.appointmentDate,
+            editingAppointment.id
+          );
+
+          if (overlapping) {
+            addNotification(
+              "error",
+              "Update Failed",
+              "There is already an appointment for this vehicle on the selected date. Please choose a different date."
+            );
+            return;
+          }
+        }
+
+        // Call backend API to update appointment
+        const updatedAppointment = await appointmentService.updateAppointment(
+          Number(editingAppointment.id),
+          {
+            date: data.appointmentDate,
+            notes: data.notes || data.customerIssue,
+            startTime: data.startTime ? `${data.startTime}:00` : undefined,
+            status: data.status,
+          }
+        );
+
+        // Convert backend response to UI format
+        const updatedUIAppointment = convertAppointmentToUIFormat(
+          updatedAppointment,
+          backendVehicles
+        );
+
+        setAppointments((prev) =>
+          prev.map((apt) =>
+            apt.id === editingAppointment.id ? updatedUIAppointment : apt
+          )
+        );
+
+        toast.success("Appointment updated successfully!");
+        addNotification(
+          "success",
+          "Appointment Updated!",
+          "Your appointment has been successfully updated."
+        );
+        setEditingAppointment(null);
+        setShowForm(false);
+
+        // Return focus to booking button after successful update
+        setTimeout(() => bookButtonRef.current?.focus(), 100);
+      } catch (error: any) {
+        const errorMessage = error.message || "An error occurred while updating your appointment. Please try again.";
+        toast.error(errorMessage);
+        addNotification(
+          "error",
+          "Update Failed",
+          errorMessage
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [editingAppointment, findOverlappingAppointment, addNotification, backendVehicles, toast]
+  );
+
+  /**
+   * Prepares appointment for editing by converting to form data.
+   */
+  const editAppointment = useCallback((appointment: AppointmentData) => {
     const formData: AppointmentFormData = {
       id: appointment.id,
       vehicleId: appointment.vehicleId,
@@ -299,143 +330,189 @@ export default function AppointmentsPage() {
     };
     setEditingAppointment(formData);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleDeleteAppointment = async (appointmentId: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  /**
+   * Deletes an appointment after confirmation.
+   */
+  const deleteAppointment = useCallback(
+    async (appointmentId: string) => {
+      setIsLoading(true);
+      try {
+        // Call backend API to delete appointment
+        await appointmentService.deleteAppointment(Number(appointmentId));
 
-      setAppointments((prev) => prev.filter((apt) => apt.id !== appointmentId));
-      addNotification(
-        "success",
-        "Appointment Cancelled",
-        "Your appointment has been successfully cancelled."
-      );
-    } catch (error) {
-      addNotification(
-        "error",
-        "Cancellation Failed",
-        "An error occurred while cancelling your appointment. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setAppointments((prev) =>
+          prev.filter((apt) => apt.id !== appointmentId)
+        );
 
-  const handleFormSubmit = async (data: AppointmentFormData) => {
-    if (editingAppointment) {
-      await handleUpdateAppointment(data);
-    } else {
-      await handleCreateAppointment(data);
-    }
-  };
+        toast.success("Appointment cancelled successfully!");
+        addNotification(
+          "success",
+          "Appointment Cancelled",
+          "Your appointment has been successfully cancelled."
+        );
+      } catch (error: any) {
+        const errorMessage = error.message || "An error occurred while cancelling your appointment. Please try again.";
+        toast.error(errorMessage);
+        addNotification(
+          "error",
+          "Cancellation Failed",
+          errorMessage
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [addNotification, toast]
+  );
 
-  const handleCancelForm = () => {
+  /**
+   * Handles form submission, routing to create or update.
+   */
+  const submitForm = useCallback(
+    async (data: AppointmentFormData) => {
+      if (editingAppointment) {
+        await updateAppointment(data);
+      } else {
+        await createAppointment(data);
+      }
+    },
+    [editingAppointment, updateAppointment, createAppointment]
+  );
+
+  /**
+   * Cancels form and resets editing state.
+   * Returns focus to the booking button.
+   */
+  const cancelForm = useCallback(() => {
     setEditingAppointment(null);
     setShowForm(false);
-  };
 
-  const getNotificationIcon = (type: NotificationType) => {
-    switch (type) {
-      case "success":
-        return <CheckCircle className="h-5 w-5" />;
-      case "error":
-        return <XCircle className="h-5 w-5" />;
-      case "info":
-        return <AlertCircle className="h-5 w-5" />;
-    }
-  };
+    // Return focus to booking button when form is cancelled
+    setTimeout(() => bookButtonRef.current?.focus(), 100);
+  }, []);
 
-  const getNotificationColors = (type: NotificationType) => {
-    switch (type) {
-      case "success":
-        return "bg-green-50 border-green-200 text-green-800";
-      case "error":
-        return "bg-red-50 border-red-200 text-red-800";
-      case "info":
-        return "bg-blue-50 border-blue-200 text-blue-800";
-    }
-  };
+  /**
+   * Opens the form to create a new appointment.
+   */
+  const openCreateForm = useCallback(() => {
+    setEditingAppointment(null);
+    setShowForm(true);
+  }, []);
+
+  /**
+   * Sorted appointments by date and time (most recent first).
+   * Memoized to avoid recalculation on every render.
+   */
+  const sortedAppointments = useMemo(() => {
+    return [...appointments].sort((a, b) => {
+      const dateCompare = b.appointmentDate.localeCompare(a.appointmentDate);
+      if (dateCompare !== 0) return dateCompare;
+      return b.startTime.localeCompare(a.startTime);
+    });
+  }, [appointments]);
+
+  // Show loading state while fetching initial data
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading appointments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-custom p-6">
-      {/* Notifications */}
-      {notifications.length > 0 && (
-        <div className="fixed top-4 right-4 z-50 space-y-2">
-          {notifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`w-96 border-2 ${getNotificationColors(
-                notification.type
-              )} animate-in slide-in-from-right`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {getNotificationIcon(notification.type)}
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{notification.title}</h4>
-                    <p className="text-sm mt-1">{notification.message}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeNotification(notification.id)}
-                    className="text-current hover:bg-black/10"
-                  >
-                    ×
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="min-h-screen space-y-6">
+      {/* Notification Center */}
+      <NotificationCenter
+        notifications={notifications}
+        onRemove={removeNotification}
+      />
 
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">My Appointments</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your service appointments
-            </p>
-          </div>
-
-          {!showForm && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-primary hover:bg-primary/90 text-white font-medium"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Book New Appointment
-            </Button>
-          )}
+      {/* Page Header */}
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-primary">My Appointments</h1>
+          <p className="text-gray-600 mt-1">Manage your service appointments</p>
         </div>
 
-        <div className="space-y-8">
-          {/* Appointment Form */}
-          {showForm && (
-            <div className="max-w-3xl mx-auto">
-              <AppointmentForm
-                vehicles={mockVehicles}
-                onSubmit={handleFormSubmit}
-                onCancel={handleCancelForm}
-                editingAppointment={editingAppointment || undefined}
-                isLoading={isLoading}
-              />
+        {!showForm && (
+          <Button
+            ref={bookButtonRef}
+            onClick={openCreateForm}
+            className="bg-primary hover:bg-primary/90 text-white font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            aria-label="Book new appointment"
+          >
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+            Book New Appointment
+          </Button>
+        )}
+      </header>
+
+      <div className="space-y-8">
+        {/* Appointment Form */}
+        {showForm && (
+          <section aria-labelledby="form-heading" className="max-w-3xl mx-auto">
+            <h2 id="form-heading" className="sr-only">
+              {editingAppointment
+                ? "Edit Appointment"
+                : "Create New Appointment"}
+            </h2>
+            <AppointmentForm
+              vehicles={vehicles}
+              onSubmit={submitForm}
+              onCancel={cancelForm}
+              editingAppointment={editingAppointment || undefined}
+              isLoading={isLoading}
+            />
+          </section>
+        )}
+
+        {/* Appointment List or Empty State */}
+        {sortedAppointments.length === 0 ? (
+          <section
+            aria-labelledby="empty-heading"
+            className="flex flex-col items-center justify-center py-16 px-4"
+          >
+            <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center border border-gray-100">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Calendar className="w-8 h-8 text-primary" aria-hidden="true" />
+              </div>
+              <h2
+                id="empty-heading"
+                className="text-xl font-bold text-gray-900 mb-2"
+              >
+                No Appointments Yet
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Get started by booking your first service appointment
+              </p>
+              <Button
+                onClick={openCreateForm}
+                className="bg-primary hover:bg-primary/90 text-white font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                Book Your First Appointment
+              </Button>
             </div>
-          )}
-
-          {/* Appointment List */}
-          <AppointmentList
-            appointments={appointments}
-            onEdit={handleEditAppointment}
-            onDelete={handleDeleteAppointment}
-            isLoading={isLoading}
-          />
-        </div>
+          </section>
+        ) : (
+          <section aria-labelledby="appointments-heading">
+            <h2 id="appointments-heading" className="sr-only">
+              Your Appointments
+            </h2>
+            <AppointmentList
+              appointments={sortedAppointments}
+              onEdit={editAppointment}
+              onDelete={deleteAppointment}
+              isLoading={isLoading}
+            />
+          </section>
+        )}
       </div>
     </div>
   );

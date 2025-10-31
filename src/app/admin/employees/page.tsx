@@ -6,11 +6,12 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, PlusCircle, Loader2, AlertCircle, RefreshCw, Mail } from 'lucide-react';
+import { Search, PlusCircle, Loader2, AlertCircle, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import AddEmployeeModal from '@/components/admin/AddEmployeeModal';
-import { employeeService, Employee } from '@/lib/services/employeeService';
+import { employeeService, Employee, EmployeeDependencies } from '@/lib/services/employeeService';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -18,85 +19,267 @@ export default function EmployeesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  useEffect(() => { fetchEmployees(); }, []);
+  // Delete confirmation states
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [deleteDependencies, setDeleteDependencies] = useState<EmployeeDependencies | null>(null);
+  const [isCheckingDependencies, setIsCheckingDependencies] = useState(false);
+
+  const toast = useToast();
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     let filtered = employees;
     if (searchQuery.trim()) {
-      filtered = filtered.filter(emp => emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || emp.email.toLowerCase().includes(searchQuery.toLowerCase()));
+      filtered = filtered.filter(emp =>
+        emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.specialization.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
-    if (roleFilter !== 'all') { filtered = filtered.filter(emp => emp.role === roleFilter); }
     setFilteredEmployees(filtered);
-  }, [employees, searchQuery, roleFilter]);
+  }, [employees, searchQuery]);
 
   const fetchEmployees = async () => {
-    setIsLoading(true); setError('');
+    setIsLoading(true);
+    setError('');
     try {
       const data = await employeeService.getAllEmployees();
-      setEmployees(data); setFilteredEmployees(data);
+      setEmployees(data);
+      setFilteredEmployees(data);
+      toast.success('Employees loaded successfully');
     } catch (err: any) {
-      setError(err.message || 'Failed to load employees');
-      const dummyData: Employee[] = [
-        { id: '1', name: 'Ethan Harper', email: 'ethan.harper@example.com', role: 'Manager', specialization: 'Automobile', createdAt: new Date().toISOString(), isActive: true },
-        { id: '2', name: 'Olivia Bennett', email: 'olivia.bennett@example.com', role: 'Technician', specialization: 'Engine', createdAt: new Date().toISOString(), isActive: true },
-      ];
-      setEmployees(dummyData); setFilteredEmployees(dummyData);
-    } finally { setIsLoading(false); }
+      const errorMessage = err.message || 'Failed to load employees';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeactivate = async (employeeId: string) => {
-    if (!confirm('Are you sure?')) return;
-    setActionLoading(employeeId);
-    try { await employeeService.deactivateEmployee(employeeId); await fetchEmployees(); } 
-    catch (err: any) { alert(err.message || 'Failed to deactivate'); } 
-    finally { setActionLoading(null); }
+  const handleDeleteClick = async (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setIsCheckingDependencies(true);
+    setShowDeleteDialog(true);
+
+    try {
+      const dependencies = await employeeService.checkDependencies(employee.employeeId);
+      setDeleteDependencies(dependencies);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to check employee dependencies');
+      setShowDeleteDialog(false);
+    } finally {
+      setIsCheckingDependencies(false);
+    }
   };
 
-  const handleResendPassword = async (employeeId: string) => {
-    if (!confirm('Send new password?')) return;
-    setActionLoading(employeeId);
-    try { await employeeService.resendTemporaryPassword(employeeId); alert('Password sent!'); } 
-    catch (err: any) { alert(err.message || 'Failed to send'); } 
-    finally { setActionLoading(null); }
+  const handleDeleteConfirm = async () => {
+    if (!employeeToDelete) return;
+
+    // If employee cannot be deleted due to dependencies, show error
+    if (deleteDependencies && !deleteDependencies.canDelete) {
+      toast.error(deleteDependencies.warningMessage || 'Cannot delete employee with active assignments');
+      setShowDeleteDialog(false);
+      return;
+    }
+
+    setActionLoading(employeeToDelete.employeeId);
+    try {
+      await employeeService.deleteEmployee(employeeToDelete.employeeId);
+      toast.success(`Employee ${employeeToDelete.name} deleted successfully`);
+      await fetchEmployees();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete employee');
+    } finally {
+      setActionLoading(null);
+      setShowDeleteDialog(false);
+      setEmployeeToDelete(null);
+      setDeleteDependencies(null);
+    }
   };
 
-  const handleModalSuccess = () => { fetchEmployees(); setTimeout(() => setIsModalOpen(false), 3000); };
+  const handleModalSuccess = () => {
+    fetchEmployees();
+    setTimeout(() => setIsModalOpen(false), 1500);
+  };
 
-  return (<>
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-3xl font-bold">Manage Employees</h1>
-      <Button onClick={() => setIsModalOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add New Employee</Button>
-    </div>
-    {error && (<Alert variant="destructive" className="mb-6"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>)}
-    <div className="flex items-center justify-between mb-6 gap-4">
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <Input type="search" placeholder="Search employees" className="pl-10" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Generate delete dialog description based on dependencies
+  const getDeleteDialogDescription = () => {
+    if (isCheckingDependencies) {
+      return "Checking employee dependencies...";
+    }
+
+    if (!deleteDependencies) {
+      return "Are you sure you want to delete this employee?";
+    }
+
+    if (!deleteDependencies.canDelete) {
+      return `Cannot delete this employee!\n\n${deleteDependencies.warningMessage}\n\nPlease reassign or complete their appointments before deleting this employee.`;
+    }
+
+    return `Are you sure you want to delete ${employeeToDelete?.name}? This action cannot be undone.`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
+            Manage Employees
+          </h1>
+          <p className="text-lg text-gray-600">
+            View and manage employee accounts and assignments
+          </p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add New Employee
+        </Button>
       </div>
-      <div className="flex items-center space-x-2">
-        <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Filter:</span>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="Manager">Manager</SelectItem>
-            <SelectItem value="Technician">Technician</SelectItem>
-            <SelectItem value="Mechanic">Mechanic</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="icon" onClick={fetchEmployees} disabled={isLoading}><RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /></Button>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            type="search"
+            placeholder="Search by name, email, or specialization"
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={fetchEmployees}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
+
+      <Card>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-gray-600">Loading employees...</span>
+          </div>
+        ) : filteredEmployees.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <AlertCircle className="h-12 w-12 mb-3 text-gray-400" />
+            <p className="text-lg font-medium">No employees found</p>
+            {searchQuery && (
+              <p className="text-sm text-gray-400 mt-1">
+                Try adjusting your search criteria
+              </p>
+            )}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Specialization</TableHead>
+                <TableHead>Hire Date</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredEmployees.map((employee) => (
+                <TableRow key={employee.employeeId}>
+                  <TableCell className="font-medium">{employee.name}</TableCell>
+                  <TableCell>{employee.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{employee.specialization}</Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(employee.hireDate)}</TableCell>
+                  <TableCell className="text-sm text-gray-500">
+                    {formatDate(employee.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={actionLoading === employee.employeeId}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDeleteClick(employee)}
+                      disabled={actionLoading === employee.employeeId}
+                    >
+                      {actionLoading === employee.employeeId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+
+      <AddEmployeeModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title={isCheckingDependencies ? "Checking Dependencies" : "Delete Employee"}
+        description={getDeleteDialogDescription()}
+        confirmText={
+          isCheckingDependencies
+            ? "Checking..."
+            : (deleteDependencies && !deleteDependencies.canDelete)
+              ? "Close"
+              : "Delete"
+        }
+        cancelText={
+          (deleteDependencies && !deleteDependencies.canDelete) ? undefined : "Cancel"
+        }
+        variant={
+          (deleteDependencies && !deleteDependencies.canDelete) ? "default" : "destructive"
+        }
+        onConfirm={
+          (deleteDependencies && !deleteDependencies.canDelete)
+            ? () => setShowDeleteDialog(false)
+            : handleDeleteConfirm
+        }
+      />
     </div>
-    <Card>
-      {isLoading ? (<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /><span className="ml-3 text-gray-600">Loading...</span></div>) : 
-      filteredEmployees.length === 0 ? (<div className="flex flex-col items-center justify-center py-12 text-gray-500"><AlertCircle className="h-12 w-12 mb-3 text-gray-400" /><p className="text-lg font-medium">No employees found</p></div>) : (
-      <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Specialization</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-      <TableBody>{filteredEmployees.map((employee) => (<TableRow key={employee.id}><TableCell className="font-medium">{employee.name}</TableCell><TableCell>{employee.email}</TableCell><TableCell><Badge variant="secondary">{employee.role}</Badge></TableCell><TableCell><Badge variant="outline">{employee.specialization}</Badge></TableCell><TableCell><Badge variant={employee.isActive ? "default" : "destructive"}>{employee.isActive ? 'Active' : 'Inactive'}</Badge></TableCell><TableCell className="text-right space-x-2"><Button variant="ghost" size="sm" onClick={() => handleResendPassword(employee.id)} disabled={actionLoading === employee.id}>{actionLoading === employee.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}</Button><Button variant="link" size="sm" className={employee.isActive ? "text-red-600" : "text-green-600"} onClick={() => handleDeactivate(employee.id)} disabled={actionLoading === employee.id}>{employee.isActive ? 'Deactivate' : 'Activate'}</Button></TableCell></TableRow>))}</TableBody></Table>)}
-    </Card>
-    <AddEmployeeModal open={isModalOpen} onOpenChange={setIsModalOpen} onSuccess={handleModalSuccess} />
-  </>);
+  );
 }

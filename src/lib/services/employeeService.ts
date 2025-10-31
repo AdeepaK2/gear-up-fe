@@ -1,130 +1,172 @@
 import { API_ENDPOINTS } from '../config/api';
+import { authService } from './authService';
 
 export interface CreateEmployeeRequest {
   name: string;
   email: string;
+  password: string;
   specialization: string;
-  role?: string;
+  hireDate: string;
+}
+
+export interface UpdateEmployeeRequest {
+  name?: string;
+  specialization?: string;
+  hireDate?: string;
 }
 
 export interface Employee {
-  id: string;
+  employeeId: number;
   name: string;
   email: string;
-  role: string;
   specialization: string;
+  hireDate: string;
   createdAt: string;
-  isActive: boolean;
+  updatedAt: string;
 }
 
-export interface CreateEmployeeResponse {
-  employee: Employee;
-  temporaryPassword: string;
+export interface EmployeeDependencies {
+  appointmentCount: number;
+  hasAppointments: boolean;
+  canDelete: boolean;
+  warningMessage?: string;
+}
+
+export interface ApiResponse<T> {
+  status: string;
   message: string;
+  data: T;
+  timestamp: string;
+  path: string;
 }
 
 class EmployeeService {
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('accessToken');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    };
-  }
-
-  // Create new employee account
-  async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
-    try {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.BASE}/employees`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create employee');
-      }
-
-      const result = await response.json();
-      return result.data;
-    } catch (error: any) {
-      console.error('Create employee error:', error);
-      throw error;
-    }
-  }
 
   // Get all employees
   async getAllEmployees(): Promise<Employee[]> {
     try {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.BASE}/employees`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.EMPLOYEE.BASE,
+        { method: 'GET' }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to fetch employees');
       }
 
-      const result = await response.json();
-      return result.data;
+      const apiResponse: ApiResponse<Employee[]> = await response.json();
+      return apiResponse.data;
     } catch (error: any) {
       console.error('Fetch employees error:', error);
       throw error;
     }
   }
 
-  // Deactivate employee account
-  async deactivateEmployee(employeeId: string): Promise<void> {
+  // Get employee by ID
+  async getEmployeeById(id: number): Promise<Employee> {
     try {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.BASE}/employees/${employeeId}/deactivate`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-      });
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.EMPLOYEE.BASE}/${id}`,
+        { method: 'GET' }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to deactivate employee');
+        throw new Error(errorData.message || 'Failed to fetch employee');
       }
+
+      const apiResponse: ApiResponse<Employee> = await response.json();
+      return apiResponse.data;
     } catch (error: any) {
-      console.error('Deactivate employee error:', error);
+      console.error('Fetch employee error:', error);
       throw error;
     }
   }
 
-  // Reactivate employee account
-  async reactivateEmployee(employeeId: string): Promise<void> {
+  // Create new employee
+  async createEmployee(data: CreateEmployeeRequest): Promise<Employee> {
     try {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.BASE}/employees/${employeeId}/reactivate`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-      });
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.EMPLOYEE.BASE,
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reactivate employee');
+        throw new Error(errorData.message || 'Failed to create employee');
       }
+
+      const apiResponse: ApiResponse<Employee> = await response.json();
+      return apiResponse.data;
     } catch (error: any) {
-      console.error('Reactivate employee error:', error);
+      console.error('Create employee error:', error);
       throw error;
     }
   }
 
-  // Resend temporary password
-  async resendTemporaryPassword(employeeId: string): Promise<void> {
+  // Update employee
+  async updateEmployee(id: number, data: UpdateEmployeeRequest): Promise<Employee> {
     try {
-      const response = await fetch(`${API_ENDPOINTS.ADMIN.BASE}/employees/${employeeId}/resend-password`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-      });
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.EMPLOYEE.BASE}/${id}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to resend password');
+        throw new Error(errorData.message || 'Failed to update employee');
+      }
+
+      const apiResponse: ApiResponse<Employee> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Update employee error:', error);
+      throw error;
+    }
+  }
+
+  // Check employee dependencies before deletion
+  async checkDependencies(id: number): Promise<EmployeeDependencies> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.EMPLOYEE.BASE}/${id}/dependencies`,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to check dependencies');
+      }
+
+      const apiResponse: ApiResponse<EmployeeDependencies> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Check dependencies error:', error);
+      throw error;
+    }
+  }
+
+  // Delete employee
+  async deleteEmployee(id: number): Promise<void> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.EMPLOYEE.BASE}/${id}`,
+        { method: 'DELETE' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete employee');
       }
     } catch (error: any) {
-      console.error('Resend password error:', error);
+      console.error('Delete employee error:', error);
       throw error;
     }
   }
