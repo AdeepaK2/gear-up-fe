@@ -88,7 +88,6 @@ export default function AppointmentForm({
       editingAppointment?.consultationType || ("" as ConsultationType),
     appointmentDate: editingAppointment?.appointmentDate || "",
     startTime: editingAppointment?.startTime || "",
-    endTime: editingAppointment?.endTime || "",
     customerIssue: editingAppointment?.customerIssue || "",
     notes: editingAppointment?.notes || "",
   });
@@ -112,19 +111,6 @@ export default function AppointmentForm({
 
     if (!formData.startTime) {
       newErrors.startTime = "Please enter a start time";
-    }
-
-    if (!formData.endTime) {
-      newErrors.endTime = "Please enter an end time";
-    }
-
-    // Validate that end time is after start time
-    if (
-      formData.startTime &&
-      formData.endTime &&
-      formData.startTime >= formData.endTime
-    ) {
-      newErrors.endTime = "End time must be after start time";
     }
 
     // Validate that appointment is not in the past
@@ -164,7 +150,6 @@ export default function AppointmentForm({
           consultationType: "" as ConsultationType,
           appointmentDate: "",
           startTime: "",
-          endTime: "",
           customerIssue: "",
           notes: "",
         });
@@ -332,46 +317,29 @@ export default function AppointmentForm({
           </div>
 
           {/* Time Selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="startTime"
-                className="text-primary font-medium flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Start Time
-              </Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-                className={cn("border-2", errors.startTime && "border-red-500")}
-              />
-              {errors.startTime && (
-                <p className="text-red-500 text-sm">{errors.startTime}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endTime" className="text-primary font-medium">
-                End Time
-              </Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, endTime: e.target.value })
-                }
-                className={cn("border-2", errors.endTime && "border-red-500")}
-              />
-              {errors.endTime && (
-                <p className="text-red-500 text-sm">{errors.endTime}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="startTime"
+              className="text-primary font-medium flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              Preferred Start Time
+            </Label>
+            <Input
+              id="startTime"
+              type="time"
+              value={formData.startTime}
+              onChange={(e) =>
+                setFormData({ ...formData, startTime: e.target.value })
+              }
+              className={cn("border-2", errors.startTime && "border-red-500")}
+            />
+            {errors.startTime && (
+              <p className="text-red-500 text-sm">{errors.startTime}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              The duration will be determined by our service team based on your needs
+            </p>
           </div>
 
           {/* Customer Issue Description */}
