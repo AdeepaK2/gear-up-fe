@@ -4,9 +4,14 @@ import { authService } from './authService';
 export interface CreateEmployeeRequest {
   name: string;
   email: string;
-  password: string;
   specialization: string;
-  hireDate: string;
+  role?: string;
+}
+
+export interface CreateEmployeeResponse {
+  employee: Employee;
+  temporaryPassword: string;
+  message: string;
 }
 
 export interface UpdateEmployeeRequest {
@@ -84,11 +89,11 @@ class EmployeeService {
     }
   }
 
-  // Create new employee
-  async createEmployee(data: CreateEmployeeRequest): Promise<Employee> {
+  // Create new employee (Admin only)
+  async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
     try {
       const response = await authService.authenticatedFetch(
-        API_ENDPOINTS.EMPLOYEE.BASE,
+        API_ENDPOINTS.ADMIN.EMPLOYEES,
         {
           method: 'POST',
           body: JSON.stringify(data),
@@ -100,7 +105,7 @@ class EmployeeService {
         throw new Error(errorData.message || 'Failed to create employee');
       }
 
-      const apiResponse: ApiResponse<Employee> = await response.json();
+      const apiResponse: ApiResponse<CreateEmployeeResponse> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
       console.error('Create employee error:', error);
