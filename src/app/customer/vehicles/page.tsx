@@ -2,110 +2,141 @@
 
 import React from "react";
 import { Car, Edit2, Trash2, Plus } from "lucide-react";
-
-type Vehicle = {
-  id: string;
-  make: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-};
-
-const mockVehicles: Vehicle[] = [
-  {
-    id: "1",
-    make: "Toyota",
-    model: "Corolla",
-    year: 2018,
-    licensePlate: "ABC-123",
-  },
-  {
-    id: "2",
-    make: "Honda",
-    model: "Civic",
-    year: 2020,
-    licensePlate: "XYZ-789",
-  },
-  {
-    id: "3",
-    make: "Ford",
-    model: "Focus",
-    year: 2017,
-    licensePlate: "FDE-456",
-  },
-  {
-    id: "4",
-    make: "Tesla",
-    model: "Model 3",
-    year: 2022,
-    licensePlate: "EV-2022",
-  },
-  { id: "5", make: "BMW", model: "X3", year: 2019, licensePlate: "BMW-900" },
-  { id: "6", make: "Audi", model: "A4", year: 2021, licensePlate: "AUD-404" },
-];
+import { vehicleService } from "@/lib/services/vehicleService";
+import type { Vehicle, VehicleCreateRequest } from "@/lib/types/Vehicle";
 
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = React.useState<Vehicle[]>(mockVehicles);
+  const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isEditMode, setIsEditMode] = React.useState(false);
+  const [editingVehicleId, setEditingVehicleId] = React.useState<number | null>(null);
   const [form, setForm] = React.useState({
     make: "",
     model: "",
     year: "",
     licensePlate: "",
+    vin: "",
   });
+  const [submitting, setSubmitting] = React.useState(false);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  // Fetch vehicles on component mount
+  React.useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await vehicleService.getAllVehicles();
+      setVehicles(data);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch vehicles");
+      console.error("Error fetching vehicles:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openModal = () => {
+    setIsEditMode(false);
+    setEditingVehicleId(null);
+    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (vehicle: Vehicle) => {
+    setIsEditMode(true);
+    setEditingVehicleId(vehicle.id);
+    setForm({
+      make: vehicle.make,
+      model: vehicle.model,
+      year: String(vehicle.year),
+      licensePlate: vehicle.licensePlate,
+      vin: vehicle.vin,
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setEditingVehicleId(null);
+    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     // Basic validation
-    if (!form.make || !form.model || !form.year || !form.licensePlate) {
+    if (!form.make || !form.model || !form.year || !form.licensePlate || !form.vin) {
       alert("Please fill all fields");
       return;
     }
 
-    const newVehicle: Vehicle = {
-      id: String(Date.now()),
-      make: form.make,
-      model: form.model,
-      year: Number(form.year),
-      licensePlate: form.licensePlate,
-    };
+    try {
+      setSubmitting(true);
 
-    setVehicles((prev) => [newVehicle, ...prev]);
-    setForm({ make: "", model: "", year: "", licensePlate: "" });
-    closeModal();
+      if (isEditMode && editingVehicleId) {
+        // Update existing vehicle
+        const updatedVehicle = await vehicleService.updateVehicle(editingVehicleId, {
+          make: form.make,
+          model: form.model,
+          year: Number(form.year),
+          licensePlate: form.licensePlate,
+          vin: form.vin,
+        });
+        setVehicles((prev) =>
+          prev.map((v) => (v.id === editingVehicleId ? updatedVehicle : v))
+        );
+      } else {
+        // Create new vehicle
+        const vehicleData: VehicleCreateRequest = {
+          make: form.make,
+          model: form.model,
+          year: Number(form.year),
+          licensePlate: form.licensePlate,
+          vin: form.vin,
+        };
+        const newVehicle = await vehicleService.createVehicle(vehicleData);
+        setVehicles((prev) => [newVehicle, ...prev]);
+      }
+
+      closeModal();
+    } catch (err: any) {
+      alert(err.message || `Failed to ${isEditMode ? "update" : "create"} vehicle`);
+      console.error(`Error ${isEditMode ? "updating" : "creating"} vehicle:`, err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleAdd = () => {
-    // Placeholder: open modal or navigate to add vehicle form
-    // For now, just log and add a dummy vehicle
-    console.log("Add Vehicle clicked");
-    const newVehicle: Vehicle = {
-      id: String(Date.now()),
-      make: "New",
-      model: "Vehicle",
-      year: 2025,
-      licensePlate: "NEW-000",
-    };
-    setVehicles((prev) => [newVehicle, ...prev]);
+  const handleEdit = (id: number) => {
+    const vehicle = vehicles.find((v) => v.id === id);
+    if (vehicle) {
+      openEditModal(vehicle);
+    }
   };
 
-  const handleEdit = (id: string) => {
-    // Placeholder: open edit form/modal
-    console.log("Edit vehicle", id);
-  };
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this vehicle?")) {
+      return;
+    }
 
-  const handleDelete = (id: string) => {
-    // Placeholder: confirm and delete
-    console.log("Delete vehicle", id);
-    setVehicles((prev) => prev.filter((v) => v.id !== id));
+    try {
+      await vehicleService.deleteVehicle(id);
+      setVehicles((prev) => prev.filter((v) => v.id !== id));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete vehicle");
+      console.error("Error deleting vehicle:", err);
+    }
   };
 
   return (
@@ -122,7 +153,43 @@ export default function VehiclesPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+            <p className="mt-4 text-gray-600">Loading vehicles...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p className="font-medium">Error loading vehicles</p>
+            <p className="text-sm">{error}</p>
+            <button
+              onClick={fetchVehicles}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && vehicles.length === 0 && (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <Car className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-lg font-medium text-gray-900">No vehicles</h3>
+            <p className="mt-1 text-gray-500">Get started by adding your first vehicle.</p>
+            <button
+              onClick={openModal}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"
+            >
+              <Plus size={16} />
+              Add Vehicle
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && vehicles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vehicles.map((v) => (
             <div
               key={v.id}
@@ -188,14 +255,17 @@ export default function VehiclesPage() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-custom rounded-lg shadow-lg p-6 w-full max-w-md animate-fade-in">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-primary font-bold text-xl">Add Vehicle</h3>
+              <h3 className="text-primary font-bold text-xl">
+                {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
+              </h3>
               <button onClick={closeModal} className="hover:text-secondary">
                 ✕
               </button>
@@ -203,50 +273,74 @@ export default function VehiclesPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-300">
-                  Make
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  VIN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="vin"
+                  value={form.vin}
+                  onChange={handleChange}
+                  placeholder="e.g., 1HGBH41JXMN109186"
+                  minLength={11}
+                  maxLength={17}
+                  className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Vehicle Identification Number (11-17 characters)
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Make <span className="text-red-500">*</span>
                 </label>
                 <input
                   name="make"
                   value={form.make}
                   onChange={handleChange}
+                  placeholder="e.g., Toyota"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Model
+                  Model <span className="text-red-500">*</span>
                 </label>
                 <input
                   name="model"
                   value={form.model}
                   onChange={handleChange}
+                  placeholder="e.g., Camry"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Year
+                  Year <span className="text-red-500">*</span>
                 </label>
                 <input
                   name="year"
                   value={form.year}
                   onChange={handleChange}
                   type="number"
+                  placeholder="e.g., 2022"
+                  min="1900"
+                  max="2099"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  License Plate
+                  License Plate <span className="text-red-500">*</span>
                 </label>
                 <input
                   name="licensePlate"
                   value={form.licensePlate}
                   onChange={handleChange}
+                  placeholder="e.g., ABC-1234"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
                 />
               </div>
@@ -255,15 +349,17 @@ export default function VehiclesPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                  disabled={submitting}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary"
+                  disabled={submitting}
+                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save
+                  {submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update" : "Save")}
                 </button>
               </div>
             </form>
