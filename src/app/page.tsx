@@ -3,6 +3,7 @@ import HeroSection from "../componenets/landing/HeroSection";
 import ServicesPreview from "../componenets/landing/ServicesPreview";
 import AboutSection from "../componenets/landing/AboutSection";
 import Footer from "../componenets/shared/Footer";
+import ChatbotPopup from "@/components/shared/ChatbotPopup";
 
 export default function Home() {
   return (
@@ -67,6 +68,9 @@ export default function Home() {
       </section>
 
       <Footer />
+      
+      {/* AI Chatbot Popup */}
+      <ChatbotPopup />
     </div>
   );
 }

@@ -3,6 +3,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/a
 
 // API Endpoints
 export const API_ENDPOINTS = {
+  BASE_URL: API_BASE_URL,
   AUTH: {
     LOGIN: `${API_BASE_URL}/auth/login`,
     REGISTER: `${API_BASE_URL}/auth/register`,
@@ -25,6 +26,12 @@ export const API_ENDPOINTS = {
   },
   VEHICLES: {
     BASE: `${API_BASE_URL}/vehicles`,
+  },
+  CHAT: {
+    BASE: `${API_BASE_URL}/chat`,
+    SEND: `${API_BASE_URL}/chat`,
+    STREAM: `${API_BASE_URL}/chat/stream`,
+    HISTORY: `${API_BASE_URL}/chat/history`,
   },
 };
 

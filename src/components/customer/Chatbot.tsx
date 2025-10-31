@@ -28,6 +28,7 @@ import {
   BotResponse,
   ChatFeedback,
 } from "@/lib/types/Chatbot";
+import { chatbotService, ChatMessage } from "@/lib/services/chatbotService";
 
 interface ChatbotProps {
   customerContext: CustomerContext;
@@ -55,6 +56,7 @@ export default function Chatbot({
     null
   );
   const [filePreview, setFilePreview] = useState<File | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +89,23 @@ export default function Chatbot({
     },
   ];
 
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('accessToken');
+      setIsAuthenticated(!!token);
+    };
+    
+    checkAuth();
+    
+    // Check auth when window gains focus
+    window.addEventListener('focus', checkAuth);
+    
+    return () => {
+      window.removeEventListener('focus', checkAuth);
+    };
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -95,118 +114,21 @@ export default function Chatbot({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const generateBotResponse = (userMessage: string): BotResponse => {
-    const lowerMessage = userMessage.toLowerCase();
-
-    // FAQ responses
-    if (
-      lowerMessage.includes("appointment") ||
-      lowerMessage.includes("booking")
-    ) {
-      return {
-        message:
-          "I can help you with appointments! You can view your current appointments, schedule new ones, or modify existing bookings.",
-        suggestions: [
-          "View my appointments",
-          "Schedule new appointment",
-          "Cancel appointment",
-        ],
-        quickActions: [
-          {
-            id: "qa1",
-            label: "View Appointments",
-            action: "view_appointments",
-            icon: "📅",
-          },
-        ],
-      };
-    }
-
-    if (lowerMessage.includes("service") || lowerMessage.includes("repair")) {
-      return {
-        message:
-          "I can assist you with our services! We offer various automotive services including maintenance, repairs, and inspections.",
-        suggestions: [
-          "View available services",
-          "Request new service",
-          "Check service status",
-        ],
-        quickActions: [
-          {
-            id: "qa2",
-            label: "View Services",
-            action: "view_services",
-            icon: "🔧",
-          },
-          {
-            id: "qa3",
-            label: "Request Service",
-            action: "request_service",
-            icon: "➕",
-          },
-        ],
-      };
-    }
-
-    if (lowerMessage.includes("profile") || lowerMessage.includes("account")) {
-      return {
-        message:
-          "I can help you manage your profile and account settings. You can update your contact information, preferences, and more.",
-        suggestions: [
-          "Update profile",
-          "Change password",
-          "Notification settings",
-        ],
-        quickActions: [
-          {
-            id: "qa4",
-            label: "Update Profile",
-            action: "update_profile",
-            icon: "👤",
-          },
-        ],
-      };
-    }
-
-    if (lowerMessage.includes("price") || lowerMessage.includes("cost")) {
-      return {
-        message:
-          "Our pricing varies depending on the service type and vehicle requirements. Would you like me to show you our service catalog with pricing information?",
-        suggestions: ["View service pricing", "Get quote", "Compare packages"],
-      };
-    }
-
-    if (lowerMessage.includes("help") || lowerMessage.includes("support")) {
-      return {
-        message:
-          "I'm here to help! You can ask me about services, appointments, your profile, or any general questions. If you need human assistance, I can connect you with our support team.",
-        suggestions: ["Contact human support", "View FAQ", "Get started guide"],
-        quickActions: [
-          {
-            id: "qa5",
-            label: "Contact Support",
-            action: "contact_support",
-            icon: "🎧",
-          },
-        ],
-      };
-    }
-
-    // Default response
-    return {
-      message:
-        "Thank you for your message! I'm here to help with any questions about your services, appointments, or account. What would you like to know more about?",
-      suggestions: [
-        "View appointments",
-        "Browse services",
-        "Update profile",
-        "Get help",
-      ],
-    };
-  };
-
   const handleSendMessage = async () => {
     if (!inputValue.trim() && !filePreview) return;
+
+    // Check authentication
+    if (!isAuthenticated) {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "🔒 You need to be logged in to use the chatbot. Please log in and try again.",
+        sender: "bot",
+        timestamp: new Date(),
+        type: "text",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -227,23 +149,68 @@ export default function Chatbot({
     setFilePreview(null);
     setIsTyping(true);
 
-    // Simulate bot response delay
-    setTimeout(() => {
-      const botResponse = generateBotResponse(userMessage.content);
+    try {
+      // Get conversation history for context
+      const conversationHistory: ChatMessage[] = messages.map((msg) => ({
+        role: msg.sender === "customer" ? "user" : "assistant",
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      }));
+
+      // Send message to RAG chatbot service
+      const response = await chatbotService.sendMessage({
+        question: userMessage.content,
+        conversationHistory,
+        context: {
+          customerId: customerContext.id, // String id (email)
+          currentPage: "/customer/chatbot",
+          metadata: {
+            customerName: customerContext.name,
+            currentProject: customerContext.currentProject,
+            currentService: customerContext.currentService,
+          },
+        },
+      });
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: botResponse.message,
+        content: response.answer,
         sender: "bot",
-        timestamp: new Date(),
+        timestamp: new Date(response.timestamp),
         type: "text",
         metadata: {
-          actions: botResponse.quickActions,
+          sessionId: response.sessionId,
+          confidence: response.confidence,
         },
       };
 
       setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      
+      // Check if it's an authentication error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isAuthError = errorMessage.includes('Unauthorized') || errorMessage.includes('401');
+      
+      const botErrorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: isAuthError
+          ? "🔒 Your session has expired. Please log in again and try."
+          : "I apologize, but I'm having trouble connecting right now. Please try again in a moment or contact our support team for immediate assistance.",
+        sender: "bot",
+        timestamp: new Date(),
+        type: "text",
+      };
+
+      setMessages((prev) => [...prev, botErrorMessage]);
+      
+      // Update auth status if it was an auth error
+      if (isAuthError) {
+        setIsAuthenticated(false);
+      }
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleQuickAction = (action: QuickAction) => {

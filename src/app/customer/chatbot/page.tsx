@@ -4,26 +4,47 @@ import { useState, useEffect } from "react";
 import Chatbot from "@/components/customer/Chatbot";
 import { CustomerContext, QuickAction } from "@/lib/types/Chatbot";
 import { useRouter } from "next/navigation";
+import { authService } from "@/lib/services/authService";
 
 export default function ChatbotPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock customer context - in a real app, this would come from your auth/user context
-  const [customerContext] = useState<CustomerContext>({
-    id: "1",
-    name: "John Doe",
-    currentProject: {
-      id: "proj-001",
-      name: "Vehicle Maintenance",
-      status: "in-progress",
-    },
-    currentService: {
-      id: "serv-001",
-      name: "Oil Change",
-      status: "scheduled",
-    },
+  // Get real customer context from auth
+  const [customerContext, setCustomerContext] = useState<CustomerContext>({
+    id: "0",
+    name: "Guest User",
     onlineStatus: "online",
   });
+
+  useEffect(() => {
+    const loadCustomerContext = () => {
+      try {
+        const user = authService.getCurrentUser();
+        
+        if (user) {
+          setCustomerContext({
+            id: user.email, // Use email as id since User doesn't have id field
+            name: user.name || user.email.split('@')[0],
+            onlineStatus: "online",
+            // These can be loaded from actual API calls if needed
+            currentProject: undefined,
+            currentService: undefined,
+          });
+        } else {
+          // Not logged in, redirect to login
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Error loading customer context:', error);
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCustomerContext();
+  }, [router]);
 
   const handleActionClick = (action: QuickAction) => {
     // Handle navigation based on the action
@@ -48,6 +69,17 @@ export default function ChatbotPage() {
         console.log("Action clicked:", action);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading chatbot...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 h-full">
