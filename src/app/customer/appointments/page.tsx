@@ -17,7 +17,6 @@ import NotificationCenter, {
   type NotificationType,
 } from "@/components/customer/NotificationCenter";
 import {
-  timeRangesOverlap,
   getConsultationLabel,
   type ConsultationType,
 } from "@/lib/utils/appointments";
@@ -144,8 +143,8 @@ export default function AppointmentsPage() {
   }, []);
 
   /**
-   * Checks if a new appointment overlaps with existing appointments.
-   * Uses minute-based time comparison for precision.
+   * Checks if a new appointment overlaps with existing appointments on the same day.
+   * Only checks date since endTime is set by backend/employee.
    *
    * @returns The overlapping appointment or undefined if no overlap
    */
@@ -153,8 +152,6 @@ export default function AppointmentsPage() {
     (
       vehicleId: string,
       appointmentDate: string,
-      startTime: string,
-      endTime: string,
       excludeId?: string
     ): AppointmentData | undefined => {
       return appointments.find(
@@ -162,8 +159,7 @@ export default function AppointmentsPage() {
           apt.id !== excludeId &&
           apt.vehicleId === vehicleId &&
           apt.appointmentDate === appointmentDate &&
-          apt.status !== "cancelled" &&
-          timeRangesOverlap(startTime, endTime, apt.startTime, apt.endTime)
+          apt.status !== "cancelled"
       );
     },
     [appointments]
@@ -176,19 +172,17 @@ export default function AppointmentsPage() {
     async (data: AppointmentFormData) => {
       setIsLoading(true);
       try {
-        // Validate no overlapping appointments
+        // Validate no overlapping appointments (one per day per vehicle)
         const overlapping = findOverlappingAppointment(
           data.vehicleId,
-          data.appointmentDate,
-          data.startTime,
-          data.endTime
+          data.appointmentDate
         );
 
         if (overlapping) {
           addNotification(
             "error",
             "Booking Failed",
-            "There is already an appointment for this vehicle at the selected time."
+            "There is already an appointment for this vehicle on the selected date. Please choose a different date."
           );
           return;
         }
@@ -252,13 +246,11 @@ export default function AppointmentsPage() {
 
       setIsLoading(true);
       try {
-        // Check for overlapping appointments (excluding the current one)
-        if (data.appointmentDate && data.startTime && data.endTime) {
+        // Check for overlapping appointments (excluding the current one, one per day per vehicle)
+        if (data.appointmentDate) {
           const overlapping = findOverlappingAppointment(
             editingAppointment.vehicleId,
             data.appointmentDate,
-            data.startTime,
-            data.endTime,
             editingAppointment.id
           );
 
@@ -266,7 +258,7 @@ export default function AppointmentsPage() {
             addNotification(
               "error",
               "Update Failed",
-              "There is already an appointment for this vehicle at the selected time."
+              "There is already an appointment for this vehicle on the selected date. Please choose a different date."
             );
             return;
           }
@@ -279,7 +271,6 @@ export default function AppointmentsPage() {
             date: data.appointmentDate,
             notes: data.notes || data.customerIssue,
             startTime: data.startTime ? `${data.startTime}:00` : undefined,
-            endTime: data.endTime ? `${data.endTime}:00` : undefined,
             status: data.status,
           }
         );
