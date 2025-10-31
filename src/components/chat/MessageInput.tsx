@@ -75,10 +75,10 @@ export const MessageInput = React.memo<MessageInputProps>(
     const canSend = (value.trim() || selectedFile) && !disabled;
 
     return (
-      <div className="border-t p-4">
+      <div className="border-t-2 border-gray-200 bg-white px-6 py-4">
         {/* File Preview */}
         {selectedFile && onFileRemove && (
-          <div className="mb-3 p-2 bg-blue-50 rounded-lg flex items-center justify-between">
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Paperclip className="w-4 h-4 text-blue-500" aria-hidden="true" />
               <span className="text-sm text-blue-700">{selectedFile.name}</span>
@@ -95,7 +95,7 @@ export const MessageInput = React.memo<MessageInputProps>(
         )}
 
         {/* Input Row */}
-        <div className="flex space-x-2">
+        <div className="flex space-x-3">
           {/* Hidden File Input */}
           <input
             ref={fileInputRef}
@@ -127,7 +127,7 @@ export const MessageInput = React.memo<MessageInputProps>(
             placeholder={placeholder}
             onKeyPress={handleKeyPress}
             disabled={disabled}
-            className="flex-1"
+            className="flex-1 py-3 px-4 text-base border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             aria-label="Message input"
             autoFocus
           />
@@ -137,8 +137,9 @@ export const MessageInput = React.memo<MessageInputProps>(
             onClick={handleSend}
             disabled={!canSend}
             aria-label="Send message"
+            className="px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300"
           >
-            <Send className="w-4 h-4" aria-hidden="true" />
+            <Send className="w-5 h-5" aria-hidden="true" />
           </Button>
         </div>
 
