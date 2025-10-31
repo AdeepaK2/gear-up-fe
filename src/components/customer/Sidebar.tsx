@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Car,
@@ -13,6 +13,10 @@ import {
   MessageSquare,
   LogOut,
 } from "lucide-react";
+import { authService } from "@/lib/services/authService";
+import type { User as UserType } from "@/lib/types/Auth";
+import { useToast } from "@/contexts/ToastContext";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 const navItems = [
   { href: "/customer/dashboard", label: "Dashboard", icon: Home },
@@ -25,24 +29,66 @@ const navItems = [
 
 export default function CustomerSidebar() {
   const rawPathname = usePathname() || "/customer/dashboard";
+  const router = useRouter();
+  const toast = useToast();
+
   // Remove trailing slash to normalize the pathname
   const pathname = rawPathname.endsWith("/")
     ? rawPathname.slice(0, -1)
     : rawPathname;
 
-  // Debug: Let's see what pathname we're getting
-  console.log("Current pathname:", pathname, "Raw pathname:", rawPathname);
+  const [user, setUser] = React.useState<UserType | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
+
+  // Fetch authenticated user on component mount
+  React.useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+
+    // If not authenticated, redirect to login
+    if (!currentUser || !authService.isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    try {
+      setIsLoggingOut(true);
+      await authService.logout();
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Logout failed, but redirecting to login");
+      // Still redirect to login even if logout API fails
+      router.push("/login");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50">
-      <div className="mb-8 flex justify-center">
-        <Image
-          src="/Logo.png"
-          alt="Company Logo"
-          width={70}
-          height={40}
-          className="object-contain"
-        />
+      <div className="mb-6 text-center">
+        <div className="inline-flex items-center justify-center bg-gray-100 rounded px-2 py-1 mx-auto">
+          <Image
+            src="/Logo.png"
+            alt="Company Logo"
+            width={110}
+            height={32}
+            className="block"
+          />
+        </div>
+      </div>
+
+      <div className="mb-4 text-center">
+        <p className="font-semibold text-gray-800">{user?.name || "Loading..."}</p>
+        <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
       </div>
 
       <nav className="space-y-2">
@@ -52,11 +98,6 @@ export default function CustomerSidebar() {
             pathname === item.href ||
             (pathname?.startsWith(item.href + "/") &&
               item.href !== "/customer/dashboard");
-
-          // Debug: Let's see the active state for each item
-          console.log(
-            `Item: ${item.label}, href: ${item.href}, active: ${active}, pathname: ${pathname}`
-          );
 
           const Icon = item.icon;
           return (
@@ -88,14 +129,26 @@ export default function CustomerSidebar() {
       </nav>
 
       <div className="mt-auto pt-8">
-        <Link
-          href="/customer/login"
-          className={`flex items-center gap-3 rounded-md px-3 py-2 bg-red-600 text-white`}
+        <button
+          onClick={handleLogoutClick}
+          disabled={isLoggingOut}
+          className={`flex items-center gap-3 rounded-md px-3 py-2 w-full bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           <LogOut size={16} className="text-white" />
-          <span>Logout</span>
-        </Link>
+          <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+        </button>
       </div>
+
+      <ConfirmationDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Confirm Logout"
+        description="Are you sure you want to logout? You will need to login again to access your account."
+        confirmText="Logout"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleLogoutConfirm}
+      />
     </aside>
   );
 }
