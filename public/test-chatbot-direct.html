@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GearUp Chatbot - Direct Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .step h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            display: block;
+        }
+        
+        .result.error {
+            background: #fed7d7;
+            border: 2px solid #e53e3e;
+            color: #7f1d1d;
+            display: block;
+        }
+        
+        .result.info {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+            color: #1e3a8a;
+            display: block;
+        }
+        
+        pre {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .instructions {
+            background: #fff7ed;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .instructions h2 {
+            color: #f59e0b;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 GearUp Chatbot - Direct Backend Test</h1>
+        
+        <div class="instructions">
+            <h2>⚠️ IMPORTANT: Clear Browser Cache First!</h2>
+            <p><strong>The frontend code has been updated, but your browser has cached the old version.</strong></p>
+            <ol>
+                <li><strong>Hard Refresh:</strong> Press <code>Ctrl + Shift + R</code> (Windows) or <code>Cmd + Shift + R</code> (Mac)</li>
+                <li><strong>Or Clear Cache:</strong> Press <code>F12</code> → Go to "Application" tab → "Storage" → "Clear site data"</li>
+                <li><strong>Then reload</strong> the GearUp application</li>
+            </ol>
+            <p style="margin-top: 15px;"><strong>This page tests the backend directly to confirm it's working.</strong></p>
+        </div>
+        
+        <div class="step">
+            <h3>Step 1: Login</h3>
+            <input type="email" id="email" placeholder="Email" value="nethmalgunawardhana@gmail.com" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <input type="password" id="password" placeholder="Password" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="testLogin()">🔐 Login</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Test Chatbot (Direct Backend Call)</h3>
+            <input type="text" id="message" placeholder="Your message" value="Hello, can you help me?" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="testChatbot()">💬 Send Message</button>
+            <div id="chatResult" class="result"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Debug Info</h3>
+            <button onclick="showDebugInfo()">🔍 Show Debug Info</button>
+            <div id="debugResult" class="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let token = null;
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const div = document.getElementById('loginResult');
+            
+            div.className = 'result info';
+            div.textContent = '🔄 Logging in...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    token = data.data.accessToken;
+                    div.className = 'result success';
+                    div.innerHTML = `
+                        <strong>✅ Login Successful!</strong><br>
+                        Token saved for testing<br>
+                        <small>Token: ${token.substring(0, 30)}...</small>
+                    `;
+                } else {
+                    div.className = 'result error';
+                    div.innerHTML = `<strong>❌ Login failed:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                div.className = 'result error';
+                div.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function testChatbot() {
+            const message = document.getElementById('message').value;
+            const div = document.getElementById('chatResult');
+            
+            if (!token) {
+                div.className = 'result error';
+                div.textContent = '❌ Please login first!';
+                return;
+            }
+            
+            div.className = 'result info';
+            div.innerHTML = '🔄 Sending message to chatbot...<br><strong>Debugging token...</strong>';
+            
+            try {
+                // DETAILED TOKEN DEBUGGING
+                console.log('=== TOKEN DEBUG INFO ===');
+                console.log('Full Token:', token);
+                console.log('Token Length:', token.length);
+                console.log('Token First 100 chars:', token.substring(0, 100));
+                console.log('Token Last 50 chars:', token.substring(token.length - 50));
+                
+                // Parse JWT to see what's inside
+                try {
+                    const tokenParts = token.split('.');
+                    console.log('Token Parts Count:', tokenParts.length);
+                    
+                    if (tokenParts.length === 3) {
+                        const payload = JSON.parse(atob(tokenParts[1]));
+                        console.log('Token Payload:', payload);
+                        console.log('Token Issued At:', new Date(payload.iat * 1000));
+                        console.log('Token Expires At:', new Date(payload.exp * 1000));
+                        console.log('Token is Expired?', Date.now() > payload.exp * 1000);
+                        console.log('User ID in token:', payload.userId || payload.sub || 'NOT FOUND');
+                        console.log('Email in token:', payload.email || payload.sub || 'NOT FOUND');
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse token:', parseError);
+                }
+                
+                const authHeader = `Bearer ${token}`;
+                console.log('Authorization Header Length:', authHeader.length);
+                console.log('Authorization Header:', authHeader.substring(0, 100) + '...');
+                
+                console.log('Sending request to:', `${API_BASE}/chat`);
+                console.log('Request Headers:', {
+                    'Content-Type': 'application/json',
+                    'Authorization': authHeader.substring(0, 100) + '...'
+                });
+                
+                const requestBody = {
+                    question: message,
+                    conversationHistory: [],
+                    context: {
+                        customerId: 'nethmalgunawardhana@gmail.com',
+                        currentPage: '/test'
+                    }
+                };
+                console.log('Request Body:', requestBody);
+                
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authHeader
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response statusText:', response.statusText);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok && data.status === 'success') {
+                    div.className = 'result success';
+                    div.innerHTML = `
+                        <strong>✅ Chatbot Response Received!</strong><br>
+                        <strong>Answer:</strong> ${data.data.answer}<br>
+                        <strong>Session ID:</strong> ${data.data.sessionId}<br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    div.className = 'result error';
+                    
+                    // Show detailed debug info in the error
+                    let tokenInfo = 'Unable to parse token';
+                    try {
+                        const tokenParts = token.split('.');
+                        if (tokenParts.length === 3) {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            const isExpired = Date.now() > payload.exp * 1000;
+                            tokenInfo = `
+                                <strong>Token Info:</strong><br>
+                                - User ID: ${payload.userId || payload.sub || 'NOT FOUND'}<br>
+                                - Email: ${payload.email || 'NOT FOUND'}<br>
+                                - Issued: ${new Date(payload.iat * 1000).toLocaleString()}<br>
+                                - Expires: ${new Date(payload.exp * 1000).toLocaleString()}<br>
+                                - Expired: ${isExpired ? '❌ YES' : '✅ NO'}<br>
+                                - Full Payload: <pre>${JSON.stringify(payload, null, 2)}</pre>
+                            `;
+                        }
+                    } catch (e) {
+                        tokenInfo = `Error parsing token: ${e.message}`;
+                    }
+                    
+                    div.innerHTML = `
+                        <strong>❌ Chatbot Request Failed (${response.status})</strong><br>
+                        ${tokenInfo}
+                        <br><strong>Response:</strong>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                        <br><strong>Sent Headers:</strong>
+                        <pre>Authorization: Bearer ${token.substring(0, 50)}...${token.substring(token.length - 20)}</pre>
+                    `;
+                }
+            } catch (error) {
+                div.className = 'result error';
+                div.innerHTML = `❌ Error: ${error.message}<br><pre>${error.stack}</pre>`;
+                console.error('Chatbot test error:', error);
+            }
+        }
+        
+        function showDebugInfo() {
+            const div = document.getElementById('debugResult');
+            
+            const info = {
+                currentToken: token ? `${token.substring(0, 50)}...` : 'No token',
+                apiBase: API_BASE,
+                frontendUrl: window.location.href,
+                localStorage: {
+                    accessToken: localStorage.getItem('accessToken') ? `${localStorage.getItem('accessToken').substring(0, 50)}...` : 'No token',
+                    user: localStorage.getItem('user')
+                }
+            };
+            
+            div.className = 'result info';
+            div.innerHTML = `
+                <strong>🔍 Debug Information:</strong>
+                <pre>${JSON.stringify(info, null, 2)}</pre>
+                <p style="margin-top: 15px;"><strong>⚠️ If frontend chatbot still fails:</strong></p>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Press <strong>Ctrl + Shift + R</strong> to hard refresh the frontend</li>
+                    <li>Or clear browser cache in DevTools (F12 → Application → Clear site data)</li>
+                    <li>Make sure localStorage.accessToken matches the working token above</li>
+                </ol>
+            `;
+        }
+    </script>
+</body>
+</html>

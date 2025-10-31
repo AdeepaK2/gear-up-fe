@@ -57,23 +57,11 @@ export default function ChatbotPage() {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <div className="mb-4 flex-shrink-0">
-        <h1 className="text-3xl font-bold text-primary">
-          Customer Support Chat
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Get instant help with your services, appointments, and account
-          management.
-        </p>
-      </div>
-
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Chatbot
-          customerContext={customerContext}
-          onActionClick={navigateForAction}
-        />
-      </div>
+    <div className="h-screen w-full">
+      <Chatbot
+        customerContext={customerContext}
+        onActionClick={navigateForAction}
+      />
     </div>
   );
 }

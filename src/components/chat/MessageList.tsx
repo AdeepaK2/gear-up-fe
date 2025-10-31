@@ -16,7 +16,7 @@ export const MessageList = React.memo<MessageListProps>(
     if (messages.length === 0) {
       return (
         <div
-          className="flex items-center justify-center h-full text-gray-500"
+          className="flex items-center justify-center min-h-[300px] text-gray-500"
           role="status"
         >
           <div className="text-center">
@@ -36,7 +36,7 @@ export const MessageList = React.memo<MessageListProps>(
         aria-live="polite"
         aria-relevant="additions"
         aria-label="Chat messages"
-        className="space-y-4"
+        className="space-y-6 pb-4 min-h-[200px]"
       >
         {messages.map((message) => (
           <MessageItem

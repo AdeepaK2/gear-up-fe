@@ -14,14 +14,14 @@ interface QuickActionsBarProps {
 export const QuickActionsBar = React.memo<QuickActionsBarProps>(
   ({ actions, onActionClick }) => {
     return (
-      <div className="p-4 border-b bg-gray-50" role="complementary">
+      <div className="px-6 py-2 border-b bg-gray-50" role="complementary">
         <div className="flex flex-wrap gap-2">
           {actions.map((action) => (
             <Button
               key={action.id}
               size="sm"
               variant="outline"
-              className="text-xs"
+              className="text-xs py-1 px-3"
               onClick={() => onActionClick(action)}
               aria-label={action.label}
             >
