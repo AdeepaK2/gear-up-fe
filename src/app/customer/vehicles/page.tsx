@@ -4,14 +4,18 @@ import React from "react";
 import { Car, Edit2, Trash2, Plus } from "lucide-react";
 import { vehicleService } from "@/lib/services/vehicleService";
 import type { Vehicle, VehicleCreateRequest } from "@/lib/types/Vehicle";
+import { useToast } from "@/contexts/ToastContext";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export default function VehiclesPage() {
+  const toast = useToast();
   const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [editingVehicleId, setEditingVehicleId] = React.useState<number | null>(null);
+  const [deleteVehicleId, setDeleteVehicleId] = React.useState<number | null>(null);
   const [form, setForm] = React.useState({
     make: "",
     model: "",
@@ -77,7 +81,7 @@ export default function VehiclesPage() {
 
     // Basic validation
     if (!form.make || !form.model || !form.year || !form.licensePlate || !form.vin) {
-      alert("Please fill all fields");
+      toast.warning("Please fill all required fields");
       return;
     }
 
@@ -96,6 +100,7 @@ export default function VehiclesPage() {
         setVehicles((prev) =>
           prev.map((v) => (v.id === editingVehicleId ? updatedVehicle : v))
         );
+        toast.success("Vehicle updated successfully");
       } else {
         // Create new vehicle
         const vehicleData: VehicleCreateRequest = {
@@ -107,11 +112,12 @@ export default function VehiclesPage() {
         };
         const newVehicle = await vehicleService.createVehicle(vehicleData);
         setVehicles((prev) => [newVehicle, ...prev]);
+        toast.success("Vehicle added successfully");
       }
 
       closeModal();
     } catch (err: any) {
-      alert(err.message || `Failed to ${isEditMode ? "update" : "create"} vehicle`);
+      toast.error(err.message || `Failed to ${isEditMode ? "update" : "create"} vehicle`);
       console.error(`Error ${isEditMode ? "updating" : "creating"} vehicle:`, err);
     } finally {
       setSubmitting(false);
@@ -125,16 +131,20 @@ export default function VehiclesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this vehicle?")) {
-      return;
-    }
+  const handleDeleteClick = (id: number) => {
+    setDeleteVehicleId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteVehicleId) return;
 
     try {
-      await vehicleService.deleteVehicle(id);
-      setVehicles((prev) => prev.filter((v) => v.id !== id));
+      await vehicleService.deleteVehicle(deleteVehicleId);
+      setVehicles((prev) => prev.filter((v) => v.id !== deleteVehicleId));
+      toast.success("Vehicle deleted successfully");
+      setDeleteVehicleId(null);
     } catch (err: any) {
-      alert(err.message || "Failed to delete vehicle");
+      toast.error(err.message || "Failed to delete vehicle");
       console.error("Error deleting vehicle:", err);
     }
   };
@@ -245,7 +255,7 @@ export default function VehiclesPage() {
                   </button>
 
                   <button
-                    onClick={() => handleDelete(v.id)}
+                    onClick={() => handleDeleteClick(v.id)}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
                   >
                     <Trash2 size={18} />
@@ -366,6 +376,17 @@ export default function VehiclesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        open={deleteVehicleId !== null}
+        onOpenChange={(open) => !open && setDeleteVehicleId(null)}
+        title="Delete Vehicle"
+        description="Are you sure you want to delete this vehicle? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 }
