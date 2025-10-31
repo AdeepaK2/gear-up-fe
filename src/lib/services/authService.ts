@@ -62,6 +62,11 @@ class AuthService {
   // Login
   async login(credentials: LoginRequest): Promise<{ user: User; token: string }> {
     try {
+      console.log('🚀 Attempting login with:', { 
+        email: credentials.email,
+        url: API_ENDPOINTS.AUTH.LOGIN 
+      });
+
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {
@@ -71,9 +76,19 @@ class AuthService {
         body: JSON.stringify(credentials),
       });
 
+      console.log('📡 Login response status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || `Login failed with status ${response.status}`;
+          console.error('❌ Login error data:', errorData);
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorMessage = `Login failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const apiResponse: ApiResponse<LoginResponse> = await response.json();
@@ -102,9 +117,16 @@ class AuthService {
       // Store user info
       localStorage.setItem('user', JSON.stringify(user));
 
+      console.log('✅ Login successful for user:', user.email);
       return { user, token: accessToken };
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to server. Please ensure the backend is running on http://localhost:8080');
+      }
+      
       throw error;
     }
   }
@@ -112,6 +134,12 @@ class AuthService {
   // Register
   async register(data: RegisterRequest): Promise<UserResponse> {
     try {
+      console.log('🚀 Attempting registration with:', { 
+        email: data.email, 
+        name: data.name,
+        url: API_ENDPOINTS.AUTH.REGISTER 
+      });
+
       // Backend only expects: email, name, password (no role field)
       const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
@@ -126,15 +154,32 @@ class AuthService {
         }),
       });
 
+      console.log('📡 Registration response status:', response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        let errorMessage = 'Registration failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || `Registration failed with status ${response.status}`;
+          console.error('❌ Registration error data:', errorData);
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorMessage = `Registration failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const apiResponse: ApiResponse<UserResponse> = await response.json();
+      console.log('✅ Registration successful:', apiResponse);
       return apiResponse.data;
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to server. Please ensure the backend is running on http://localhost:8080');
+      }
+      
       throw error;
     }
   }

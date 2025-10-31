@@ -19,6 +19,7 @@ import { QuickActionsBar } from "@/components/chat/QuickActionsBar";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { debugLog } from "@/lib/utils/debugLog";
+import { chatbotService, type ChatMessage } from "@/lib/services/chatbotService";
 
 interface ChatbotProps {
   customerContext: CustomerContext;
@@ -214,7 +215,7 @@ export default function Chatbot({
 
   /**
    * Handle sending a message
-   * Simulates bot response after delay
+   * Calls the real RAG chatbot API through Spring Boot
    */
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() && !filePreview) return;
@@ -238,24 +239,65 @@ export default function Chatbot({
     setFilePreview(null);
     setIsTyping(true);
 
-    // Simulate bot response delay
-    setTimeout(() => {
-      const botResponse = generateBotResponse(userMessage.content);
+    try {
+      // Convert messages to conversation history format
+      const conversationHistory: ChatMessage[] = messages.map((msg) => ({
+        role: msg.sender === "customer" ? "user" : "assistant",
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+      }));
+
+      // Send message to RAG chatbot service
+      const response = await chatbotService.sendMessage({
+        question: userMessage.content,
+        conversationHistory,
+        context: {
+          customerId: customerContext.id, // String id (email)
+          currentPage: "/customer/chatbot",
+          metadata: {
+            customerName: customerContext.name,
+            currentProject: customerContext.currentProject,
+            currentService: customerContext.currentService,
+          },
+        },
+      });
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: botResponse.message,
+        content: response.answer,
         sender: "bot",
-        timestamp: new Date(),
+        timestamp: new Date(response.timestamp),
         type: "text",
         metadata: {
-          actions: botResponse.quickActions,
+          sessionId: response.sessionId,
+          confidence: response.confidence,
+          sources: response.sources,
         },
       };
 
       setMessages((prev) => [...prev, botMessage]);
       setIsTyping(false);
-    }, 1500);
-  }, [inputValue, filePreview, generateBotResponse]);
+
+    } catch (error) {
+      console.error('Error sending message to chatbot:', error);
+      
+      // Fallback to mock response if API fails
+      const fallbackResponse = generateBotResponse(userMessage.content);
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: `I'm having trouble connecting to the chatbot service. Here's a general response: ${fallbackResponse.message}`,
+        sender: "bot",
+        timestamp: new Date(),
+        type: "text",
+        metadata: {
+          actions: fallbackResponse.quickActions,
+        },
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+      setIsTyping(false);
+    }
+  }, [inputValue, filePreview, messages, customerContext, generateBotResponse]);
 
   /**
    * Handle quick action click
@@ -358,39 +400,47 @@ export default function Chatbot({
   }, []);
 
   return (
-    <div className="flex flex-col h-full max-w-6xl mx-auto bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-screen w-full bg-white">
       {/* Context Header */}
-      <ChatHeader
-        customerContext={customerContext}
-        isEscalated={isEscalated}
-        estimatedWaitTime={estimatedWaitTime}
-      />
+      <div className="flex-shrink-0">
+        <ChatHeader
+          customerContext={customerContext}
+          isEscalated={isEscalated}
+          estimatedWaitTime={estimatedWaitTime}
+        />
+      </div>
 
       {/* Quick Actions */}
-      <QuickActionsBar
-        actions={quickActions}
-        onActionClick={handleQuickAction}
-      />
+      <div className="flex-shrink-0">
+        <QuickActionsBar
+          actions={quickActions}
+          onActionClick={handleQuickAction}
+        />
+      </div>
 
-      {/* Chat Messages */}
-      <ChatWindow
-        messages={messages}
-        isTyping={isTyping}
-        onQuickAction={handleQuickAction}
-      />
+      {/* Chat Messages - This should take up most of the space */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ChatWindow
+          messages={messages}
+          isTyping={isTyping}
+          onQuickAction={handleQuickAction}
+        />
+      </div>
 
       {/* Input Area */}
-      <MessageInput
-        value={inputValue}
-        onChange={setInputValue}
-        onSend={handleSendMessage}
-        onFileSelect={handleFileSelect}
-        onFileRemove={handleFileRemove}
-        selectedFile={filePreview}
-      />
+      <div className="flex-shrink-0">
+        <MessageInput
+          value={inputValue}
+          onChange={setInputValue}
+          onSend={handleSendMessage}
+          onFileSelect={handleFileSelect}
+          onFileRemove={handleFileRemove}
+          selectedFile={filePreview}
+        />
+      </div>
 
       {/* Footer Actions */}
-      <div className="px-4 pb-4 flex justify-end">
+      <div className="flex-shrink-0 px-4 pb-2 flex justify-end">
         <Button
           size="sm"
           variant="ghost"

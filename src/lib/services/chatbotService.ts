@@ -58,7 +58,7 @@ class ChatbotService {
   private sessionId: string | null = null;
 
   constructor() {
-    this.baseUrl = API_ENDPOINTS.BASE_URL;
+    this.baseUrl = API_ENDPOINTS.CHAT.BASE;
   }
 
   /**
@@ -89,7 +89,7 @@ class ChatbotService {
    */
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     try {
-      const response = await authService.authenticatedFetch(`${this.baseUrl}/chat`, {
+      const response = await authService.authenticatedFetch(API_ENDPOINTS.CHAT.SEND, {
         method: 'POST',
         body: JSON.stringify({
           question: request.question,
@@ -128,7 +128,7 @@ class ChatbotService {
       // Get fresh auth headers (will check expiration and refresh if needed)
       const headers = await this.getAuthHeaders();
       
-      const response = await fetch(`${this.baseUrl}/chat/stream`, {
+      const response = await fetch(API_ENDPOINTS.CHAT.STREAM, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -189,7 +189,7 @@ class ChatbotService {
   async getChatHistory(sessionId: string): Promise<ChatHistory[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${this.baseUrl}/chat/history/${sessionId}`,
+        `${API_ENDPOINTS.CHAT.HISTORY}/${sessionId}`,
         {
           method: 'GET',
         }

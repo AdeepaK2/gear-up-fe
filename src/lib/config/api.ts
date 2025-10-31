@@ -28,10 +28,10 @@ export const API_ENDPOINTS = {
     BASE: `${API_BASE_URL}/vehicles`,
   },
   CHAT: {
-    BASE: `${API_BASE_URL}/chat`,
-    SEND: `${API_BASE_URL}/chat`,
-    STREAM: `${API_BASE_URL}/chat/stream`,
-    HISTORY: `${API_BASE_URL}/chat/history`,
+    BASE: `${API_BASE_URL}/rag-chat`,
+    SEND: `${API_BASE_URL}/rag-chat`,
+    STREAM: `${API_BASE_URL}/rag-chat/stream`,
+    HISTORY: `${API_BASE_URL}/rag-chat/history`,
   },
 };
 
