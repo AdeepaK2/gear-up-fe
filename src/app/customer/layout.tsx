@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/customer/Sidebar";
+import Header from "@/components/customer/Header";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
 import { UserRole } from "@/lib/types/Auth";
 
@@ -26,8 +27,11 @@ export default function CustomerLayout({
         {/* Fixed Sidebar */}
         <Sidebar />
 
-        {/* Main content with left padding to accommodate fixed sidebar */}
-        <main className="ml-64 p-8">{children}</main>
+        {/* Page wrapper: reserve top space for header (h-16) and apply left margin on md+ to avoid sidebar overlap */}
+        <div className="ml-0 md:ml-64 pt-16">
+          <Header />
+          <main className="p-4 max-w-full">{children}</main>
+        </div>
       </div>
     </ProtectedRoute>
   );
