@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         logout,
-        isAuthenticated: authService.isAuthenticated(),
+        isAuthenticated: typeof window !== 'undefined' ? authService.isAuthenticated() : false,
         hasRole,
       }}
     >
