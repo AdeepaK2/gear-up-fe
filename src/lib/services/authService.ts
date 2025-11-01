@@ -263,6 +263,10 @@ class AuthService {
 
   // Get access token
   getAccessToken(): string | null {
+    if (typeof window === 'undefined') {
+      // Server-side rendering - no localStorage available
+      return this.accessToken || null;
+    }
     return this.accessToken || localStorage.getItem('accessToken');
   }
 
