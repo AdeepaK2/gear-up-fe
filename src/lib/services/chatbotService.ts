@@ -43,6 +43,13 @@ export interface ChatStreamChunk {
   timestamp: string;
 }
 
+export interface ChatSession {
+  sessionId: string;
+  title: string;
+  createdAt: string;
+  customerEmail?: string;
+}
+
 export interface ChatHistory {
   id: number;
   sessionId: string;
@@ -56,6 +63,9 @@ export interface ChatHistory {
 class ChatbotService {
   private baseUrl: string;
   private sessionId: string | null = null;
+  private sessionsCache: { data: ChatSession[], timestamp: number } | null = null;
+  private historyCache: Map<string, { data: ChatMessage[], timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 30000; // 30 seconds cache
 
   constructor() {
     this.baseUrl = API_ENDPOINTS.CHAT.BASE;
@@ -229,10 +239,199 @@ class ChatbotService {
   }
 
   /**
+   * Get all chat sessions for current user
+   */
+  async getChatSessions(limit: number = 20): Promise<ChatSession[]> {
+    try {
+      // Check cache first
+      const now = Date.now();
+      if (this.sessionsCache && (now - this.sessionsCache.timestamp) < this.CACHE_DURATION) {
+        console.log('Returning cached sessions');
+        return this.sessionsCache.data;
+      }
+
+      const response = await authService.authenticatedFetch(`${this.baseUrl}/sessions?limit=${limit}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `HTTP error! status: ${response.status}`;
+        console.error('Get sessions error details:', errorData);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      const sessions = data.data?.sessions || [];
+      
+      // Cache the result
+      this.sessionsCache = {
+        data: sessions,
+        timestamp: now
+      };
+      
+      return sessions;
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+      // Return cached data if available, otherwise empty array
+      return this.sessionsCache?.data || [];
+    }
+  }
+
+  /**
+   * Create a new chat session
+   */
+  async createChatSession(title?: string): Promise<ChatSession> {
+    try {
+      const response = await authService.authenticatedFetch(`${this.baseUrl}/sessions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: title || 'New Chat' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || `HTTP error! status: ${response.status}`;
+        console.error('Create session error details:', errorData);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      const newSession = data.data;
+      
+      // Set this as the current session
+      this.sessionId = newSession.sessionId;
+      
+      // Invalidate sessions cache since we created a new session
+      this.sessionsCache = null;
+      
+      return newSession;
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+      
+      // Create a fallback local session for development/testing
+      const fallbackSession: ChatSession = {
+        sessionId: `local-${Date.now()}`,
+        title: title || 'New Chat (Local)',
+        createdAt: new Date().toISOString()
+      };
+      
+      console.warn('Using fallback local session:', fallbackSession);
+      this.sessionId = fallbackSession.sessionId;
+      
+      return fallbackSession;
+    }
+  }
+
+  /**
+   * Delete a chat session
+   */
+  async deleteChatSession(sessionId: string): Promise<void> {
+    try {
+      const response = await authService.authenticatedFetch(`${this.baseUrl}/sessions/${sessionId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // If we're deleting the current session, clear it
+      if (this.sessionId === sessionId) {
+        this.sessionId = null;
+      }
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load chat history for a specific session
+   */
+  async loadChatSession(sessionId: string): Promise<ChatMessage[]> {
+    try {
+      // Check cache first
+      const now = Date.now();
+      const cached = this.historyCache.get(sessionId);
+      if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+        console.log('Returning cached chat history for session:', sessionId);
+        this.sessionId = sessionId;
+        return cached.data;
+      }
+
+      const response = await authService.authenticatedFetch(`${this.baseUrl}/history/${sessionId}`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const history = data.data || [];
+      
+      // Set this as the current session
+      this.sessionId = sessionId;
+      
+      // Convert to ChatMessage format - each DB record has both question and answer
+      const messages: ChatMessage[] = [];
+      
+      history.forEach((record: any) => {
+        // Add user message (question)
+        if (record.question) {
+          messages.push({
+            role: 'user',
+            content: record.question,
+            timestamp: record.created_at || record.timestamp
+          });
+        }
+        
+        // Add bot message (answer)
+        if (record.answer) {
+          messages.push({
+            role: 'assistant',
+            content: record.answer,
+            timestamp: record.created_at || record.timestamp
+          });
+        }
+      });
+      
+      // Cache the result
+      this.historyCache.set(sessionId, {
+        data: messages,
+        timestamp: now
+      });
+      
+      return messages;
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Clear current session
    */
   clearSession(): void {
     this.sessionId = null;
+  }
+
+  /**
+   * Clear all caches
+   */
+  clearCaches(): void {
+    this.sessionsCache = null;
+    this.historyCache.clear();
+  }
+
+  /**
+   * Invalidate sessions cache (call after creating/deleting sessions)
+   */
+  invalidateSessionsCache(): void {
+    this.sessionsCache = null;
   }
 
   /**
