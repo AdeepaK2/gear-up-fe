@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   },
   ADMIN: {
     BASE: `${API_BASE_URL}/admin`,
+    EMPLOYEES: `${API_BASE_URL}/admin/employees`,
   },
   APPOINTMENTS: {
     BASE: `${API_BASE_URL}/appointments`,
