@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../config/api';
 import { authService } from './authService';
+import type { EmployeeTaskSummary } from '../types/Employee';
 
 export interface CreateEmployeeRequest {
   name: string;
@@ -172,6 +173,48 @@ class EmployeeService {
       }
     } catch (error: any) {
       console.error('Delete employee error:', error);
+      throw error;
+    }
+  }
+
+  // Get current employee info
+  async getCurrentEmployee(): Promise<Employee> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.EMPLOYEE.BASE}/me`,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch current employee');
+      }
+
+      const apiResponse: ApiResponse<Employee> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Get current employee error:', error);
+      throw error;
+    }
+  }
+
+  // Get employee task summary for dashboard
+  async getEmployeeTaskSummary(): Promise<{ [key: string]: number }> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.TASKS.EMPLOYEE_SUMMARY}`,
+        { method: 'GET' }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch task summary');
+      }
+
+      const apiResponse: ApiResponse<{ [key: string]: number }> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Get task summary error:', error);
       throw error;
     }
   }

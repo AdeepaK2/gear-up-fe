@@ -122,6 +122,132 @@ class AppointmentService {
       throw error;
     }
   }
+
+  // Employee-specific methods
+
+  // Get all appointments for the current employee
+  async getEmployeeAppointments(): Promise<Appointment[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.APPOINTMENTS.EMPLOYEE,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch employee appointments');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching employee appointments:', error);
+      throw error;
+    }
+  }
+
+  // Get upcoming appointments for the current employee
+  async getEmployeeUpcomingAppointments(): Promise<Appointment[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.APPOINTMENTS.EMPLOYEE_UPCOMING,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch upcoming appointments');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching upcoming appointments:', error);
+      throw error;
+    }
+  }
+
+  // Get appointments by month and statuses
+  async getAppointmentsByMonth(year: number, month: number, statuses?: string[]): Promise<Appointment[]> {
+    try {
+      const params = new URLSearchParams({
+        year: year.toString(),
+        month: month.toString(),
+      });
+
+      if (statuses && statuses.length > 0) {
+        statuses.forEach(status => params.append('statuses', status));
+      }
+
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BY_MONTH}?${params.toString()}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch appointments by month');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching appointments by month:', error);
+      throw error;
+    }
+  }
+
+  // Filter appointments by date
+  async getAppointmentsByDate(date: string): Promise<Appointment[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.FILTER_BY_DATE}?date=${date}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch appointments by date');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching appointments by date:', error);
+      throw error;
+    }
+  }
+
+  // Search appointments
+  async searchAppointments(keyword: string): Promise<Appointment[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.SEARCH}?keyword=${encodeURIComponent(keyword)}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to search appointments');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error searching appointments:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

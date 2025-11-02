@@ -88,14 +88,19 @@ export interface Notification {
 // Backend API types (matching backend DTOs)
 export interface Appointment {
   id: number;
-  date: string; // LocalDate as string
-  status: string;
-  notes: string | null;
-  startTime: string | null; // LocalTime as string
-  endTime: string | null; // LocalTime as string
   vehicleId: number;
+  vehicleName: string;
+  vehicleDetails: string;
   customerId: number;
   employeeId: number | null;
+  consultationType: string;
+  consultationTypeLabel: string;
+  appointmentDate: string; // LocalDate as string
+  startTime: string | null; // LocalTime as string
+  endTime: string | null; // LocalTime as string
+  status: string;
+  customerIssue: string | null;
+  notes: string | null;
   taskIds: number[] | null;
 }
 

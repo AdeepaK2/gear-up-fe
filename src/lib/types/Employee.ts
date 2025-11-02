@@ -36,3 +36,28 @@ export interface ApiResponse<T> {
   timestamp: string;
   path: string;
 }
+
+// Employee Dashboard Types
+export interface EmployeeTaskSummary {
+  total?: number;
+  assigned?: number;
+  inProgress?: number;
+  completed?: number;
+  pending?: number;
+  completedToday?: number;
+  [key: string]: number | undefined;
+}
+
+export interface EmployeeDashboardData {
+  taskSummary: EmployeeTaskSummary;
+  recentAppointments: any[];
+  upcomingAppointments: any[];
+}
+
+// Employee Available Slots DTO
+export interface EmployeeAvailableSlot {
+  employeeId: number;
+  employeeName: string;
+  date: string;
+  availableSlots: string[];
+}
