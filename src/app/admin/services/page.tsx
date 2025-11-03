@@ -28,10 +28,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/contexts/ToastContext";
 
 interface Service {
-  id: number;
+  taskId: number; // Backend uses taskId, not id
   name: string;
   description: string;
   estimatedHours: number;
+  estimatedCost: number;
+  category: string;
+  priority: string;
+  notes: string;
+  requestedBy: string;
+  status: string;
   createdAt: string;
 }
 
@@ -49,6 +55,10 @@ export default function ServicesPage() {
     name: "",
     description: "",
     estimatedHours: "",
+    estimatedCost: "",
+    category: "General",
+    priority: "Medium",
+    notes: "",
   });
 
   useEffect(() => {
@@ -70,7 +80,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/services", {
+      const response = await fetch("http://localhost:8080/api/v1/tasks", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -108,7 +118,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/services", {
+      const response = await fetch("http://localhost:8080/api/v1/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,7 +127,13 @@ export default function ServicesPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          estimatedHours: parseFloat(formData.estimatedHours),
+          estimatedHours: parseInt(formData.estimatedHours),
+          estimatedCost: parseFloat(formData.estimatedCost) || 0,
+          category: formData.category,
+          priority: formData.priority,
+          notes: formData.notes || "No additional notes",
+          requestedBy: "Admin",
+          appointmentId: null, // No appointment for standalone services
         }),
       });
 
@@ -127,12 +143,21 @@ export default function ServicesPage() {
       }
 
       if (!response.ok) {
-        throw new Error("Failed to add service");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add service");
       }
 
       toast.success("Service added successfully!");
       setIsDialogOpen(false);
-      setFormData({ name: "", description: "", estimatedHours: "" });
+      setFormData({ 
+        name: "", 
+        description: "", 
+        estimatedHours: "",
+        estimatedCost: "",
+        category: "General",
+        priority: "Medium",
+        notes: "",
+      });
       fetchServices();
     } catch (err: any) {
       toast.error(err.message || "Failed to add service");
@@ -154,7 +179,7 @@ export default function ServicesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/services/${serviceId}`,
+        `http://localhost:8080/api/v1/tasks/${serviceId}`,
         {
           method: "DELETE",
           headers: {
@@ -262,7 +287,7 @@ export default function ServicesPage() {
                       htmlFor="name"
                       className="text-sm font-semibold text-gray-700"
                     >
-                      Service Name
+                      Service Name *
                     </Label>
                     <Input
                       id="name"
@@ -281,7 +306,7 @@ export default function ServicesPage() {
                       htmlFor="description"
                       className="text-sm font-semibold text-gray-700"
                     >
-                      Service Description
+                      Service Description *
                     </Label>
                     <Input
                       id="description"
@@ -295,28 +320,119 @@ export default function ServicesPage() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="hours"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Estimated Hours *
+                      </Label>
+                      <Input
+                        id="hours"
+                        type="number"
+                        step="1"
+                        min="0"
+                        placeholder="e.g., 2"
+                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                        value={formData.estimatedHours}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            estimatedHours: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="cost"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Estimated Cost *
+                      </Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="e.g., 99.99"
+                        className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                        value={formData.estimatedCost}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            estimatedCost: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="category"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Category
+                      </Label>
+                      <select
+                        id="category"
+                        className="h-12 w-full border-gray-200 rounded-lg px-4 focus:border-primary focus:ring-primary/20 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                        value={formData.category}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
+                      >
+                        <option value="General">General</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Repair">Repair</option>
+                        <option value="Inspection">Inspection</option>
+                        <option value="Diagnostic">Diagnostic</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="priority"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Priority
+                      </Label>
+                      <select
+                        id="priority"
+                        className="h-12 w-full border-gray-200 rounded-lg px-4 focus:border-primary focus:ring-primary/20 bg-white/70 backdrop-blur-sm transition-all duration-200"
+                        value={formData.priority}
+                        onChange={(e) =>
+                          setFormData({ ...formData, priority: e.target.value })
+                        }
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label
-                      htmlFor="hours"
+                      htmlFor="notes"
                       className="text-sm font-semibold text-gray-700"
                     >
-                      Estimated Hours
+                      Additional Notes
                     </Label>
                     <Input
-                      id="hours"
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      placeholder="Enter estimated duration (e.g., 2.5)"
+                      id="notes"
+                      placeholder="Any additional information"
                       className="h-12 border-gray-200 focus:border-primary focus:ring-primary/20 bg-white/70 backdrop-blur-sm transition-all duration-200"
-                      value={formData.estimatedHours}
+                      value={formData.notes}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          estimatedHours: e.target.value,
-                        })
+                        setFormData({ ...formData, notes: e.target.value })
                       }
-                      required
                     />
                   </div>
                 </div>
@@ -393,7 +509,7 @@ export default function ServicesPage() {
                 {filteredServices.length > 0 ? (
                   filteredServices.map((service) => (
                     <TableRow
-                      key={service.id}
+                      key={service.taskId}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <TableCell className="py-6 text-gray-900 font-medium">
@@ -415,7 +531,7 @@ export default function ServicesPage() {
                           variant="ghost"
                           size="sm"
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          onClick={() => handleDeleteService(service.id)}
+                          onClick={() => handleDeleteService(service.taskId)}
                         >
                           Delete Service
                         </Button>

@@ -267,7 +267,8 @@ class AuthService {
       // Server-side rendering - no localStorage available
       return this.accessToken || null;
     }
-    return this.accessToken || localStorage.getItem('accessToken');
+    // Check both possible token storage keys for compatibility
+    return this.accessToken || localStorage.getItem('accessToken') || localStorage.getItem('token');
   }
 
   // Check if user is authenticated
