@@ -21,6 +21,11 @@ interface CustomerProfile {
   dateOfBirth?: string;
   address: string;
   profilePicture?: string;
+  // Separate fields for backend
+  addressLine?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
 }
 
 export default function ProfilePage() {
@@ -57,7 +62,12 @@ export default function ProfilePage() {
         fullName: customerData.name,
         email: customerData.email,
         mobile: customerData.phoneNumber,
-        address: `${customerData.address}, ${customerData.city}, ${customerData.country} ${customerData.postalCode}`,
+        address: `${customerData.address || ''}, ${customerData.city || ''}, ${customerData.country || ''} ${customerData.postalCode || ''}`.trim().replace(/^,\s*|,\s*$/g, ''),
+        // Store individual fields for editing
+        addressLine: customerData.address,
+        city: customerData.city,
+        country: customerData.country,
+        postalCode: customerData.postalCode,
         // These fields are not in backend yet
         nic: undefined,
         gender: undefined,
@@ -83,10 +93,33 @@ export default function ProfilePage() {
 
   const saveProfile = useCallback(async (updatedProfile: CustomerProfile) => {
     try {
-      // Only send name and phoneNumber as per backend UpdateCustomerRequest
+      // Parse the address field if it's been edited as a single string
+      // Expected format: "address, city, country postalCode"
+      let addressLine = updatedProfile.addressLine;
+      let city = updatedProfile.city;
+      let country = updatedProfile.country;
+      let postalCode = updatedProfile.postalCode;
+
+      // If the user edited the combined address field, try to parse it
+      if (updatedProfile.address && !updatedProfile.addressLine) {
+        const parts = updatedProfile.address.split(',').map(p => p.trim());
+        if (parts.length >= 3) {
+          addressLine = parts[0];
+          city = parts[1];
+          const countryPostal = parts[2].split(' ');
+          country = countryPostal.slice(0, -1).join(' ');
+          postalCode = countryPostal[countryPostal.length - 1];
+        }
+      }
+
+      // Send update with all fields
       await customerService.updateCurrentCustomerProfile({
         name: updatedProfile.fullName,
         phoneNumber: updatedProfile.mobile,
+        address: addressLine,
+        city: city,
+        country: country,
+        postalCode: postalCode,
       });
       
       setProfile(updatedProfile);

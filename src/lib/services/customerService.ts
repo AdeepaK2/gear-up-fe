@@ -26,6 +26,10 @@ export interface CreateCustomerRequest {
 export interface UpdateCustomerRequest {
   name: string;
   phoneNumber: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
 }
 
 export interface ApiResponse<T> {
