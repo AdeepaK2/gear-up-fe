@@ -58,13 +58,16 @@ export const ChatWindow = React.memo<ChatWindowProps>(
 
     return (
       <div
-        className="flex-1 overflow-y-auto p-4 relative"
+        className="h-full overflow-y-auto px-6 py-6 relative bg-gray-100"
         ref={scrollContainerRef}
         onScroll={handleScroll}
+        style={{ minHeight: '400px' }}
       >
-        <MessageList messages={messages} onQuickAction={onQuickAction} />
+        <div className="max-w-4xl mx-auto">
+          <MessageList messages={messages} onQuickAction={onQuickAction} />
 
-        {isTyping && <TypingIndicator />}
+          {isTyping && <TypingIndicator />}
+        </div>
 
         <div ref={messagesEndRef} />
 

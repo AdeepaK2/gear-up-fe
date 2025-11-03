@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Chatbot Auth</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .token-display {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .error {
+            color: #e53e3e;
+            background: #fed7d7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #38a169;
+            background: #c6f6d5;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #2c5282;
+            background: #bee3f8;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Chatbot Authentication Debugger</h1>
+        
+        <div class="section">
+            <h3>Step 1: Check Current Token</h3>
+            <button onclick="checkToken()">Check localStorage Token</button>
+            <div id="tokenInfo"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Step 2: Test Backend Login</h3>
+            <input type="email" id="email" placeholder="Email" value="nethmalgunawardhana@gmail.com" style="width: 300px; padding: 8px; margin: 5px;">
+            <input type="password" id="password" placeholder="Password" style="width: 300px; padding: 8px; margin: 5px;">
+            <br>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Step 3: Test Chatbot API</h3>
+            <button onclick="testChatbot()">Test Chatbot with Current Token</button>
+            <button onclick="testChatbotWithFreshToken()">Test Chatbot with Fresh Token</button>
+            <div id="chatbotResult"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Step 4: Clear and Reset</h3>
+            <button onclick="clearAndReset()">Clear localStorage & Reset</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let freshToken = null;
+        
+        function checkToken() {
+            const token = localStorage.getItem('accessToken');
+            const user = localStorage.getItem('user');
+            const div = document.getElementById('tokenInfo');
+            
+            if (!token) {
+                div.innerHTML = '<div class="error">❌ No token found in localStorage!</div>';
+                return;
+            }
+            
+            try {
+                // Decode JWT
+                const parts = token.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                const exp = new Date(payload.exp * 1000);
+                const now = new Date();
+                const isExpired = exp < now;
+                
+                div.innerHTML = `
+                    <div class="${isExpired ? 'error' : 'success'}">
+                        <strong>${isExpired ? '⚠️ Token EXPIRED' : '✅ Token Valid'}</strong><br>
+                        Expires: ${exp.toLocaleString()}<br>
+                        Email: ${payload.sub}<br>
+                        Issued: ${new Date(payload.iat * 1000).toLocaleString()}
+                    </div>
+                    <div class="token-display">${token}</div>
+                    <pre>${JSON.stringify(payload, null, 2)}</pre>
+                `;
+                
+                if (user) {
+                    const userData = JSON.parse(user);
+                    div.innerHTML += `<div class="info"><strong>User Data:</strong><pre>${JSON.stringify(userData, null, 2)}</pre></div>`;
+                }
+            } catch (e) {
+                div.innerHTML = `<div class="error">❌ Error decoding token: ${e.message}</div>`;
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const div = document.getElementById('loginResult');
+            
+            div.innerHTML = '<div class="info">🔄 Logging in...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    freshToken = data.data.accessToken;
+                    div.innerHTML = `
+                        <div class="success">
+                            ✅ Login Successful!<br>
+                            Token saved for testing
+                        </div>
+                        <div class="token-display">${freshToken}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    div.innerHTML = `<div class="error">❌ Login failed:<br><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+                }
+            } catch (error) {
+                div.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testChatbot() {
+            const token = localStorage.getItem('accessToken');
+            await testChatbotWithToken(token, 'localStorage token');
+        }
+        
+        async function testChatbotWithFreshToken() {
+            if (!freshToken) {
+                alert('Please login first to get a fresh token!');
+                return;
+            }
+            await testChatbotWithToken(freshToken, 'fresh login token');
+        }
+        
+        async function testChatbotWithToken(token, tokenSource) {
+            const div = document.getElementById('chatbotResult');
+            
+            if (!token) {
+                div.innerHTML = '<div class="error">❌ No token available! Please login first.</div>';
+                return;
+            }
+            
+            div.innerHTML = `<div class="info">🔄 Testing chatbot with ${tokenSource}...</div>`;
+            
+            const chatRequest = {
+                question: "Hello, can you help me?",
+                conversationHistory: [],
+                context: {
+                    customerId: "nethmalgunawardhana@gmail.com",
+                    currentPage: "/customer/chatbot",
+                    metadata: {
+                        customerName: "nethmalgunawardhana"
+                    }
+                }
+            };
+            
+            console.log('Sending request:', {
+                url: `${API_BASE}/chat`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token.substring(0, 20)}...`
+                },
+                body: chatRequest
+            });
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(chatRequest)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    div.innerHTML = `
+                        <div class="success">
+                            ✅ Chatbot Response Received!<br>
+                            Used: ${tokenSource}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="error">
+                            ❌ Chatbot Request Failed (${response.status})<br>
+                            Used: ${tokenSource}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                div.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function clearAndReset() {
+            localStorage.clear();
+            sessionStorage.clear();
+            freshToken = null;
+            document.getElementById('tokenInfo').innerHTML = '<div class="success">✅ Storage cleared!</div>';
+            document.getElementById('loginResult').innerHTML = '';
+            document.getElementById('chatbotResult').innerHTML = '';
+        }
+        
+        // Auto-check token on load
+        window.addEventListener('load', checkToken);
+    </script>
+</body>
+</html>
