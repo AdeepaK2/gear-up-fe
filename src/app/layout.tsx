@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import DemoModeBanner from "../components/shared/DemoModeBanner";
-import Providers from "../components/providers/Providers";
+import { ToastProvider } from "../contexts/ToastContext";
+import ClientAuthProvider from "../components/providers/ClientAuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +36,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <DemoModeBanner />
-          {children}
-        </Providers>
+        <ClientAuthProvider>
+          <ToastProvider>
+            <DemoModeBanner />
+            {children}
+          </ToastProvider>
+        </ClientAuthProvider>
       </body>
     </html>
   );

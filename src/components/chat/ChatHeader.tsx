@@ -1,6 +1,8 @@
 import React from "react";
-import { User, Clock } from "lucide-react";
+import { User, Clock, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { CustomerContext } from "@/lib/types/Chatbot";
 
 interface ChatHeaderProps {
@@ -15,22 +17,37 @@ interface ChatHeaderProps {
  */
 export const ChatHeader = React.memo<ChatHeaderProps>(
   ({ customerContext, isEscalated = false, estimatedWaitTime = null }) => {
+    const router = useRouter();
+
+    const handleBackClick = () => {
+      router.push("/customer");
+    };
+
     return (
       <div
-        className="bg-gradient-to-r from-primary to-primary/90 text-white p-4 rounded-t-lg"
+        className="bg-gradient-to-r from-primary to-primary/90 text-white px-6 py-3"
         role="banner"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackClick}
+              className="text-white hover:bg-white/10 p-2"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
             <div
-              className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center"
+              className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center"
               aria-hidden="true"
             >
-              <User className="w-5 h-5" />
+              <User className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-semibold text-lg">{customerContext.name}</h2>
-              <div className="flex items-center space-x-4 text-sm text-white/80">
+              <h2 className="font-semibold text-base">{customerContext.name}</h2>
+              <div className="flex items-center space-x-4 text-xs text-white/80">
                 {customerContext.currentProject && (
                   <span>Project: {customerContext.currentProject.name}</span>
                 )}

@@ -25,19 +25,19 @@ export const MessageItem = React.memo<MessageItemProps>(
 
     return (
       <div
-        className={`flex ${isCustomer ? "justify-end" : "justify-start"} mb-4`}
+        className={`flex ${isCustomer ? "justify-end" : "justify-start"} mb-6`}
         role="article"
         aria-label={`Message from ${message.sender} at ${formatTime(
           message.timestamp
         )}`}
       >
         <div
-          className={`flex items-start space-x-2 max-w-[80%] ${
+          className={`flex items-start space-x-3 max-w-[85%] ${
             isCustomer ? "flex-row-reverse space-x-reverse" : ""
           }`}
         >
           <div
-            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${
               isCustomer
                 ? "bg-blue-500"
                 : message.sender === "bot"
@@ -47,22 +47,22 @@ export const MessageItem = React.memo<MessageItemProps>(
             aria-hidden="true"
           >
             {isCustomer ? (
-              <User className="w-4 h-4 text-white" />
+              <User className="w-5 h-5 text-white" />
             ) : message.sender === "bot" ? (
-              <Bot className="w-4 h-4 text-gray-600" />
+              <Bot className="w-5 h-5 text-gray-600" />
             ) : (
-              <User className="w-4 h-4 text-white" />
+              <User className="w-5 h-5 text-white" />
             )}
           </div>
 
           <div
-            className={`rounded-lg px-4 py-2 ${
+            className={`rounded-lg px-5 py-3 shadow-sm ${
               isCustomer
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-800 border"
+                : "bg-white text-gray-800 border border-gray-200"
             }`}
           >
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
 
             {message.metadata?.fileName && (
               <div className="mt-2 p-2 bg-white bg-opacity-20 rounded flex items-center space-x-2">
