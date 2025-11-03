@@ -23,6 +23,11 @@ export interface CreateCustomerRequest {
   postalCode: string;
 }
 
+export interface UpdateCustomerRequest {
+  name: string;
+  phoneNumber: string;
+}
+
 export interface ApiResponse<T> {
   status: string;
   message: string;
@@ -159,6 +164,56 @@ class CustomerService {
       }
     } catch (error: any) {
       console.error('Reactivate customer error:', error);
+      throw error;
+    }
+  }
+
+  // Get current customer profile
+  // Since backend doesn't have /me endpoint, we'll get all customers and filter by current user's email
+  async getCurrentCustomerProfile(): Promise<Customer> {
+    try {
+      const user = authService.getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const customers = await this.getAllCustomers();
+      const currentCustomer = customers.find(c => c.email === user.email);
+      
+      if (!currentCustomer) {
+        throw new Error('Customer profile not found');
+      }
+
+      return currentCustomer;
+    } catch (error: any) {
+      console.error('Get current customer profile error:', error);
+      throw error;
+    }
+  }
+
+  // Update current customer profile
+  async updateCurrentCustomerProfile(data: UpdateCustomerRequest): Promise<Customer> {
+    try {
+      // First get current customer to get the ID
+      const currentCustomer = await this.getCurrentCustomerProfile();
+      
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${currentCustomer.customerId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      const apiResponse: ApiResponse<Customer> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Update customer profile error:', error);
       throw error;
     }
   }

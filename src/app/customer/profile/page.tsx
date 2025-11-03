@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { ChangePasswordDialog } from "@/components/ui/change-password-dialog";
 import { NotificationPreferencesDialog } from "@/components/ui/notification-preferences-dialog";
@@ -8,6 +8,8 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { BasicInfoCard } from "@/components/profile/BasicInfoCard";
 import { SecuritySettingsCard } from "@/components/profile/SecuritySettingsCard";
 import { SupportHelpCard } from "@/components/profile/SupportHelpCard";
+import { customerService, type Customer } from "@/lib/services/customerService";
+import { useToast } from "@/contexts/ToastContext";
 
 interface CustomerProfile {
   id: string;
@@ -23,24 +25,52 @@ interface CustomerProfile {
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   // Dialog states
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
-  // Mock data - in a real app, this would come from an API or state management
   const [profile, setProfile] = useState<CustomerProfile>({
-    id: "1",
-    fullName: "John Doe",
-    email: "john.doe@email.com",
-    mobile: "+1 (555) 123-4567",
-    nic: "123456789V",
-    gender: "Male",
-    dateOfBirth: "1990-05-15",
-    address: "123 Main Street, City, State 12345",
-    profilePicture: "/api/placeholder/150/150",
+    id: "",
+    fullName: "",
+    email: "",
+    mobile: "",
+    address: "",
   });
+
+  // Fetch customer profile on mount
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const customerData: Customer = await customerService.getCurrentCustomerProfile();
+      
+      // Map backend Customer to frontend CustomerProfile
+      setProfile({
+        id: customerData.customerId.toString(),
+        fullName: customerData.name,
+        email: customerData.email,
+        mobile: customerData.phoneNumber,
+        address: `${customerData.address}, ${customerData.city}, ${customerData.country} ${customerData.postalCode}`,
+        // These fields are not in backend yet
+        nic: undefined,
+        gender: undefined,
+        dateOfBirth: undefined,
+        profilePicture: undefined,
+      });
+    } catch (error: any) {
+      showToast("Failed to load profile: " + error.message, "error");
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Stable handlers using useCallback
   const startEditing = useCallback(() => {
@@ -51,11 +81,25 @@ export default function ProfilePage() {
     setIsEditing(false);
   }, []);
 
-  const saveProfile = useCallback((updatedProfile: CustomerProfile) => {
-    // In a real app, this would make an API call
-    setProfile(updatedProfile);
-    setIsEditing(false);
-  }, []);
+  const saveProfile = useCallback(async (updatedProfile: CustomerProfile) => {
+    try {
+      // Only send name and phoneNumber as per backend UpdateCustomerRequest
+      await customerService.updateCurrentCustomerProfile({
+        name: updatedProfile.fullName,
+        phoneNumber: updatedProfile.mobile,
+      });
+      
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      showToast("Profile updated successfully", "success");
+      
+      // Refresh profile from backend to get latest data
+      await fetchProfile();
+    } catch (error: any) {
+      showToast("Failed to update profile: " + error.message, "error");
+      console.error('Error updating profile:', error);
+    }
+  }, [showToast]);
 
   const handleProfileChange = useCallback((updatedProfile: CustomerProfile) => {
     setProfile(updatedProfile);
@@ -65,11 +109,19 @@ export default function ProfilePage() {
     setShowDeactivateConfirm(true);
   }, []);
 
-  const confirmDeactivateAccount = useCallback(() => {
-    // In a real app, this would make an API call to deactivate the account
-    // Redirect to login or homepage
-    setShowDeactivateConfirm(false);
-  }, []);
+  const confirmDeactivateAccount = useCallback(async () => {
+    try {
+      const customerData = await customerService.getCurrentCustomerProfile();
+      await customerService.deactivateCustomer(customerData.customerId, "User requested deactivation");
+      showToast("Account deactivated successfully", "success");
+      setShowDeactivateConfirm(false);
+      // Redirect to login page
+      window.location.href = '/login';
+    } catch (error: any) {
+      showToast("Failed to deactivate account: " + error.message, "error");
+      console.error('Error deactivating account:', error);
+    }
+  }, [showToast]);
 
   const openPasswordDialog = useCallback(() => {
     setShowPasswordDialog(true);
@@ -82,6 +134,14 @@ export default function ProfilePage() {
   const manageLoginSessions = useCallback(() => {
     // Future implementation
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen space-y-6">
