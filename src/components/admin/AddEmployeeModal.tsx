@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, AlertCircle, Loader2, Copy, Mail } from 'lucide-react';
-import { employeeService, CreateEmployeeRequest } from '@/lib/services/employeeService';
+import { employeeService, CreateEmployeeRequest, CreateEmployeeResponse } from '@/lib/services/employeeService';
+import { useToast } from '@/contexts/ToastContext';
 
 interface AddEmployeeModalProps {
   open: boolean;
@@ -32,10 +33,8 @@ export default function AddEmployeeModal({ open, onOpenChange, onSuccess }: AddE
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState<{
-    temporaryPassword: string;
-    message: string;
-  } | null>(null);
+  const [success, setSuccess] = useState<CreateEmployeeResponse | null>(null);
+  const toast = useToast();
 
   const handleChange = (field: keyof CreateEmployeeRequest, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

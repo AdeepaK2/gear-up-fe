@@ -135,9 +135,9 @@ export default function EmployeesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-primary">
             Manage Employees
@@ -146,10 +146,6 @@ export default function EmployeesPage() {
             View and manage employee accounts and assignments
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Employee
-        </Button>
       </div>
 
       {error && (
@@ -171,14 +167,23 @@ export default function EmployeesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={fetchEmployees}
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="whitespace-nowrap"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Employee
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchEmployees}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <Card>

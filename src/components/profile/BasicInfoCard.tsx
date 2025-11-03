@@ -86,7 +86,6 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
 
     // Debounce validation for better UX
     const debouncedFullName = useDebouncedValue(profile.fullName, 300);
-    const debouncedEmail = useDebouncedValue(profile.email, 300);
     const debouncedMobile = useDebouncedValue(profile.mobile, 300);
 
     // Focus management
@@ -106,16 +105,6 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
         }));
       }
     }, [debouncedFullName, isEditing]);
-
-    useEffect(() => {
-      if (isEditing) {
-        const emailResult = validateEmail(debouncedEmail);
-        setErrors((prev) => ({
-          ...prev,
-          email: emailResult.error,
-        }));
-      }
-    }, [debouncedEmail, isEditing]);
 
     useEffect(() => {
       if (isEditing) {
@@ -178,9 +167,8 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
     };
 
     const handleSave = () => {
-      // Validate all fields
+      // Validate all fields except email (read-only)
       const fullNameResult = validateFullName(profile.fullName);
-      const emailResult = validateEmail(profile.email);
       const mobileResult = validateMobile(profile.mobile);
       const nicResult = validateNIC(profile.nic || "");
       const dobResult = validateDateOfBirth(profile.dateOfBirth || "");
@@ -188,7 +176,6 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
 
       const newErrors: FieldErrors = {
         fullName: fullNameResult.error,
-        email: emailResult.error,
         mobile: mobileResult.error,
         nic: nicResult.error,
         dateOfBirth: dobResult.error,
@@ -203,11 +190,10 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
         return;
       }
 
-      // Normalize data before saving
+      // Normalize data before saving (email is not normalized since it's read-only)
       const normalizedProfile = {
         ...profile,
         fullName: normalizeFullName(profile.fullName),
-        email: normalizeEmail(profile.email),
         nic: profile.nic?.trim().toUpperCase(),
       };
 
@@ -371,32 +357,14 @@ export const BasicInfoCard = React.memo<BasicInfoCardProps>(
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              {isEditing ? (
-                <>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => handleFieldChange("email", e.target.value)}
-                    placeholder="example@email.com"
-                    aria-invalid={!!errors.email}
-                    aria-describedby={errors.email ? "email-error" : undefined}
-                  />
-                  {errors.email && (
-                    <p
-                      id="email-error"
-                      className="text-xs text-red-600"
-                      role="alert"
-                    >
-                      {errors.email}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-500" aria-hidden="true" />
-                  <span className="text-gray-900">{profile.email}</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                <span className="text-gray-900">{profile.email}</span>
+              </div>
+              {isEditing && (
+                <p className="text-xs text-gray-500">
+                  Email cannot be changed
+                </p>
               )}
             </div>
 
