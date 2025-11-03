@@ -44,6 +44,14 @@ export default function ProfilePage() {
     email: "",
     mobile: "",
     address: "",
+    addressLine: "",
+    city: "",
+    country: "",
+    postalCode: "",
+    nic: "",
+    gender: "",
+    dateOfBirth: "",
+    profilePicture: "",
   });
 
   // Fetch customer profile on mount
@@ -59,20 +67,20 @@ export default function ProfilePage() {
       // Map backend Customer to frontend CustomerProfile
       setProfile({
         id: customerData.customerId.toString(),
-        fullName: customerData.name,
-        email: customerData.email,
-        mobile: customerData.phoneNumber,
-        address: `${customerData.address || ''}, ${customerData.city || ''}, ${customerData.country || ''} ${customerData.postalCode || ''}`.trim().replace(/^,\s*|,\s*$/g, ''),
+        fullName: customerData.name || "",
+        email: customerData.email || "",
+        mobile: customerData.phoneNumber || "",
+        address: `${customerData.address || ''}, ${customerData.city || ''}, ${customerData.country || ''} ${customerData.postalCode || ''}`.trim().replace(/^,\s*|,\s*$/g, '').replace(/\s+/g, ' '),
         // Store individual fields for editing
-        addressLine: customerData.address,
-        city: customerData.city,
-        country: customerData.country,
-        postalCode: customerData.postalCode,
-        // These fields are not in backend yet
-        nic: undefined,
-        gender: undefined,
-        dateOfBirth: undefined,
-        profilePicture: undefined,
+        addressLine: customerData.address || "",
+        city: customerData.city || "",
+        country: customerData.country || "",
+        postalCode: customerData.postalCode || "",
+        // These fields are not in backend yet - use empty string instead of undefined
+        nic: "",
+        gender: "",
+        dateOfBirth: "",
+        profilePicture: "",
       });
     } catch (error: any) {
       showToast("Failed to load profile: " + error.message, "error");
@@ -93,27 +101,39 @@ export default function ProfilePage() {
 
   const saveProfile = useCallback(async (updatedProfile: CustomerProfile) => {
     try {
-      // Parse the address field if it's been edited as a single string
+      // Parse the address field - user edits it as a single textarea
       // Expected format: "address, city, country postalCode"
-      let addressLine = updatedProfile.addressLine;
-      let city = updatedProfile.city;
-      let country = updatedProfile.country;
-      let postalCode = updatedProfile.postalCode;
+      let addressLine = "";
+      let city = "";
+      let country = "";
+      let postalCode = "";
 
-      // If the user edited the combined address field, try to parse it
-      if (updatedProfile.address && !updatedProfile.addressLine) {
+      if (updatedProfile.address) {
+        // Try to parse the combined address string
         const parts = updatedProfile.address.split(',').map(p => p.trim());
+        
+        if (parts.length >= 1) {
+          addressLine = parts[0] || "";
+        }
+        if (parts.length >= 2) {
+          city = parts[1] || "";
+        }
         if (parts.length >= 3) {
-          addressLine = parts[0];
-          city = parts[1];
-          const countryPostal = parts[2].split(' ');
-          country = countryPostal.slice(0, -1).join(' ');
-          postalCode = countryPostal[countryPostal.length - 1];
+          // Last part might be "country postalCode"
+          const lastPart = parts[2];
+          const words = lastPart.split(' ').filter(w => w);
+          if (words.length > 1) {
+            // Assume last word is postal code
+            postalCode = words[words.length - 1];
+            country = words.slice(0, -1).join(' ');
+          } else {
+            // If only one word, it's the country
+            country = lastPart;
+          }
         }
       }
 
-      // Send update with all fields
-      await customerService.updateCurrentCustomerProfile({
+      console.log('Sending update:', {
         name: updatedProfile.fullName,
         phoneNumber: updatedProfile.mobile,
         address: addressLine,
@@ -121,8 +141,21 @@ export default function ProfilePage() {
         country: country,
         postalCode: postalCode,
       });
+
+      // Send update with all fields (only include non-empty optional fields)
+      const updateData: any = {
+        name: updatedProfile.fullName,
+        phoneNumber: updatedProfile.mobile,
+      };
+
+      // Only include optional fields if they have values
+      if (addressLine) updateData.address = addressLine;
+      if (city) updateData.city = city;
+      if (country) updateData.country = country;
+      if (postalCode) updateData.postalCode = postalCode;
+
+      await customerService.updateCurrentCustomerProfile(updateData);
       
-      setProfile(updatedProfile);
       setIsEditing(false);
       showToast("Profile updated successfully", "success");
       
