@@ -61,11 +61,11 @@ const convertAppointmentToUIFormat = (
     vehicleDetails: vehicleUI?.details || "",
     consultationType: "general-checkup", // Default since backend doesn't have this field
     consultationTypeLabel: "General Service",
-    appointmentDate: appointment.date,
+    appointmentDate: appointment.appointmentDate,
     startTime: appointment.startTime || "09:00",
     endTime: appointment.endTime || "10:00",
     status: appointment.status as any,
-    customerIssue: appointment.notes || "",
+    customerIssue: appointment.customerIssue || appointment.notes || "",
     notes: appointment.notes || "",
   };
 };
@@ -200,9 +200,10 @@ export default function AppointmentsPage() {
 
         // Call backend API to create appointment
         const createdAppointment = await appointmentService.createAppointment({
-          date: data.appointmentDate,
+          appointmentDate: data.appointmentDate,
           notes: data.notes || data.customerIssue,
           vehicleId: Number(data.vehicleId),
+          startTime: data.startTime ? `${data.startTime}:00` : undefined,
         });
 
         // Convert backend response to UI format
@@ -268,7 +269,7 @@ export default function AppointmentsPage() {
         const updatedAppointment = await appointmentService.updateAppointment(
           Number(editingAppointment.id),
           {
-            date: data.appointmentDate,
+            appointmentDate: data.appointmentDate,
             notes: data.notes || data.customerIssue,
             startTime: data.startTime ? `${data.startTime}:00` : undefined,
             status: data.status,
