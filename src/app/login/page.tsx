@@ -230,60 +230,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
-              </svg>
-              Demo Accounts (Quick Access):
-            </h4>
-            <div className="space-y-2">
-              {demoCredentials.map((demo, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 bg-white p-3 rounded border border-gray-200 hover:border-blue-300 transition-all"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-primary capitalize text-sm">{demo.name}</div>
-                    <div className="text-gray-600 text-xs truncate">{demo.email}</div>
-                    <div className="text-gray-500 text-xs mt-0.5">{demo.description}</div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => fillDemoCredentials(demo)}
-                      className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                      title="Auto-fill login form"
-                    >
-                      Fill
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDemoLogin(demo)}
-                      disabled={isLoading}
-                      className="px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      title="Login instantly without authentication"
-                    >
-                      Login →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded">
-              <p className="text-xs text-amber-800 flex items-start">
-                <svg className="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-                </svg>
-                <span>
-                  <strong>Demo Mode:</strong> Click "Login →" to instantly access demo accounts without backend authentication. 
-                  Click "Fill" to auto-fill credentials for regular login testing.
-                </span>
-              </p>
-            </div>
-          </div>
-
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
