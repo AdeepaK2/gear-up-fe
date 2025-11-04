@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { notificationService } from '@/lib/services/notificationService';
 import { authService } from '@/lib/services/authService';
-import type { Notification, ConnectionStatus } from '@/lib/types/notification';
+import type { Notification, ConnectionStatus } from '@/lib/types/Notification';
 
 interface NotificationContextType {
   notifications: Notification[];
