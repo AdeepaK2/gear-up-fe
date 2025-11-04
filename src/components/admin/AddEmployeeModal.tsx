@@ -30,6 +30,7 @@ export default function AddEmployeeModal({ open, onOpenChange, onSuccess }: AddE
     email: '',
     specialization: '',
     role: 'Technician',
+    // password will be auto-generated
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +71,8 @@ export default function AddEmployeeModal({ open, onOpenChange, onSuccess }: AddE
       const response = await employeeService.createEmployee(formData);
       
       setSuccess({
+        email: response.email,
+        name: response.name,
         temporaryPassword: response.temporaryPassword,
         message: response.message || 'Employee account created successfully!',
       });

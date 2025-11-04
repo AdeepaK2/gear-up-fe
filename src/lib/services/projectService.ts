@@ -49,7 +49,7 @@ class ProjectService {
   async getEmployeeProjects(): Promise<Project[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_ENDPOINTS.PROJECTS.BASE}/employee`,
+        API_ENDPOINTS.PROJECTS.EMPLOYEE,
         {
           method: 'GET',
         }
@@ -57,6 +57,13 @@ class ProjectService {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.warn('Failed to fetch employee projects:', response.status, errorData);
+        
+        // Return empty array on error instead of throwing
+        if (response.status === 400 || response.status === 404 || response.status === 500) {
+          return [];
+        }
+        
         throw new Error(errorData.message || 'Failed to fetch employee projects');
       }
 
@@ -64,7 +71,8 @@ class ProjectService {
       return apiResponse.data;
     } catch (error: any) {
       console.error('Error fetching employee projects:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent page crash
+      return [];
     }
   }
 

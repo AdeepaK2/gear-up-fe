@@ -7,10 +7,12 @@ export interface CreateEmployeeRequest {
   email: string;
   specialization: string;
   role?: string;
+  password?: string; // Optional - will be auto-generated if not provided
 }
 
 export interface CreateEmployeeResponse {
-  employee: Employee;
+  email: string;
+  name: string;
   temporaryPassword: string;
   message: string;
 }
@@ -90,14 +92,41 @@ class EmployeeService {
     }
   }
 
+  // Generate a temporary password
+  private generateTemporaryPassword(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let password = '';
+    // Ensure at least one of each required type
+    password += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 23)]; // Uppercase
+    password += 'abcdefghijkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)]; // Lowercase
+    password += '23456789'[Math.floor(Math.random() * 8)]; // Number
+    password += '!@#$%&*'[Math.floor(Math.random() * 7)]; // Special
+    
+    // Fill the rest randomly
+    for (let i = 4; i < 12; i++) {
+      password += chars[Math.floor(Math.random() * chars.length)];
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  }
+
   // Create new employee (Admin only)
   async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
     try {
+      // Generate temporary password if not provided
+      const tempPassword = data.password || this.generateTemporaryPassword();
+      
+      const requestData = {
+        ...data,
+        password: tempPassword
+      };
+      
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.ADMIN.EMPLOYEES,
         {
           method: 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify(requestData),
         }
       );
 
@@ -106,8 +135,15 @@ class EmployeeService {
         throw new Error(errorData.message || 'Failed to create employee');
       }
 
-      const apiResponse: ApiResponse<CreateEmployeeResponse> = await response.json();
-      return apiResponse.data;
+      const apiResponse: ApiResponse<{email: string, name: string}> = await response.json();
+      
+      // Return the response with the generated temporary password
+      return {
+        email: apiResponse.data.email,
+        name: apiResponse.data.name,
+        temporaryPassword: tempPassword,
+        message: 'Employee created successfully! Please share the temporary password with the employee.'
+      };
     } catch (error: any) {
       console.error('Create employee error:', error);
       throw error;
@@ -187,6 +223,24 @@ class EmployeeService {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.warn('Failed to fetch current employee:', response.status, errorData);
+        
+        // If employee record doesn't exist, return a default/empty employee object
+        if (response.status === 400 || response.status === 404 || response.status === 500) {
+          console.warn('Employee record not found or invalid - returning default employee object');
+          return {
+            employeeId: 0,
+            name: '',
+            email: '',
+            specialization: '',
+            phone: '',
+            hireDate: new Date().toISOString(),
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as Employee;
+        }
+        
         throw new Error(errorData.message || 'Failed to fetch current employee');
       }
 
@@ -194,7 +248,19 @@ class EmployeeService {
       return apiResponse.data;
     } catch (error: any) {
       console.error('Get current employee error:', error);
-      throw error;
+      // Return default empty employee instead of throwing
+      // This allows the profile page to load with empty fields
+      return {
+        employeeId: 0,
+        name: '',
+        email: '',
+        specialization: '',
+        phone: '',
+        hireDate: new Date().toISOString(),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as Employee;
     }
   }
 
@@ -208,14 +274,30 @@ class EmployeeService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch task summary');
+        console.warn('Task summary fetch returned non-OK status:', response.status, errorData);
+        
+        // Return empty summary if there's any error (missing employee record, etc)
+        // This prevents the dashboard from crashing
+        return {
+          assigned: 0,
+          inProgress: 0,
+          completedToday: 0,
+          total: 0,
+        };
       }
 
       const apiResponse: ApiResponse<{ [key: string]: number }> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
       console.error('Get task summary error:', error);
-      throw error;
+      // Return empty summary on error to prevent dashboard from breaking
+      // This handles cases like missing employee records in the database
+      return {
+        assigned: 0,
+        inProgress: 0,
+        completedToday: 0,
+        total: 0,
+      };
     }
   }
 }

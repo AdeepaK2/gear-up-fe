@@ -137,14 +137,17 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch employee appointments');
+        console.warn('Employee appointments fetch returned non-OK status:', response.status, errorData);
+        // Return empty array on error to prevent page crash
+        return [];
       }
 
       const apiResponse: ApiResponse<Appointment[]> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
       console.error('Error fetching employee appointments:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent page crash
+      return [];
     }
   }
 
@@ -160,14 +163,17 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch upcoming appointments');
+        console.warn('Upcoming appointments fetch returned non-OK status:', response.status, errorData);
+        // Return empty array on error to prevent page crash
+        return [];
       }
 
       const apiResponse: ApiResponse<Appointment[]> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
       console.error('Error fetching upcoming appointments:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent page crash
+      return [];
     }
   }
 

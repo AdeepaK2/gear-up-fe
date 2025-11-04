@@ -59,7 +59,10 @@ export default function EmployeeProfile() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee) return;
+    if (!employee || employee.employeeId === 0) {
+      setError('Cannot update profile: Employee record not found');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -130,6 +133,12 @@ export default function EmployeeProfile() {
         <div className="text-center py-12">
           <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={loadCurrentEmployee}>Retry</Button>
+        </div>
+      ) : employee && employee.employeeId === 0 ? (
+        <div className="text-center py-12 bg-amber-50 border border-amber-200 rounded-lg p-8">
+          <p className="text-amber-800 mb-4 text-lg font-medium">Employee Record Not Found</p>
+          <p className="text-amber-700 mb-6">Your employee record appears to be missing from the system. Please contact your administrator.</p>
+          <Button onClick={loadCurrentEmployee} variant="outline">Try Again</Button>
         </div>
       ) : tab === "profile" && (
         <div className="flex gap-12 items-start">
