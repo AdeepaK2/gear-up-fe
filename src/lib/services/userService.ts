@@ -1,4 +1,4 @@
-import API_BASE_URL from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
 import type { ChangePasswordRequest, PasswordChangeResponse } from '../types/Auth';
 
 interface ApiResponse<T> {
@@ -17,7 +17,7 @@ class UserService {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${API_BASE_URL}/user/password-status`, {
+    const response = await fetch(`${API_ENDPOINTS.AUTH.CHANGE_PASSWORD}/status`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -42,7 +42,7 @@ class UserService {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${API_BASE_URL}/user/change-password`, {
+    const response = await fetch(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
