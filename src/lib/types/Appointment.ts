@@ -94,11 +94,14 @@ export interface Appointment {
   startTime: string | null; // LocalTime as string
   endTime: string | null; // LocalTime as string
   vehicleId: number;
+  vehicleName: string;
+  vehicleDetails: string;
   customerId: number;
   employeeId: number | null;
+  consultationType: string;
+  consultationTypeLabel: string;
+  customerIssue: string | null;
   taskIds: number[] | null;
-  consultationType?: string;
-  customerIssue?: string;
 }
 
 export interface AppointmentCreateRequest {

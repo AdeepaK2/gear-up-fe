@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     LOGOUT: `${API_BASE_URL}/auth/logout`,
     VERIFY_EMAIL: `${API_BASE_URL}/auth/verify-email`,
     RESEND_EMAIL: `${API_BASE_URL}/auth/resend-email`,
+    CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
   },
   CUSTOMER: {
     BASE: `${API_BASE_URL}/customers`,
@@ -25,9 +26,24 @@ export const API_ENDPOINTS = {
   },
   APPOINTMENTS: {
     BASE: `${API_BASE_URL}/appointments`,
+    EMPLOYEE: `${API_BASE_URL}/appointments/employee`,
+    EMPLOYEE_UPCOMING: `${API_BASE_URL}/appointments/employee/upcoming`,
+    BY_MONTH: `${API_BASE_URL}/appointments/by-month`,
+    FILTER_BY_DATE: `${API_BASE_URL}/appointments/filter-by-date`,
+    SEARCH: `${API_BASE_URL}/appointments/search`,
+    AVAILABLE_SLOTS: `${API_BASE_URL}/appointments/employee/available-slots`,
   },
   VEHICLES: {
     BASE: `${API_BASE_URL}/vehicles`,
+  },
+  PROJECTS: {
+    BASE: `${API_BASE_URL}/projects`,
+    EMPLOYEE: `${API_BASE_URL}/projects/employee`,
+  },
+  TASKS: {
+    BASE: `${API_BASE_URL}/tasks`,
+    EMPLOYEE: `${API_BASE_URL}/tasks/employee`,
+    EMPLOYEE_SUMMARY: `${API_BASE_URL}/employees/task-summary`,
   },
   CHAT: {
     BASE: `${API_BASE_URL}/rag-chat`,
