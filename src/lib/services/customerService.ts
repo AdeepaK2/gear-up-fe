@@ -173,22 +173,22 @@ class CustomerService {
   }
 
   // Get current customer profile
-  // Since backend doesn't have /me endpoint, we'll get all customers and filter by current user's email
   async getCurrentCustomerProfile(): Promise<Customer> {
     try {
-      const user = authService.getCurrentUser();
-      if (!user) {
-        throw new Error('No authenticated user found');
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/me`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch customer');
       }
 
-      const customers = await this.getAllCustomers();
-      const currentCustomer = customers.find(c => c.email === user.email);
-      
-      if (!currentCustomer) {
-        throw new Error('Customer profile not found');
-      }
-
-      return currentCustomer;
+      const apiResponse: ApiResponse<Customer> = await response.json();
+      return apiResponse.data;
     } catch (error: any) {
       console.error('Get current customer profile error:', error);
       throw error;
@@ -196,11 +196,13 @@ class CustomerService {
   }
 
   // Update current customer profile
-  async updateCurrentCustomerProfile(data: UpdateCustomerRequest): Promise<Customer> {
+  async updateCurrentCustomerProfile(
+    data: UpdateCustomerRequest
+  ): Promise<Customer> {
     try {
       // First get current customer to get the ID
       const currentCustomer = await this.getCurrentCustomerProfile();
-      
+
       const response = await authService.authenticatedFetch(
         `${API_ENDPOINTS.CUSTOMER.BASE}/${currentCustomer.customerId}`,
         {
