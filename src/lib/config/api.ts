@@ -64,6 +64,13 @@ export const API_ENDPOINTS = {
     STREAM: `${API_BASE_URL}/rag-chat/stream`,
     HISTORY: `${API_BASE_URL}/rag-chat/history`,
   },
+  NOTIFICATIONS: {
+    BASE: `${API_BASE_URL}/notifications`,
+    STREAM: `${API_BASE_URL}/notifications/stream`,
+    UNREAD: `${API_BASE_URL}/notifications/unread`,
+    UNREAD_COUNT: `${API_BASE_URL}/notifications/unread/count`,
+    READ_ALL: `${API_BASE_URL}/notifications/read-all`,
+  },
 };
 
 export default API_BASE_URL;
