@@ -232,11 +232,11 @@ class AppointmentService {
     }
   }
 
-  // Search appointments
-  async searchAppointments(keyword: string): Promise<Appointment[]> {
+  // Admin: Search appointments (used to get all appointments for admin)
+  async searchAppointments(keyword: string = ''): Promise<Appointment[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_ENDPOINTS.APPOINTMENTS.SEARCH}?keyword=${encodeURIComponent(keyword)}`,
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/search?keyword=${encodeURIComponent(keyword)}`,
         {
           method: 'GET',
         }
@@ -251,6 +251,30 @@ class AppointmentService {
       return apiResponse.data;
     } catch (error: any) {
       console.error('Error searching appointments:', error);
+      throw error;
+    }
+  }
+
+  // Admin: Assign employee to appointment
+  async assignEmployee(appointmentId: number, employeeId: number): Promise<Appointment> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ employeeId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to assign employee');
+      }
+
+      const apiResponse: ApiResponse<Appointment> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error assigning employee:', error);
       throw error;
     }
   }

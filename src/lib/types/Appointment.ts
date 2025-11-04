@@ -88,6 +88,11 @@ export interface Notification {
 // Backend API types (matching backend DTOs)
 export interface Appointment {
   id: number;
+  appointmentDate: string; // LocalDate as string (matches AppointmentResponseDTO)
+  status: string;
+  notes: string | null;
+  startTime: string | null; // LocalTime as string
+  endTime: string | null; // LocalTime as string
   vehicleId: number;
   vehicleName: string;
   vehicleDetails: string;
@@ -95,23 +100,19 @@ export interface Appointment {
   employeeId: number | null;
   consultationType: string;
   consultationTypeLabel: string;
-  appointmentDate: string; // LocalDate as string
-  startTime: string | null; // LocalTime as string
-  endTime: string | null; // LocalTime as string
-  status: string;
   customerIssue: string | null;
-  notes: string | null;
   taskIds: number[] | null;
 }
 
 export interface AppointmentCreateRequest {
-  date: string; // YYYY-MM-DD format
+  appointmentDate: string; // YYYY-MM-DD format (matches backend DTO)
   notes?: string;
   vehicleId: number;
+  startTime?: string; // HH:MM:SS format
 }
 
 export interface AppointmentUpdateRequest {
-  date?: string;
+  appointmentDate?: string; // YYYY-MM-DD format (matches backend DTO)
   status?: string;
   notes?: string;
   startTime?: string; // HH:MM:SS format

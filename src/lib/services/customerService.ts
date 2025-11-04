@@ -1,47 +1,38 @@
-import API_BASE_URL from '../config/api';
 import { authService } from './authService';
+import { API_ENDPOINTS } from '../config/api';
 
-export interface CustomerProfile {
+export interface Customer {
+  customerId: number;
   name: string;
   email: string;
-  profileImage?: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
-export interface CustomerHeader {
+export interface CreateCustomerRequest {
   name: string;
-  profileImage?: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
 }
 
-export interface CustomerSummary {
-  upcomingAppointments: number;
-  ongoingProjects: number;
-  completedServices: number;
-  pendingRequests: number;
+export interface UpdateCustomerRequest {
+  name: string;
+  phoneNumber: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
 }
 
-export interface CustomerActivity {
-  id: number;
-  action: string;
-  description: string;
-  time: string;
-}
-
-export interface CustomerVehicle {
-  id: number;
-  make: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-}
-
-export interface CustomerDashboard {
-  profile: CustomerProfile;
-  summary: CustomerSummary;
-  recentActivities: CustomerActivity[];
-  vehicles: CustomerVehicle[];
-}
-
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   status: string;
   message: string;
   data: T;
@@ -50,22 +41,11 @@ interface ApiResponse<T> {
 }
 
 class CustomerService {
-  
-  // Try to get customer ID by checking if user is a customer
-  // For now, we'll skip the API call and use fallback data
-  // TODO: Add backend endpoint `/customers/me` or `/customers/by-email/{email}`
-  private async tryGetCustomerIdByEmail(email: string): Promise<number | null> {
-    // For now, return null to always use fallback
-    // This prevents the "Customer not found with id: 1" error
-    console.log('Using fallback customer data for email:', email);
-    return null;
-  }
-  
-  // Get customer header info (name & profile image)
-  async getCustomerHeader(customerId: number): Promise<CustomerHeader> {
+  // Get all customers
+  async getAllCustomers(): Promise<Customer[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_BASE_URL}/customers/${customerId}/header`,
+        API_ENDPOINTS.CUSTOMER.BASE,
         {
           method: 'GET',
         }
@@ -73,22 +53,22 @@ class CustomerService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch customer header');
+        throw new Error(errorData.message || 'Failed to fetch customers');
       }
 
-      const apiResponse: ApiResponse<CustomerHeader> = await response.json();
+      const apiResponse: ApiResponse<Customer[]> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
-      console.error('Error fetching customer header:', error);
-      throw new Error(error.message || 'Failed to fetch customer header');
+      console.error('Fetch customers error:', error);
+      throw error;
     }
   }
 
-  // Get full customer dashboard
-  async getCustomerDashboard(customerId: number): Promise<CustomerDashboard> {
+  // Get customer by ID
+  async getCustomerById(id: number): Promise<Customer> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_BASE_URL}/customers/${customerId}/dashboard`,
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${id}`,
         {
           method: 'GET',
         }
@@ -96,134 +76,149 @@ class CustomerService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch customer dashboard');
+        throw new Error(errorData.message || 'Failed to fetch customer');
       }
 
-      const apiResponse: ApiResponse<CustomerDashboard> = await response.json();
+      const apiResponse: ApiResponse<Customer> = await response.json();
       return apiResponse.data;
     } catch (error: any) {
-      console.error('Error fetching customer dashboard:', error);
-      throw new Error(error.message || 'Failed to fetch customer dashboard');
+      console.error('Fetch customer error:', error);
+      throw error;
     }
   }
 
-  // Get customer profile from current user context
-  async getCurrentCustomerProfile(): Promise<CustomerProfile | null> {
+  // Create customer (Admin creates customer with account)
+  async createCustomer(data: CreateCustomerRequest): Promise<Customer> {
     try {
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        return null;
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.CUSTOMER.BASE,
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create customer');
       }
 
-      // Try to get detailed profile from backend
-      try {
-        // First try to get customer ID from user context
-        let customerId = this.extractCustomerIdFromUser(currentUser);
-        
-        // If not found, try to get it by email
-        if (!customerId && currentUser.email) {
-          customerId = await this.tryGetCustomerIdByEmail(currentUser.email);
-        }
-        
-        if (customerId) {
-          const dashboard = await this.getCustomerDashboard(customerId);
-          return dashboard.profile;
-        }
-      } catch (apiError) {
-        console.log('Customer API error:', apiError);
-      }
-
-      // Fallback to basic info from auth context
-      return {
-        name: currentUser.name,
-        email: currentUser.email,
-      };
+      const apiResponse: ApiResponse<Customer> = await response.json();
+      return apiResponse.data;
     } catch (error: any) {
-      console.error('Error fetching current customer profile:', error);
-      return null;
+      console.error('Create customer error:', error);
+      throw error;
     }
   }
 
-  // Extract customer ID from user context or JWT - returns null if not found
-  private extractCustomerIdFromUser(user: any): number | null {
-    // First try to get from user object
-    if (user?.customerId) {
-      return typeof user.customerId === 'string' ? parseInt(user.customerId) : user.customerId;
-    }
-
-    // Try to decode JWT token to get customer ID
+  // Delete customer
+  async deleteCustomer(id: number): Promise<void> {
     try {
-      if (typeof window === 'undefined') return null;
-      
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        // Check if customer ID is in the JWT payload
-        if (payload.customerId) {
-          return typeof payload.customerId === 'string' ? parseInt(payload.customerId) : payload.customerId;
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${id}`,
+        {
+          method: 'DELETE',
         }
-        if (payload.userId) {
-          return typeof payload.userId === 'string' ? parseInt(payload.userId) : payload.userId;
-        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete customer');
       }
-    } catch (error) {
-      console.error('Error decoding JWT:', error);
-    }
-
-    // Return null if customer ID cannot be determined
-    // This will trigger the fallback to use auth context data
-    return null;
-  }
-
-  // Get current customer's recent activities (for context display)
-  async getCurrentCustomerContext(): Promise<{
-    profile: CustomerProfile;
-    currentProject?: string;
-    currentService?: string;
-  } | null> {
-    try {
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) return null;
-
-      // Try to get detailed info from backend
-      try {
-        // First try to get customer ID from user context
-        let customerId = this.extractCustomerIdFromUser(currentUser);
-        
-        // If not found, try to get it by email
-        if (!customerId && currentUser.email) {
-          customerId = await this.tryGetCustomerIdByEmail(currentUser.email);
-        }
-        
-        if (customerId) {
-          const dashboard = await this.getCustomerDashboard(customerId);
-          
-          // Get most recent activity for context
-          const recentActivity = dashboard.recentActivities?.[0];
-          const currentVehicle = dashboard.vehicles?.[0];
-
-          return {
-            profile: dashboard.profile,
-            currentProject: currentVehicle ? `${currentVehicle.make} ${currentVehicle.model} (${currentVehicle.year})` : 'Vehicle Maintenance',
-            currentService: recentActivity?.action || 'General Service',
-          };
-        }
-      } catch (dashboardError) {
-        console.log('Dashboard API error:', dashboardError);
-      }
-      
-      // Fallback to basic user info from auth context
-      return {
-        profile: {
-          name: currentUser.name,
-          email: currentUser.email,
-        },
-        currentProject: 'Vehicle Maintenance',
-        currentService: 'General Service',
-      };
     } catch (error: any) {
-      console.error('Error fetching customer context:', error);
-      return null;
+      console.error('Delete customer error:', error);
+      throw error;
+    }
+  }
+
+  // Deactivate customer account
+  async deactivateCustomer(id: number, reason: string): Promise<void> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${id}/deactivate`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ reason }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to deactivate customer');
+      }
+    } catch (error: any) {
+      console.error('Deactivate customer error:', error);
+      throw error;
+    }
+  }
+
+  // Reactivate customer account
+  async reactivateCustomer(id: number): Promise<void> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${id}/reactivate`,
+        {
+          method: 'PUT',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reactivate customer');
+      }
+    } catch (error: any) {
+      console.error('Reactivate customer error:', error);
+      throw error;
+    }
+  }
+
+  // Get current customer profile
+  // Since backend doesn't have /me endpoint, we'll get all customers and filter by current user's email
+  async getCurrentCustomerProfile(): Promise<Customer> {
+    try {
+      const user = authService.getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      const customers = await this.getAllCustomers();
+      const currentCustomer = customers.find(c => c.email === user.email);
+      
+      if (!currentCustomer) {
+        throw new Error('Customer profile not found');
+      }
+
+      return currentCustomer;
+    } catch (error: any) {
+      console.error('Get current customer profile error:', error);
+      throw error;
+    }
+  }
+
+  // Update current customer profile
+  async updateCurrentCustomerProfile(data: UpdateCustomerRequest): Promise<Customer> {
+    try {
+      // First get current customer to get the ID
+      const currentCustomer = await this.getCurrentCustomerProfile();
+      
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.CUSTOMER.BASE}/${currentCustomer.customerId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update profile');
+      }
+
+      const apiResponse: ApiResponse<Customer> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Update customer profile error:', error);
+      throw error;
     }
   }
 }
