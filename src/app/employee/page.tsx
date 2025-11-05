@@ -178,8 +178,8 @@ export default function EmployeeDashboard() {
 
 			{/* Upcoming Appointments */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="">
-					<CardTitle className="text-2xl font-bold text-gray-900">Upcoming Appointments</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Upcoming Appointments</CardTitle>
 				</CardHeader>
 				<CardContent className="overflow-x-auto px-4 pb-6">
 					<table className="min-w-full text-sm">
@@ -213,8 +213,8 @@ export default function EmployeeDashboard() {
 
 			{/* Projects by Status */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="">
-					<CardTitle className="text-2xl font-bold text-gray-900">Projects by Status</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Projects by Status</CardTitle>
 				</CardHeader>
 				<CardContent className="">
 					<div className="space-y-4">
@@ -232,8 +232,8 @@ export default function EmployeeDashboard() {
 
 			{/* Recent Activity */}
 			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="">
-					<CardTitle className="text-2xl font-bold text-gray-900">Recent Activity</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Recent Activity</CardTitle>
 				</CardHeader>
 				<CardContent className="">
 					{activities.map((activity, idx) => (
