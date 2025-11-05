@@ -1,31 +1,53 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Search, PlusCircle, Loader2, AlertCircle, RefreshCw, Pencil, Trash2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import AddEmployeeModal from '@/components/admin/AddEmployeeModal';
-import { employeeService, Employee, EmployeeDependencies } from '@/lib/services/employeeService';
-import { useToast } from '@/contexts/ToastContext';
-import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import React, { useState, useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  PlusCircle,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import AddEmployeeModal from "@/components/admin/AddEmployeeModal";
+import {
+  employeeService,
+  Employee,
+  EmployeeDependencies,
+} from "@/lib/services/employeeService";
+import { useToast } from "@/contexts/ToastContext";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   // Delete confirmation states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
-  const [deleteDependencies, setDeleteDependencies] = useState<EmployeeDependencies | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+    null
+  );
+  const [deleteDependencies, setDeleteDependencies] =
+    useState<EmployeeDependencies | null>(null);
   const [isCheckingDependencies, setIsCheckingDependencies] = useState(false);
 
   const toast = useToast();
@@ -37,10 +59,11 @@ export default function EmployeesPage() {
   useEffect(() => {
     let filtered = employees;
     if (searchQuery.trim()) {
-      filtered = filtered.filter(emp =>
-        emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.specialization.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (emp) =>
+          emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          emp.specialization.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     setFilteredEmployees(filtered);
@@ -48,14 +71,14 @@ export default function EmployeesPage() {
 
   const fetchEmployees = async () => {
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
       const data = await employeeService.getAllEmployees();
       setEmployees(data);
       setFilteredEmployees(data);
-      toast.success('Employees loaded successfully');
+      toast.success("Employees loaded successfully");
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to load employees';
+      const errorMessage = err.message || "Failed to load employees";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -69,10 +92,12 @@ export default function EmployeesPage() {
     setShowDeleteDialog(true);
 
     try {
-      const dependencies = await employeeService.checkDependencies(employee.employeeId);
+      const dependencies = await employeeService.checkDependencies(
+        employee.employeeId
+      );
       setDeleteDependencies(dependencies);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to check employee dependencies');
+      toast.error(err.message || "Failed to check employee dependencies");
       setShowDeleteDialog(false);
     } finally {
       setIsCheckingDependencies(false);
@@ -84,7 +109,10 @@ export default function EmployeesPage() {
 
     // If employee cannot be deleted due to dependencies, show error
     if (deleteDependencies && !deleteDependencies.canDelete) {
-      toast.error(deleteDependencies.warningMessage || 'Cannot delete employee with active assignments');
+      toast.error(
+        deleteDependencies.warningMessage ||
+          "Cannot delete employee with active assignments"
+      );
       setShowDeleteDialog(false);
       return;
     }
@@ -95,7 +123,7 @@ export default function EmployeesPage() {
       toast.success(`Employee ${employeeToDelete.name} deleted successfully`);
       await fetchEmployees();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete employee');
+      toast.error(err.message || "Failed to delete employee");
     } finally {
       setActionLoading(null);
       setShowDeleteDialog(false);
@@ -105,15 +133,16 @@ export default function EmployeesPage() {
   };
 
   const handleModalSuccess = () => {
+    // Refresh the employee list but do NOT auto-close the modal.
+    // Admin should manually close the dialog after reading the success message.
     fetchEmployees();
-    setTimeout(() => setIsModalOpen(false), 1500);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -181,11 +210,23 @@ export default function EmployeesPage() {
             onClick={fetchEmployees}
             disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
       </div>
 
+      {/* Employees Table */}
+      <Card className="bg-white shadow-lg border-0">
+        <div className="">
+          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+            <h3 className="text-2xl font-semibold text-white">
+              All Employees
+            </h3>
+            <p className="text-white text-md">
+              Manage employee accounts and team information
+            </p>
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -264,23 +305,29 @@ export default function EmployeesPage() {
       <ConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title={isCheckingDependencies ? "Checking Dependencies" : "Delete Employee"}
+        title={
+          isCheckingDependencies ? "Checking Dependencies" : "Delete Employee"
+        }
         description={getDeleteDialogDescription()}
         confirmText={
           isCheckingDependencies
             ? "Checking..."
-            : (deleteDependencies && !deleteDependencies.canDelete)
-              ? "Close"
-              : "Delete"
+            : deleteDependencies && !deleteDependencies.canDelete
+            ? "Close"
+            : "Delete"
         }
         cancelText={
-          (deleteDependencies && !deleteDependencies.canDelete) ? undefined : "Cancel"
+          deleteDependencies && !deleteDependencies.canDelete
+            ? undefined
+            : "Cancel"
         }
         variant={
-          (deleteDependencies && !deleteDependencies.canDelete) ? "default" : "destructive"
+          deleteDependencies && !deleteDependencies.canDelete
+            ? "default"
+            : "destructive"
         }
         onConfirm={
-          (deleteDependencies && !deleteDependencies.canDelete)
+          deleteDependencies && !deleteDependencies.canDelete
             ? () => setShowDeleteDialog(false)
             : handleDeleteConfirm
         }

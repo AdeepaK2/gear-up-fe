@@ -78,6 +78,11 @@ class VehicleService {
     }
   }
 
+  // Alias for getCurrentCustomerVehicles
+  async getMyVehicles(): Promise<Vehicle[]> {
+    return this.getCurrentCustomerVehicles();
+  }
+
   // Create a new vehicle
   async createVehicle(vehicleData: VehicleCreateRequest): Promise<Vehicle> {
     try {

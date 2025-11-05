@@ -15,7 +15,7 @@ interface CalendarEvent {
 
 export default function EmployeeAppointments() {
 	const [selectedDay, setSelectedDay] = useState<number | null>(7);
-	const [activeTab, setActiveTab] = useState<"pending" | "inprogress" | "completed">("pending");
+	const [activeTab, setActiveTab] = useState<"pending" | "confirmed" | "inprogress" | "completed">("pending");
 	const [miniDate, setMiniDate] = useState<Date | undefined>(new Date());
 	const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -24,6 +24,7 @@ export default function EmployeeAppointments() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [searchKeyword, setSearchKeyword] = useState('');
+	const [actionLoading, setActionLoading] = useState<number | null>(null);
 
 	// Load appointments on component mount and when month changes
 	useEffect(() => {
@@ -49,7 +50,7 @@ export default function EmployeeAppointments() {
 			const year = calendarMonth.getFullYear();
 			const month = calendarMonth.getMonth() + 1; // JavaScript months are 0-indexed
 
-			const appointmentsData = await appointmentService.getAppointmentsByMonth(year, month);
+			const appointmentsData = await appointmentService.getEmployeeAppointments();
 			setAppointments(appointmentsData);
 		} catch (err) {
 			console.error('Failed to load appointments:', err);
@@ -66,8 +67,11 @@ export default function EmployeeAppointments() {
 			case 'pending':
 				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'pending');
 				break;
+			case 'confirmed':
+				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'confirmed');
+				break;
 			case 'inprogress':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'in_progress' || apt.status.toLowerCase() === 'confirmed');
+				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'in_progress');
 				break;
 			case 'completed':
 				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'completed');
@@ -75,6 +79,60 @@ export default function EmployeeAppointments() {
 		}
 
 		setFilteredAppointments(filtered);
+	};
+
+	const handleApproveAppointment = async (appointmentId: number) => {
+		try {
+			setActionLoading(appointmentId);
+			await appointmentService.approveAppointment(appointmentId);
+			// Reload appointments after approval
+			await loadAppointments();
+			alert('Appointment approved successfully!');
+		} catch (err) {
+			console.error('Failed to approve appointment:', err);
+			alert('Failed to approve appointment. Please try again.');
+		} finally {
+			setActionLoading(null);
+		}
+	};
+
+	const handleRejectAppointment = async (appointmentId: number) => {
+		if (!confirm('Are you sure you want to reject this appointment?')) {
+			return;
+		}
+
+		try {
+			setActionLoading(appointmentId);
+			await appointmentService.rejectAppointment(appointmentId);
+			// Reload appointments after rejection
+			await loadAppointments();
+			alert('Appointment rejected successfully!');
+		} catch (err) {
+			console.error('Failed to reject appointment:', err);
+			alert('Failed to reject appointment. Please try again.');
+		} finally {
+			setActionLoading(null);
+		}
+	};
+
+	const handleStartAppointment = async (appointmentId: number) => {
+		try {
+			setActionLoading(appointmentId);
+			await appointmentService.startAppointment(appointmentId);
+			// Reload appointments after starting
+			await loadAppointments();
+			alert('Appointment started successfully!');
+		} catch (err) {
+			console.error('Failed to start appointment:', err);
+			alert('Failed to start appointment. Please try again.');
+		} finally {
+			setActionLoading(null);
+		}
+	};
+
+	const handleCompleteAppointment = async (appointmentId: number) => {
+		// Navigate to report submission page with query param
+		window.location.href = `/employee/appointments/report?id=${appointmentId}`;
 	};
 
 	const convertAppointmentsToCalendarEvents = () => {
@@ -90,9 +148,8 @@ export default function EmployeeAppointments() {
 
 	const getStatusColor = (status: string): string => {
 		switch (status.toLowerCase()) {
-			case 'pending':
-				return '#fbbf24'; // yellow
 			case 'confirmed':
+				return '#fbbf24'; // yellow
 			case 'in_progress':
 				return '#3b82f6'; // blue
 			case 'completed':
@@ -153,25 +210,67 @@ export default function EmployeeAppointments() {
 						) : error ? (
 							<div className="text-center py-4 text-red-500">Error: {error}</div>
 						) : (
-							<div className="flex flex-col gap-2">
+							<div className="flex flex-col gap-3">
 								{filteredAppointments.slice(0, 5).map((appointment) => (
-									<div key={appointment.id} className="flex items-center justify-between py-2 border-b last:border-0">
-										<div>
-											<div className="font-medium text-sm">Customer #{appointment.customerId}</div>
-											<div className="text-blue-600 text-xs">{appointment.consultationTypeLabel || appointment.consultationType}</div>
+									<div key={appointment.id} className="py-2 border-b last:border-0">
+										<div className="flex items-center justify-between mb-2">
+											<div className="flex-1">
+												<div className="font-medium text-sm">Customer #{appointment.customerId}</div>
+												<div className="text-blue-600 text-xs">{appointment.consultationTypeLabel || appointment.consultationType}</div>
+												<div className="text-xs text-gray-600 mt-1">
+													{appointment.startTime && appointment.endTime
+														? `${appointment.startTime} - ${appointment.endTime}`
+														: appointment.startTime || 'Time TBD'
+													}
+												</div>
+											</div>
+											<div className={`ml-2 w-3 h-3 rounded-full flex-shrink-0 ${
+												appointment.status.toLowerCase() === 'completed' ? 'bg-green-500' :
+												appointment.status.toLowerCase() === 'in_progress' ? 'bg-blue-500' :
+												appointment.status.toLowerCase() === 'confirmed' ? 'bg-blue-500' :
+												'bg-yellow-500'
+											}`}></div>
 										</div>
-										<div className="text-xs font-medium">
-											{appointment.startTime && appointment.endTime 
-												? `${appointment.startTime}-${appointment.endTime}`
-												: appointment.startTime || 'TBD'
-											}
-										</div>
-										<div className={`ml-2 w-3 h-3 rounded-full ${
-											appointment.status.toLowerCase() === 'completed' ? 'bg-green-500' :
-											appointment.status.toLowerCase() === 'in_progress' ? 'bg-blue-500' :
-											appointment.status.toLowerCase() === 'confirmed' ? 'bg-blue-500' :
-											'bg-yellow-500'
-										}`}></div>
+										{appointment.status.toLowerCase() === 'pending' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleApproveAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													{actionLoading === appointment.id ? 'Approving...' : 'Approve'}
+												</button>
+												<button
+													onClick={() => handleRejectAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													{actionLoading === appointment.id ? 'Rejecting...' : 'Reject'}
+												</button>
+											</div>
+										)}
+										{appointment.status.toLowerCase() === 'confirmed' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleStartAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													{actionLoading === appointment.id ? 'Starting...' : 'Start Work'}
+												</button>
+											</div>
+										)}
+										{appointment.status.toLowerCase() === 'in_progress' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleCompleteAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													Submit Report
+												</button>
+											</div>
+										)}
 									</div>
 								))}
 								{filteredAppointments.length === 0 && (
@@ -181,7 +280,7 @@ export default function EmployeeAppointments() {
 								)}
 							</div>
 						)}
-						<button 
+						<button
 							onClick={() => window.location.href = '/employee/appointments'}
 							className="w-full mt-4 py-2 rounded-full bg-primary hover:bg-secondary text-white font-semibold text-sm"
 						>
@@ -256,10 +355,16 @@ export default function EmployeeAppointments() {
 					{/* Status Tabs */}
 					<div className="flex gap-2 mb-2">
 						<button
-							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "pending" ? "bg-gray-200" : "bg-white"}`}
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "pending" ? "bg-yellow-200" : "bg-white"}`}
 							onClick={() => setActiveTab("pending")}
 						>
-							Pending
+							Pending Approval
+						</button>
+						<button
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "confirmed" ? "bg-gray-200" : "bg-white"}`}
+							onClick={() => setActiveTab("confirmed")}
+						>
+							Confirmed
 						</button>
 						<button
 							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "inprogress" ? "bg-gray-200" : "bg-white"}`}

@@ -63,9 +63,9 @@ class AuthService {
   // Login
   async login(credentials: LoginRequest): Promise<{ user: User; token: string }> {
     try {
-      console.log('🚀 Attempting login with:', { 
+      console.log('🚀 Attempting login with:', {
         email: credentials.email,
-        url: API_ENDPOINTS.AUTH.LOGIN 
+        url: API_ENDPOINTS.AUTH.LOGIN
       });
 
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
@@ -101,7 +101,7 @@ class AuthService {
 
       // Decode token to get user info
       const userInfo = getUserFromToken(accessToken);
-      
+
       if (!userInfo) {
         throw new Error('Invalid token received');
       }
@@ -122,12 +122,12 @@ class AuthService {
       return { user, token: accessToken };
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      
+
       // Provide user-friendly error messages
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error(`Unable to connect to server. Please ensure the backend is running on ${API_BASE_URL}`);
       }
-      
+
       throw error;
     }
   }

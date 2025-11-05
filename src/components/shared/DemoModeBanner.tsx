@@ -8,7 +8,25 @@ export default function DemoModeBanner() {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Check demo mode initially
     setIsDemo(isDemoMode());
+
+    // Also listen for storage changes (in case user logs in/out in another tab)
+    const handleStorageChange = () => {
+      setIsDemo(isDemoMode());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Re-check periodically to catch same-tab changes
+    const interval = setInterval(() => {
+      setIsDemo(isDemoMode());
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
 
   if (!isDemo || !isVisible) return null;

@@ -1,9 +1,9 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Table,
   TableBody,
@@ -11,14 +11,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dialog';
 import {
   Check,
   X,
@@ -37,11 +36,11 @@ import {
   Car,
   Filter,
   UserPlus,
-} from "lucide-react";
-import { appointmentService } from "@/lib/services/appointmentService";
-import { employeeService, type Employee } from "@/lib/services/employeeService";
-import type { Appointment } from "@/lib/types/Appointment";
-import { useToast } from "@/contexts/ToastContext";
+} from 'lucide-react';
+import { appointmentService } from '@/lib/services/appointmentService';
+import { employeeService, type Employee } from '@/lib/services/employeeService';
+import type { Appointment } from '@/lib/types/Appointment';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function AppointmentsPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -50,8 +49,9 @@ export default function AppointmentsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const { showToast } = useToast();
 
   // Fetch appointments and employees on mount
@@ -63,13 +63,13 @@ export default function AppointmentsPage() {
     try {
       setLoading(true);
       const [appointmentsData, employeesData] = await Promise.all([
-        appointmentService.searchAppointments(''), // Empty string fetches all
+        appointmentService.getAllAppointments(),
         employeeService.getAllEmployees(),
       ]);
       setAppointments(appointmentsData);
       setEmployees(employeesData);
     } catch (error: any) {
-      showToast("Failed to load data: " + error.message, "error");
+      showToast('Failed to load data: ' + error.message, 'error');
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
@@ -78,22 +78,23 @@ export default function AppointmentsPage() {
 
   const getStatusCounts = () => {
     return {
-      pending: appointments.filter((a) => a.status === "PENDING").length,
-      inProgress: appointments.filter((a) => a.status === "IN_PROGRESS").length,
-      completed: appointments.filter((a) => a.status === "COMPLETED").length,
-      cancelled: appointments.filter((a) => a.status === "CANCELLED").length,
+      pending: appointments.filter((a) => a.status === 'PENDING').length,
+      confirmed: appointments.filter((a) => a.status === 'CONFIRMED').length,
+      inProgress: appointments.filter((a) => a.status === 'IN_PROGRESS').length,
+      completed: appointments.filter((a) => a.status === 'COMPLETED').length,
+      cancelled: appointments.filter((a) => a.status === 'CANCELLED').length,
     };
   };
 
   const handleAssignEmployee = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
-    setSelectedEmployeeId(appointment.employeeId?.toString() || "");
+    setSelectedEmployeeId(appointment.employeeId?.toString() || '');
     setAssignDialogOpen(true);
   };
 
   const confirmAssignEmployee = async () => {
     if (!selectedAppointment || !selectedEmployeeId) {
-      showToast("Please select an employee", "error");
+      showToast('Please select an employee', 'error');
       return;
     }
 
@@ -102,35 +103,35 @@ export default function AppointmentsPage() {
         selectedAppointment.id,
         parseInt(selectedEmployeeId)
       );
-      showToast("Employee assigned successfully", "success");
+      showToast('Employee assigned successfully', 'success');
       setAssignDialogOpen(false);
       setSelectedAppointment(null);
-      setSelectedEmployeeId("");
+      setSelectedEmployeeId('');
       fetchData(); // Refresh data
     } catch (error: any) {
-      showToast("Failed to assign employee: " + error.message, "error");
+      showToast('Failed to assign employee: ' + error.message, 'error');
       console.error('Error assigning employee:', error);
     }
   };
 
   const handleApprove = async (id: number) => {
     try {
-      await appointmentService.updateAppointment(id, { status: "CONFIRMED" });
-      showToast("Appointment approved successfully", "success");
+      await appointmentService.updateAppointment(id, { status: 'CONFIRMED' });
+      showToast('Appointment approved successfully', 'success');
       fetchData();
     } catch (error: any) {
-      showToast("Failed to approve appointment: " + error.message, "error");
+      showToast('Failed to approve appointment: ' + error.message, 'error');
       console.error('Error approving appointment:', error);
     }
   };
 
   const handleReject = async (id: number) => {
     try {
-      await appointmentService.updateAppointment(id, { status: "CANCELLED" });
-      showToast("Appointment rejected successfully", "success");
+      await appointmentService.updateAppointment(id, { status: 'CANCELLED' });
+      showToast('Appointment rejected successfully', 'success');
       fetchData();
     } catch (error: any) {
-      showToast("Failed to reject appointment: " + error.message, "error");
+      showToast('Failed to reject appointment: ' + error.message, 'error');
       console.error('Error rejecting appointment:', error);
     }
   };
@@ -138,9 +139,7 @@ export default function AppointmentsPage() {
   const statusCounts = getStatusCounts();
 
   // Get dates that have appointments for calendar
-  const appointmentDates = appointments.map(
-    (a) => new Date(a.appointmentDate)
-  );
+  const appointmentDates = appointments.map((a) => new Date(a.appointmentDate));
 
   if (loading) {
     return (
@@ -313,33 +312,33 @@ export default function AppointmentsPage() {
                   className="rounded-lg border-0 bg-gray-50 p-6 w-full"
                   classNames={{
                     months:
-                      "flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start",
-                    month: "space-y-4 flex-1 min-w-0",
-                    caption: "flex justify-center items-center mb-6 relative",
+                      'flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start',
+                    month: 'space-y-4 flex-1 min-w-0',
+                    caption: 'flex justify-center items-center mb-6 relative',
                     caption_label:
-                      "text-lg font-semibold text-gray-700 text-center",
-                    nav: "hidden", // Hide default navigation since we have global navigation
-                    nav_button: "hidden",
-                    nav_button_previous: "hidden",
-                    nav_button_next: "hidden",
-                    table: "w-full border-collapse",
-                    head_row: "flex w-full mb-3",
+                      'text-lg font-semibold text-gray-700 text-center',
+                    nav: 'hidden', // Hide default navigation since we have global navigation
+                    nav_button: 'hidden',
+                    nav_button_previous: 'hidden',
+                    nav_button_next: 'hidden',
+                    table: 'w-full border-collapse',
+                    head_row: 'flex w-full mb-3',
                     head_cell:
-                      "text-gray-500 w-full font-medium text-sm text-center py-2 mx-1",
-                    row: "flex w-full mt-2",
-                    cell: "h-12 w-full text-center text-sm p-0 relative mx-1",
-                    day: "h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default",
-                    day_today: "bg-gray-200 text-gray-900 font-semibold",
-                    day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-300 opacity-50",
-                    day_hidden: "invisible",
+                      'text-gray-500 w-full font-medium text-sm text-center py-2 mx-1',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-12 w-full text-center text-sm p-0 relative mx-1',
+                    day: 'h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default',
+                    day_today: 'bg-gray-200 text-gray-900 font-semibold',
+                    day_outside: 'text-gray-300 opacity-50',
+                    day_disabled: 'text-gray-300 opacity-50',
+                    day_hidden: 'invisible',
                   }}
                   modifiers={{
                     appointment: appointmentDates,
                   }}
                   modifiersClassNames={{
                     appointment:
-                      "bg-primary text-white font-semibold hover:bg-primary",
+                      'bg-primary text-white font-semibold hover:bg-primary',
                   }}
                 />
               </div>
@@ -387,16 +386,24 @@ export default function AppointmentsPage() {
 
           <TabsContent value="pending-approval" className="mt-6">
             <PendingApprovalTable
-              data={appointments.filter((a) => a.status === "PENDING")}
+              data={appointments.filter((a) => a.status === 'PENDING')}
               onApprove={handleApprove}
               onReject={handleReject}
               onAssignEmployee={handleAssignEmployee}
               employees={employees}
             />
           </TabsContent>
+          <TabsContent value="pending-approval" className="mt-6">
+            <TableWrapper
+              data={appointments.filter((a) => a.status === 'CONFIRMED')}
+              status="Confirmed"
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
+            />
+          </TabsContent>
           <TabsContent value="in-progress" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "IN_PROGRESS")}
+              data={appointments.filter((a) => a.status === 'IN_PROGRESS')}
               status="In Progress"
               onAssignEmployee={handleAssignEmployee}
               employees={employees}
@@ -404,7 +411,7 @@ export default function AppointmentsPage() {
           </TabsContent>
           <TabsContent value="completed" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "COMPLETED")}
+              data={appointments.filter((a) => a.status === 'COMPLETED')}
               status="Completed"
               onAssignEmployee={handleAssignEmployee}
               employees={employees}
@@ -412,7 +419,7 @@ export default function AppointmentsPage() {
           </TabsContent>
           <TabsContent value="cancelled" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "CANCELLED")}
+              data={appointments.filter((a) => a.status === 'CANCELLED')}
               status="Cancelled"
               onAssignEmployee={handleAssignEmployee}
               employees={employees}
@@ -427,20 +434,27 @@ export default function AppointmentsPage() {
           <DialogHeader>
             <DialogTitle>Assign Employee to Appointment</DialogTitle>
             <DialogDescription>
-              Select an employee to assign to this appointment. This will change the appointment status to CONFIRMED.
+              Select an employee to assign to this appointment. This will change
+              the appointment status to CONFIRMED.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <label className="block text-sm font-medium mb-2">
               Select Employee
             </label>
-            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+            <Select
+              value={selectedEmployeeId}
+              onValueChange={setSelectedEmployeeId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose an employee" />
               </SelectTrigger>
               <SelectContent>
                 {employees.map((emp) => (
-                  <SelectItem key={emp.employeeId} value={emp.employeeId.toString()}>
+                  <SelectItem
+                    key={emp.employeeId}
+                    value={emp.employeeId.toString()}
+                  >
                     {emp.name} - {emp.specialization}
                   </SelectItem>
                 ))}
@@ -448,12 +462,13 @@ export default function AppointmentsPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setAssignDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={confirmAssignEmployee}>
-              Assign Employee
-            </Button>
+            <Button onClick={confirmAssignEmployee}>Assign Employee</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -470,22 +485,21 @@ interface PendingApprovalTableProps {
   employees: Employee[];
 }
 
-function PendingApprovalTable({ 
-  data, 
-  onApprove, 
-  onReject, 
+function PendingApprovalTable({
+  data,
+  onApprove,
+  onReject,
   onAssignEmployee,
-  employees 
+  employees,
 }: PendingApprovalTableProps) {
-  
   const getEmployeeName = (employeeId: number | null) => {
-    if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.employeeId === employeeId);
-    return employee ? employee.name : "Unknown";
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
   };
 
   const formatTime = (time: string | null) => {
-    if (!time) return "N/A";
+    if (!time) return 'N/A';
     return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
@@ -516,9 +530,7 @@ function PendingApprovalTable({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
-              <TableHead className="font-semibold text-gray-700">
-                ID
-              </TableHead>
+              <TableHead className="font-semibold text-gray-700">ID</TableHead>
               <TableHead className="font-semibold text-gray-700">
                 Customer ID
               </TableHead>
@@ -573,11 +585,12 @@ function PendingApprovalTable({
                   <TableCell className="py-6 text-gray-700">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-gray-500" />
-                      {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                      {formatTime(appointment.startTime)} -{' '}
+                      {formatTime(appointment.endTime)}
                     </div>
                   </TableCell>
                   <TableCell className="py-6 text-gray-700 max-w-xs truncate">
-                    {appointment.notes || "N/A"}
+                    {appointment.notes || 'N/A'}
                   </TableCell>
                   <TableCell className="text-center py-6">
                     <div className="flex gap-3 justify-center">
@@ -646,11 +659,13 @@ function TableWrapper({
 }: TableWrapperProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "In Progress":
+      case 'Confirmed':
         return <CalendarIcon className="h-5 w-5 text-primary" />;
-      case "Completed":
+      case 'In Progress':
+        return <CalendarIcon className="h-5 w-5 text-primary" />;
+      case 'Completed':
         return <Check className="h-5 w-5 text-green-600" />;
-      case "Cancelled":
+      case 'Cancelled':
         return <X className="h-5 w-5 text-red-600" />;
       default:
         return <CalendarIcon className="h-5 w-5 text-gray-600" />;
@@ -659,25 +674,27 @@ function TableWrapper({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "In Progress":
-        return "text-primary";
-      case "Completed":
-        return "text-green-600";
-      case "Cancelled":
-        return "text-red-600";
+      case 'Confirmed':
+        return 'text-primary';
+      case 'In Progress':
+        return 'text-primary';
+      case 'Completed':
+        return 'text-green-600';
+      case 'Cancelled':
+        return 'text-red-600';
       default:
-        return "text-gray-600";
+        return 'text-gray-600';
     }
   };
 
   const getEmployeeName = (employeeId: number | null) => {
-    if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.employeeId === employeeId);
-    return employee ? employee.name : "Unknown";
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
   };
 
   const formatTime = (time: string | null) => {
-    if (!time) return "N/A";
+    if (!time) return 'N/A';
     return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
@@ -712,9 +729,7 @@ function TableWrapper({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
-              <TableHead className="font-semibold text-gray-700">
-                ID
-              </TableHead>
+              <TableHead className="font-semibold text-gray-700">ID</TableHead>
               <TableHead className="font-semibold text-gray-700">
                 Customer ID
               </TableHead>
@@ -769,11 +784,12 @@ function TableWrapper({
                   <TableCell className="text-gray-700 py-6">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-gray-500" />
-                      {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                      {formatTime(appointment.startTime)} -{' '}
+                      {formatTime(appointment.endTime)}
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-700 py-6 max-w-xs truncate">
-                    {appointment.notes || "N/A"}
+                    {appointment.notes || 'N/A'}
                   </TableCell>
                   <TableCell className="text-center py-6">
                     <Button
@@ -783,7 +799,7 @@ function TableWrapper({
                       className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      {appointment.employeeId ? "Reassign" : "Assign"}
+                      {appointment.employeeId ? 'Reassign' : 'Assign'}
                     </Button>
                   </TableCell>
                 </TableRow>

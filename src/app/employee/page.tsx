@@ -233,8 +233,8 @@ export default function EmployeeDashboard() {
 
 			{/* Upcoming Appointments */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="">
-					<CardTitle className="text-2xl font-bold text-gray-900">Upcoming Appointments</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Upcoming Appointments</CardTitle>
 				</CardHeader>
 				<CardContent className="overflow-x-auto px-4 pb-6">
 					<table className="min-w-full text-sm">
@@ -266,6 +266,29 @@ export default function EmployeeDashboard() {
 				</CardContent>
 			</Card>
 
+			{/* Projects by Status */}
+			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Projects by Status</CardTitle>
+				</CardHeader>
+				<CardContent className="">
+					<div className="space-y-4">
+						{projectsStatusData.map((item) => (
+							<div key={item.status}>
+								<div className="flex justify-between mb-1">
+									<span className="text-sm font-medium">{item.status}</span>
+								</div>
+								<Progress value={item.value} className="h-2 bg-gray-200 [&>div]:bg-primary" />
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Recent Activity */}
+			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Recent Activity</CardTitle>
 			{/* Quick Actions */}
 			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
 				<CardHeader>

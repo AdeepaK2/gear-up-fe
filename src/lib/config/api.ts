@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
     VERIFY_EMAIL: `${API_BASE_URL}/auth/verify-email`,
     RESEND_EMAIL: `${API_BASE_URL}/auth/resend-email`,
     CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
+    FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
+    RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
   },
   CUSTOMER: {
     BASE: `${API_BASE_URL}/customers`,
