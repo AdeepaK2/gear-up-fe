@@ -29,7 +29,7 @@ function adaptNotification(backend: BackendNotification): Notification {
 }
 
 class NotificationService {
-  private eventSource: EventSource | null = null;
+  private sseReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private connectionStatus: ConnectionStatus = 'DISCONNECTED';
   private listeners: Set<(notification: Notification) => void> = new Set();
   private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
@@ -108,50 +108,89 @@ class NotificationService {
 
   // SSE Methods
   connectSSE(token: string): void {
-    if (this.eventSource) {
+    if (this.sseReader) {
       console.log('Already connected to SSE');
       return;
     }
 
     this.updateStatus('CONNECTING');
     
-    // EventSource doesn't support headers, so pass token as query param
-    const url = `${API_ENDPOINTS.NOTIFICATIONS.STREAM}?token=${encodeURIComponent(token)}`;
-    this.eventSource = new EventSource(url);
+    const url = `${API_ENDPOINTS.NOTIFICATIONS.STREAM}`;
+    
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'text/event-stream',
+      },
+      credentials: 'include',
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('SSE connection failed');
+      }
 
-    this.eventSource.onopen = () => {
       console.log('SSE connected');
       this.updateStatus('CONNECTED');
-    };
 
-    this.eventSource.onmessage = (event) => {
-      try {
-        const notification: BackendNotification = JSON.parse(event.data);
-        this.notifyListeners(adaptNotification(notification));
-      } catch (error) {
-        console.error('Failed to parse SSE message:', error);
+      this.sseReader = response.body?.getReader() || null;
+      const decoder = new TextDecoder();
+
+      const readStream = () => {
+        this.sseReader?.read().then(({ done, value }) => {
+          if (done) {
+            console.log('SSE stream ended');
+            this.handleSSEError();
+            return;
+          }
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n\n');
+
+          lines.forEach(line => {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = line.substring(6);
+                const notification: BackendNotification = JSON.parse(data);
+                this.notifyListeners(adaptNotification(notification));
+              } catch (error) {
+                console.error('Failed to parse SSE message:', error);
+              }
+            }
+          });
+
+          readStream();
+        }).catch(error => {
+          console.error('SSE read error:', error);
+          this.handleSSEError();
+        });
+      };
+
+      readStream();
+    }).catch(error => {
+      console.error('SSE connection error:', error);
+      this.handleSSEError();
+    });
+  }
+
+  private handleSSEError(): void {
+    this.updateStatus('ERROR');
+    this.disconnectSSE();
+    
+    setTimeout(() => {
+      const token = authService.getAccessToken();
+      if (token && this.connectionStatus === 'ERROR') {
+        this.connectSSE(token);
       }
-    };
-
-    this.eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
-      this.updateStatus('ERROR');
-      this.disconnectSSE();
-      
-      // Auto reconnect after 5 seconds
-      setTimeout(() => {
-        if (token) this.connectSSE(token);
-      }, 5000);
-    };
+    }, 5000);
   }
 
   disconnectSSE(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-      this.updateStatus('DISCONNECTED');
-      console.log('SSE disconnected');
+    if (this.sseReader) {
+      this.sseReader.cancel();
+      this.sseReader = null;
     }
+    this.updateStatus('DISCONNECTED');
+    console.log('SSE disconnected');
   }
 
   // Event listeners

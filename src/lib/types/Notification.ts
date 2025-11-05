@@ -7,6 +7,7 @@ export interface BackendNotification {
   type: string;
   createdAt: string;
   read: boolean;
+  timeAgo?: string;
 }
 
 export interface NotificationPage {
