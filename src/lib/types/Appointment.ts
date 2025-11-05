@@ -9,11 +9,11 @@ export interface ApiResponse<T> {
 
 // Frontend types for appointment system
 export type AppointmentStatus =
-  | "pending"
-  | "confirmed"
-  | "in-progress"
-  | "completed"
-  | "cancelled";
+  | "PENDING"
+  | "CONFIRMED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
 
 // Consultation types - what customer is seeking help for
 export type ConsultationType =
