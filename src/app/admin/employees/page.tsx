@@ -217,6 +217,16 @@ export default function EmployeesPage() {
         </div>
       </div>
 
+      {/* Employees Table */}
+      <Card className="bg-white shadow-lg border-0">
+        <div className="">
+          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+            <h3 className="text-2xl font-semibold text-white">
+              All Employees
+            </h3>
+            <p className="text-white text-md">
+              Manage employee accounts and team information
+            </p>
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
