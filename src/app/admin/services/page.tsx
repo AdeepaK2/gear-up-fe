@@ -118,7 +118,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/tasks", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +179,7 @@ export default function ServicesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/tasks/${serviceId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks/${serviceId}`,
         {
           method: "DELETE",
           headers: {
