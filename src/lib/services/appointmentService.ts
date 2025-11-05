@@ -327,6 +327,102 @@ class AppointmentService {
       throw error;
     }
   }
+
+  // Employee: Approve/Confirm appointment
+  async approveAppointment(appointmentId: number): Promise<Appointment> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'CONFIRMED' }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to approve appointment');
+      }
+
+      const apiResponse: ApiResponse<Appointment> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error approving appointment:', error);
+      throw error;
+    }
+  }
+
+  // Employee: Reject appointment
+  async rejectAppointment(appointmentId: number): Promise<Appointment> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'CANCELED' }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reject appointment');
+      }
+
+      const apiResponse: ApiResponse<Appointment> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error rejecting appointment:', error);
+      throw error;
+    }
+  }
+
+  // Employee: Start working on appointment (change to IN_PROGRESS)
+  async startAppointment(appointmentId: number): Promise<Appointment> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'IN_PROGRESS' }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to start appointment');
+      }
+
+      const apiResponse: ApiResponse<Appointment> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error starting appointment:', error);
+      throw error;
+    }
+  }
+
+  // Employee: Complete appointment
+  async completeAppointment(appointmentId: number): Promise<Appointment> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'COMPLETED' }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to complete appointment');
+      }
+
+      const apiResponse: ApiResponse<Appointment> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error completing appointment:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

@@ -91,7 +91,34 @@ export function getRedirectPath(role: UserRole): string {
  */
 export function isDemoMode(): boolean {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem('isDemoMode') === 'true';
+
+  // Check localStorage flag first
+  const demoFlag = localStorage.getItem('isDemoMode') === 'true';
+
+  // Also check if the token has isDemoAccount flag
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+
+      // If token has isDemoAccount flag, return true
+      if (payload.isDemoAccount === true) {
+        return true;
+      }
+    } catch (error) {
+      // If token parsing fails, fall back to localStorage flag
+    }
+  }
+
+  return demoFlag;
 }
 
 /**
