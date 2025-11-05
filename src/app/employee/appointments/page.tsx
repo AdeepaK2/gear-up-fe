@@ -15,7 +15,7 @@ interface CalendarEvent {
 
 export default function EmployeeAppointments() {
 	const [selectedDay, setSelectedDay] = useState<number | null>(7);
-	const [activeTab, setActiveTab] = useState<"pending" | "inprogress" | "completed">("pending");
+	const [activeTab, setActiveTab] = useState<"confirmed" | "inprogress" | "completed">("confirmed");
 	const [miniDate, setMiniDate] = useState<Date | undefined>(new Date());
 	const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -49,7 +49,7 @@ export default function EmployeeAppointments() {
 			const year = calendarMonth.getFullYear();
 			const month = calendarMonth.getMonth() + 1; // JavaScript months are 0-indexed
 
-			const appointmentsData = await appointmentService.getAppointmentsByMonth(year, month);
+			const appointmentsData = await appointmentService.getEmployeeAppointments();
 			setAppointments(appointmentsData);
 		} catch (err) {
 			console.error('Failed to load appointments:', err);
@@ -63,11 +63,11 @@ export default function EmployeeAppointments() {
 		let filtered = appointments;
 
 		switch (activeTab) {
-			case 'pending':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'pending');
+			case 'confirmed':
+				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'confirmed');
 				break;
 			case 'inprogress':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'in_progress' || apt.status.toLowerCase() === 'confirmed');
+				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'in_progress');
 				break;
 			case 'completed':
 				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'completed');
@@ -90,9 +90,8 @@ export default function EmployeeAppointments() {
 
 	const getStatusColor = (status: string): string => {
 		switch (status.toLowerCase()) {
-			case 'pending':
-				return '#fbbf24'; // yellow
 			case 'confirmed':
+				return '#fbbf24'; // yellow
 			case 'in_progress':
 				return '#3b82f6'; // blue
 			case 'completed':
@@ -256,10 +255,10 @@ export default function EmployeeAppointments() {
 					{/* Status Tabs */}
 					<div className="flex gap-2 mb-2">
 						<button
-							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "pending" ? "bg-gray-200" : "bg-white"}`}
-							onClick={() => setActiveTab("pending")}
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "confirmed" ? "bg-gray-200" : "bg-white"}`}
+							onClick={() => setActiveTab("confirmed")}
 						>
-							Pending
+							Confirmed
 						</button>
 						<button
 							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "inprogress" ? "bg-gray-200" : "bg-white"}`}

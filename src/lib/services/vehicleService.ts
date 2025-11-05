@@ -55,6 +55,29 @@ class VehicleService {
     }
   }
 
+  // Get current customer vehicles
+  async getCurrentCustomerVehicles(): Promise<Vehicle[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.VEHICLES.BASE}/my-vehicles`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch vehicle');
+      }
+
+      const apiResponse: ApiResponse<Vehicle[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching vehicle:', error);
+      throw error;
+    }
+  }
+
   // Create a new vehicle
   async createVehicle(vehicleData: VehicleCreateRequest): Promise<Vehicle> {
     try {
