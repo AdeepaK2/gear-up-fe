@@ -153,7 +153,7 @@ export default function AppointmentList({
                 ).length
               }
             </div>
-            <div className="text-sm text-gray-600">Upcoming</div>
+            <div className="text-sm text-gray-600">Pending</div>
           </CardContent>
         </Card>
 
