@@ -47,33 +47,33 @@ interface AppointmentListProps {
 }
 
 const statusColors: Record<AppointmentStatus, string> = {
-  pending:
+  PENDING:
     "bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border-yellow-300 shadow-sm",
-  confirmed:
+  CONFIRMED:
     "bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-300 shadow-sm",
-  "in-progress":
+  IN_PROGRESS:
     "bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border-orange-300 shadow-sm",
-  completed:
+  COMPLETED:
     "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300 shadow-sm",
-  cancelled:
+  CANCELLED:
     "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300 shadow-sm",
 };
 
 const statusLabels: Record<AppointmentStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  "in-progress": "In Progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 const consultationTypeLabels: Record<ConsultationType, string> = {
-  "general-checkup": "General Checkup",
-  "specific-issue": "Specific Issue",
-  "maintenance-advice": "Maintenance Advice",
-  "performance-issue": "Performance Issue",
-  "safety-concern": "Safety Concern",
-  other: "Other",
+  "GENERAL_CHECKUP": "General Checkup",
+  "SPECIFIC_ISSUE": "Specific Issue",
+  "MAINTENANCE_ADVICE": "Maintenance Advice",
+  "PERFORMANCE_ISSUE": "Performance Issue",
+  "SAFETY_CONCERN": "Safety Concern",
+  "OTHER": "Other",
 };
 
 export default function AppointmentList({
@@ -114,7 +114,7 @@ export default function AppointmentList({
   };
 
   const canEditOrDelete = (status: AppointmentStatus) => {
-    return status === "pending" || status === "confirmed";
+    return status === "PENDING" || status === "CONFIRMED";
   };
 
   if (appointments.length === 0) {
@@ -149,7 +149,7 @@ export default function AppointmentList({
               {
                 appointments.filter(
                   (apt) =>
-                    apt.status === "pending" || apt.status === "confirmed"
+                    apt.status === "PENDING" || apt.status === "CONFIRMED"
                 ).length
               }
             </div>
@@ -160,7 +160,7 @@ export default function AppointmentList({
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">
-              {appointments.filter((apt) => apt.status === "completed").length}
+              {appointments.filter((apt) => apt.status === "COMPLETED").length}
             </div>
             <div className="text-sm text-gray-600">Completed</div>
           </CardContent>
@@ -170,7 +170,7 @@ export default function AppointmentList({
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
               {
-                appointments.filter((apt) => apt.status === "in-progress")
+                appointments.filter((apt) => apt.status === "IN_PROGRESS")
                   .length
               }
             </div>
@@ -356,13 +356,13 @@ export default function AppointmentList({
                 className="border-l-4 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-white to-gray-50 overflow-hidden"
                 style={{
                   borderLeftColor:
-                    appointment.status === "pending"
+                    appointment.status === "PENDING"
                       ? "#f59e0b"
-                      : appointment.status === "confirmed"
+                      : appointment.status === "CONFIRMED"
                       ? "#3b82f6"
-                      : appointment.status === "completed"
+                      : appointment.status === "COMPLETED"
                       ? "#10b981"
-                      : appointment.status === "cancelled"
+                      : appointment.status === "CANCELLED"
                       ? "#ef4444"
                       : "#f97316",
                 }}
@@ -466,7 +466,7 @@ export default function AppointmentList({
                             {appointment.employeeName}
                           </p>
                         )}
-                        {appointment.status === "completed" &&
+                        {appointment.status === "COMPLETED" &&
                           appointment.recommendedServices &&
                           appointment.recommendedServices.length > 0 && (
                             <p className="text-sm text-green-600 mt-1">

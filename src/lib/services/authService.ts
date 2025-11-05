@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from '../config/api';
+import API_BASE_URL from '../config/api';
 import type { 
   LoginRequest, 
   LoginResponse, 
@@ -124,7 +125,7 @@ class AuthService {
       
       // Provide user-friendly error messages
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to server. Please ensure the backend is running on http://localhost:8080');
+        throw new Error(`Unable to connect to server. Please ensure the backend is running on ${API_BASE_URL}`);
       }
       
       throw error;
@@ -177,7 +178,7 @@ class AuthService {
       
       // Provide user-friendly error messages
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to server. Please ensure the backend is running on http://localhost:8080');
+        throw new Error(`Unable to connect to server. Please ensure the backend is running on ${API_BASE_URL}`);
       }
       
       throw error;
