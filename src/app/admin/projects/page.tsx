@@ -65,7 +65,7 @@ export default function ProjectsPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/projects", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/projects`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
