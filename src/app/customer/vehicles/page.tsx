@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Car, Edit2, Trash2, Plus } from "lucide-react";
-import { vehicleService } from "@/lib/services/vehicleService";
-import type { Vehicle, VehicleCreateRequest } from "@/lib/types/Vehicle";
-import { useToast } from "@/contexts/ToastContext";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import React from 'react';
+import { Car, Edit2, Trash2, Plus } from 'lucide-react';
+import { vehicleService } from '@/lib/services/vehicleService';
+import type { Vehicle, VehicleCreateRequest } from '@/lib/types/Vehicle';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function VehiclesPage() {
   const toast = useToast();
@@ -14,14 +14,18 @@ export default function VehiclesPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isEditMode, setIsEditMode] = React.useState(false);
-  const [editingVehicleId, setEditingVehicleId] = React.useState<number | null>(null);
-  const [deleteVehicleId, setDeleteVehicleId] = React.useState<number | null>(null);
+  const [editingVehicleId, setEditingVehicleId] = React.useState<number | null>(
+    null
+  );
+  const [deleteVehicleId, setDeleteVehicleId] = React.useState<number | null>(
+    null
+  );
   const [form, setForm] = React.useState({
-    make: "",
-    model: "",
-    year: "",
-    licensePlate: "",
-    vin: "",
+    make: '',
+    model: '',
+    year: '',
+    licensePlate: '',
+    vin: '',
   });
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -34,11 +38,11 @@ export default function VehiclesPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await vehicleService.getAllVehicles();
+      const data = await vehicleService.getCurrentCustomerVehicles();
       setVehicles(data);
     } catch (err: any) {
-      setError(err.message || "Failed to fetch vehicles");
-      console.error("Error fetching vehicles:", err);
+      setError(err.message || 'Failed to fetch vehicles');
+      console.error('Error fetching vehicles:', err);
     } finally {
       setLoading(false);
     }
@@ -47,7 +51,7 @@ export default function VehiclesPage() {
   const openModal = () => {
     setIsEditMode(false);
     setEditingVehicleId(null);
-    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+    setForm({ make: '', model: '', year: '', licensePlate: '', vin: '' });
     setIsModalOpen(true);
   };
 
@@ -68,7 +72,7 @@ export default function VehiclesPage() {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingVehicleId(null);
-    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+    setForm({ make: '', model: '', year: '', licensePlate: '', vin: '' });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,8 +84,14 @@ export default function VehiclesPage() {
     e.preventDefault();
 
     // Basic validation
-    if (!form.make || !form.model || !form.year || !form.licensePlate || !form.vin) {
-      toast.warning("Please fill all required fields");
+    if (
+      !form.make ||
+      !form.model ||
+      !form.year ||
+      !form.licensePlate ||
+      !form.vin
+    ) {
+      toast.warning('Please fill all required fields');
       return;
     }
 
@@ -90,17 +100,20 @@ export default function VehiclesPage() {
 
       if (isEditMode && editingVehicleId) {
         // Update existing vehicle
-        const updatedVehicle = await vehicleService.updateVehicle(editingVehicleId, {
-          make: form.make,
-          model: form.model,
-          year: Number(form.year),
-          licensePlate: form.licensePlate,
-          vin: form.vin,
-        });
+        const updatedVehicle = await vehicleService.updateVehicle(
+          editingVehicleId,
+          {
+            make: form.make,
+            model: form.model,
+            year: Number(form.year),
+            licensePlate: form.licensePlate,
+            vin: form.vin,
+          }
+        );
         setVehicles((prev) =>
           prev.map((v) => (v.id === editingVehicleId ? updatedVehicle : v))
         );
-        toast.success("Vehicle updated successfully");
+        toast.success('Vehicle updated successfully');
       } else {
         // Create new vehicle
         const vehicleData: VehicleCreateRequest = {
@@ -112,13 +125,18 @@ export default function VehiclesPage() {
         };
         const newVehicle = await vehicleService.createVehicle(vehicleData);
         setVehicles((prev) => [newVehicle, ...prev]);
-        toast.success("Vehicle added successfully");
+        toast.success('Vehicle added successfully');
       }
 
       closeModal();
     } catch (err: any) {
-      toast.error(err.message || `Failed to ${isEditMode ? "update" : "create"} vehicle`);
-      console.error(`Error ${isEditMode ? "updating" : "creating"} vehicle:`, err);
+      toast.error(
+        err.message || `Failed to ${isEditMode ? 'update' : 'create'} vehicle`
+      );
+      console.error(
+        `Error ${isEditMode ? 'updating' : 'creating'} vehicle:`,
+        err
+      );
     } finally {
       setSubmitting(false);
     }
@@ -141,11 +159,11 @@ export default function VehiclesPage() {
     try {
       await vehicleService.deleteVehicle(deleteVehicleId);
       setVehicles((prev) => prev.filter((v) => v.id !== deleteVehicleId));
-      toast.success("Vehicle deleted successfully");
+      toast.success('Vehicle deleted successfully');
       setDeleteVehicleId(null);
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete vehicle");
-      console.error("Error deleting vehicle:", err);
+      toast.error(err.message || 'Failed to delete vehicle');
+      console.error('Error deleting vehicle:', err);
     }
   };
 
@@ -186,8 +204,12 @@ export default function VehiclesPage() {
         {!loading && !error && vehicles.length === 0 && (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Car className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium text-gray-900">No vehicles</h3>
-            <p className="mt-1 text-gray-500">Get started by adding your first vehicle.</p>
+            <h3 className="mt-2 text-lg font-medium text-gray-900">
+              No vehicles
+            </h3>
+            <p className="mt-1 text-gray-500">
+              Get started by adding your first vehicle.
+            </p>
             <button
               onClick={openModal}
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white hover:bg-secondary"
@@ -200,71 +222,71 @@ export default function VehiclesPage() {
 
         {!loading && !error && vehicles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((v) => (
-            <div
-              key={v.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
-            >
-              <div className="flex flex-col h-full">
-                {/* Header with icon and title */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                      <Car className="text-primary w-6 h-6" />
+            {vehicles.map((v) => (
+              <div
+                key={v.id}
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-primary/20 group"
+              >
+                <div className="flex flex-col h-full">
+                  {/* Header with icon and title */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                        <Car className="text-primary w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
+                          {v.make} {v.model}
+                        </h2>
+                        <p className="text-sm text-gray-500 font-medium">
+                          {v.year}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
-                        {v.make} {v.model}
-                      </h2>
-                      <p className="text-sm text-gray-500 font-medium">
+                  </div>
+
+                  {/* Vehicle details */}
+                  <div className="flex-1 space-y-3 mb-6">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-600">
+                        License Plate
+                      </span>
+                      <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
+                        {v.licensePlate}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-600">
+                        Model Year
+                      </span>
+                      <span className="text-sm font-semibold text-primary">
                         {v.year}
-                      </p>
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Vehicle details */}
-                <div className="flex-1 space-y-3 mb-6">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-600">
-                      License Plate
-                    </span>
-                    <span className="text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-md border">
-                      {v.licensePlate}
-                    </span>
+                  {/* Action buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleEdit(v.id)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+                    >
+                      <Edit2 size={18} />
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteClick(v.id)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
+                    >
+                      <Trash2 size={18} />
+                      Delete
+                    </button>
                   </div>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-600">
-                      Model Year
-                    </span>
-                    <span className="text-sm font-semibold text-primary">
-                      {v.year}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleEdit(v.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary text-white hover:bg-secondary transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-                  >
-                    <Edit2 size={18} />
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteClick(v.id)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all duration-200 font-medium"
-                  >
-                    <Trash2 size={18} />
-                    Delete
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         )}
       </div>
@@ -274,7 +296,7 @@ export default function VehiclesPage() {
           <div className="bg-custom rounded-lg shadow-lg p-6 w-full max-w-md animate-fade-in">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-primary font-bold text-xl">
-                {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
+                {isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}
               </h3>
               <button onClick={closeModal} className="hover:text-secondary">
                 ✕
@@ -369,7 +391,13 @@ export default function VehiclesPage() {
                   disabled={submitting}
                   className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update" : "Save")}
+                  {submitting
+                    ? isEditMode
+                      ? 'Updating...'
+                      : 'Creating...'
+                    : isEditMode
+                    ? 'Update'
+                    : 'Save'}
                 </button>
               </div>
             </form>
