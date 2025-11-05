@@ -1,15 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Calendar, CheckCircle, Wrench, FileText, Clock } from "lucide-react";
-import DashboardHeader from "@/components/customer/dashboard/DashboardHeader";
-import SummaryCard from "@/components/customer/dashboard/SummaryCard";
-import NotificationsList from "@/components/customer/dashboard/NotificationsList";
-import QuickActions from "@/components/customer/dashboard/QuickActions";
-import RecentActivity from "@/components/customer/dashboard/RecentActivity";
-import VehiclesList from "@/components/customer/dashboard/VehiclesList";
-import ChatWidget from "@/components/customer/dashboard/ChatWidget";
-import DashboardFooter from "@/components/customer/dashboard/DashboardFooter";
+import { useState, useMemo, useEffect } from 'react';
+import { Calendar, CheckCircle, Wrench, FileText, Clock } from 'lucide-react';
+import DashboardHeader from '@/components/customer/dashboard/DashboardHeader';
+import SummaryCard from '@/components/customer/dashboard/SummaryCard';
+import NotificationsList from '@/components/customer/dashboard/NotificationsList';
+import QuickActions from '@/components/customer/dashboard/QuickActions';
+import RecentActivity from '@/components/customer/dashboard/RecentActivity';
+import VehiclesList from '@/components/customer/dashboard/VehiclesList';
+import ChatWidget from '@/components/customer/dashboard/ChatWidget';
+import DashboardFooter from '@/components/customer/dashboard/DashboardFooter';
+import authService from '@/lib/services/authService';
+import { customerService } from '@/lib/services/customerService';
 
 /**
  * Dashboard Data Interface
@@ -55,86 +57,86 @@ interface DashboardData {
 
 const mockData: DashboardData = {
   customer: {
-    name: "John Smith",
-    email: "john.smith@email.com",
-    membershipLevel: "Gold",
+    name: 'John Smith',
+    email: 'john.smith@email.com',
+    membershipLevel: 'Gold',
     loyaltyPoints: 2340,
-    profileImage: "/public/image.jpg",
+    profileImage: '/public/image.jpg',
   },
   summary: {
-    upcomingAppointments: { count: 2, nextDate: "2025-10-02" },
-    ongoingProjects: { count: 1, status: "In Progress" },
+    upcomingAppointments: { count: 2, nextDate: '2025-10-02' },
+    ongoingProjects: { count: 1, status: 'In Progress' },
     completedServices: { count: 15 },
     pendingRequests: { count: 3 },
   },
   notifications: [
     {
       id: 1,
-      message: "Your appointment on Oct 2nd has been confirmed",
-      type: "info",
-      time: "2 hours ago",
+      message: 'Your appointment on Oct 2nd has been confirmed',
+      type: 'info',
+      time: '2 hours ago',
       urgent: false,
     },
     {
       id: 2,
       message: 'Project #1234 status updated to "In Progress"',
-      type: "success",
-      time: "5 hours ago",
+      type: 'success',
+      time: '5 hours ago',
       urgent: false,
     },
     {
       id: 3,
-      message: "Payment required for completed service",
-      type: "warning",
-      time: "1 day ago",
+      message: 'Payment required for completed service',
+      type: 'warning',
+      time: '1 day ago',
       urgent: true,
     },
   ],
   recentActivity: [
     {
       id: 1,
-      action: "Appointment booked",
-      description: "General checkup scheduled for Oct 2nd",
-      time: "2 days ago",
+      action: 'Appointment booked',
+      description: 'General checkup scheduled for Oct 2nd',
+      time: '2 days ago',
       icon: Calendar,
     },
     {
       id: 2,
-      action: "Service accepted",
-      description: "Brake pad replacement approved",
-      time: "3 days ago",
+      action: 'Service accepted',
+      description: 'Brake pad replacement approved',
+      time: '3 days ago',
       icon: CheckCircle,
     },
     {
       id: 3,
-      action: "Status updated",
+      action: 'Status updated',
       description: 'Project #1234 moved to "In Progress"',
-      time: "5 days ago",
+      time: '5 days ago',
       icon: Wrench,
     },
     {
       id: 4,
-      action: "File uploaded",
-      description: "Vehicle inspection report submitted",
-      time: "1 week ago",
+      action: 'File uploaded',
+      description: 'Vehicle inspection report submitted',
+      time: '1 week ago',
       icon: FileText,
     },
   ],
   vehicles: [
     {
       id: 1,
-      make: "Toyota",
-      model: "Camry",
+      make: 'Toyota',
+      model: 'Camry',
       year: 2020,
-      licensePlate: "ABC-123",
-      nextService: "2025-11-15",
+      licensePlate: 'ABC-123',
+      nextService: '2025-11-15',
     },
     {
       id: 2,
-      make: "Honda",
-      model: "Civic",
+      make: 'Honda',
+      model: 'Civic',
       year: 2019,
-      licensePlate: "XYZ-789",
+      licensePlate: 'XYZ-789',
       nextService: null,
     },
   ],
@@ -151,6 +153,7 @@ const mockData: DashboardData = {
  */
 export default function DashboardPage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
 
   /**
    * Summary cards configuration
@@ -159,29 +162,29 @@ export default function DashboardPage() {
   const summaryCards = useMemo(
     () => [
       {
-        title: "Upcoming Appointments",
+        title: 'Upcoming Appointments',
         count: mockData.summary.upcomingAppointments.count,
         subtitle: `Next: ${mockData.summary.upcomingAppointments.nextDate}`,
         icon: Calendar,
-        href: "/customer/appointments",
+        href: '/customer/appointments',
       },
       {
-        title: "Ongoing Projects",
+        title: 'Ongoing Projects',
         count: mockData.summary.ongoingProjects.count,
         subtitle: mockData.summary.ongoingProjects.status,
         icon: Wrench,
-        href: "/customer/projects",
+        href: '/customer/projects',
       },
       {
-        title: "Completed Services",
+        title: 'Completed Services',
         count: mockData.summary.completedServices.count,
-        subtitle: "All time",
+        subtitle: 'All time',
         icon: CheckCircle,
       },
       {
-        title: "Pending Requests",
+        title: 'Pending Requests',
         count: mockData.summary.pendingRequests.count,
-        subtitle: "Awaiting response",
+        subtitle: 'Awaiting response',
         icon: Clock,
       },
     ],
@@ -192,9 +195,21 @@ export default function DashboardPage() {
     setIsChatOpen((prev) => !prev);
   };
 
+  useEffect(() => {
+    const fetchCustomerName = async () => {
+      try {
+        const customer = await customerService.getCurrentCustomerProfile();
+        setCustomerName(customer.name);
+      } catch (error) {
+        console.error('Error fetching customer name:', error);
+      }
+    };
+
+    fetchCustomerName();
+  }, []);
   return (
     <div className="min-h-screen space-y-6">
-      <DashboardHeader customerName={mockData.customer.name} />
+      <DashboardHeader customerName={customerName} />
 
       {/* Summary Cards Grid */}
       <section aria-labelledby="summary-heading">

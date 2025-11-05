@@ -101,7 +101,7 @@ export default function AppointmentsPage() {
         setInitialLoading(true);
 
         // Fetch vehicles
-        const vehiclesData = await vehicleService.getAllVehicles();
+        const vehiclesData = await vehicleService.getCurrentCustomerVehicles();
         setBackendVehicles(vehiclesData);
         const uiVehicles = vehiclesData.map(convertVehicleToUIFormat);
         setVehicles(uiVehicles);

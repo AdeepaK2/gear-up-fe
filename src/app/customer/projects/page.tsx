@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useState, useCallback, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   FileText,
   Car,
@@ -10,104 +10,105 @@ import {
   UserCog,
   CalendarCheck,
   AlertTriangle,
-} from "lucide-react";
-import ProjectHeader from "@/components/customer/ProjectHeader";
-import ProjectInfoTile from "@/components/customer/ProjectInfoTile";
-import ServiceStatsRow from "@/components/customer/ServiceStatsRow";
-import RecommendedServicesSection from "@/components/customer/RecommendedServicesSection";
-import SelectionReviewCard from "@/components/customer/SelectionReviewCard";
-import AcceptedServicesSection from "@/components/customer/AcceptedServicesSection";
-import ProjectActionsCard from "@/components/customer/ProjectActionsCard";
-import AdditionalServiceRequest from "@/components/customer/AdditionalServiceRequest";
-import { ProjectData, Service } from "@/lib/types/Project";
-import { cn } from "@/lib/utils";
-import { formatCurrencyLKR } from "@/lib/utils/currency";
-import { formatDateLK } from "@/lib/utils/datetime";
-import { projectStatusConfig, getStatusIcon } from "@/lib/config/projectStatus";
-import type { ServiceProgress } from "@/components/customer/ServiceProgressBadge";
+} from 'lucide-react';
+import ProjectHeader from '@/components/customer/ProjectHeader';
+import ProjectInfoTile from '@/components/customer/ProjectInfoTile';
+import ServiceStatsRow from '@/components/customer/ServiceStatsRow';
+import RecommendedServicesSection from '@/components/customer/RecommendedServicesSection';
+import SelectionReviewCard from '@/components/customer/SelectionReviewCard';
+import AcceptedServicesSection from '@/components/customer/AcceptedServicesSection';
+import ProjectActionsCard from '@/components/customer/ProjectActionsCard';
+import AdditionalServiceRequest from '@/components/customer/AdditionalServiceRequest';
+import { ProjectData, Service } from '@/lib/types/Project';
+import { cn } from '@/lib/utils';
+import { formatCurrencyLKR } from '@/lib/utils/currency';
+import { formatDateLK } from '@/lib/utils/datetime';
+import { projectStatusConfig, getStatusIcon } from '@/lib/config/projectStatus';
+import type { ServiceProgress } from '@/components/customer/ServiceProgressBadge';
+import { projectService } from '@/lib/services/projectService';
 
 /**
  * Mock project data - acts as initial state until backend integration.
  * Keep this structure stable to maintain UI contract with future API endpoints.
  */
 const mockProject: ProjectData = {
-  id: "proj_001",
-  appointmentId: "apt_001",
-  customerId: "cust_001",
-  vehicleId: "veh_001",
-  vehicleName: "2020 Toyota Camry",
-  vehicleDetails: "License: ABC-123",
-  consultationType: "general-checkup",
-  consultationDate: "2025-10-15",
-  employeeId: "emp_001",
-  employeeName: "John Smith",
-  status: "waiting-confirmation",
+  id: 'proj_001',
+  appointmentId: 'apt_001',
+  customerId: 'cust_001',
+  vehicleId: 'veh_001',
+  vehicleName: '2020 Toyota Camry',
+  vehicleDetails: 'License: ABC-123',
+  consultationType: 'general-checkup',
+  consultationDate: '2025-10-15',
+  employeeId: 'emp_001',
+  employeeName: 'John Smith',
+  status: 'waiting-confirmation',
   services: [
     {
-      id: "srv_001",
-      name: "Engine Oil Change",
+      id: 'srv_001',
+      name: 'Engine Oil Change',
       description:
-        "Replace engine oil and filter with high-quality synthetic oil. Includes inspection of oil levels and engine condition.",
-      estimatedDuration: "45 minutes",
+        'Replace engine oil and filter with high-quality synthetic oil. Includes inspection of oil levels and engine condition.',
+      estimatedDuration: '45 minutes',
       estimatedCost: 15000.0,
-      status: "accepted",
-      category: "Maintenance",
-      priority: "high",
+      status: 'accepted',
+      category: 'Maintenance',
+      priority: 'high',
       notes:
-        "Due for oil change based on mileage. Recommend synthetic oil for better engine protection.",
-      requestedBy: "employee",
-      createdAt: "2025-10-15T10:00:00Z",
+        'Due for oil change based on mileage. Recommend synthetic oil for better engine protection.',
+      requestedBy: 'employee',
+      createdAt: '2025-10-15T10:00:00Z',
     },
     {
-      id: "srv_002",
-      name: "Brake Pad Replacement",
+      id: 'srv_002',
+      name: 'Brake Pad Replacement',
       description:
-        "Replace front brake pads with OEM parts. Includes rotor inspection and brake fluid level check.",
-      estimatedDuration: "2 hours",
+        'Replace front brake pads with OEM parts. Includes rotor inspection and brake fluid level check.',
+      estimatedDuration: '2 hours',
       estimatedCost: 45000.0,
-      status: "accepted",
-      category: "Safety",
-      priority: "medium",
+      status: 'accepted',
+      category: 'Safety',
+      priority: 'medium',
       notes:
-        "Front brake pads are at 20% remaining. Recommend replacement soon for optimal braking performance.",
-      requestedBy: "employee",
-      createdAt: "2025-10-15T10:00:00Z",
+        'Front brake pads are at 20% remaining. Recommend replacement soon for optimal braking performance.',
+      requestedBy: 'employee',
+      createdAt: '2025-10-15T10:00:00Z',
     },
     {
-      id: "srv_003",
-      name: "Air Filter Replacement",
+      id: 'srv_003',
+      name: 'Air Filter Replacement',
       description:
-        "Replace engine air filter to improve air flow and engine efficiency.",
-      estimatedDuration: "20 minutes",
+        'Replace engine air filter to improve air flow and engine efficiency.',
+      estimatedDuration: '20 minutes',
       estimatedCost: 8500.0,
-      status: "recommended",
-      category: "Maintenance",
-      priority: "low",
+      status: 'recommended',
+      category: 'Maintenance',
+      priority: 'low',
       notes:
-        "Air filter is moderately dirty. Replacement will improve fuel efficiency.",
-      requestedBy: "employee",
-      createdAt: "2025-10-15T10:00:00Z",
+        'Air filter is moderately dirty. Replacement will improve fuel efficiency.',
+      requestedBy: 'employee',
+      createdAt: '2025-10-15T10:00:00Z',
     },
     {
-      id: "srv_004",
-      name: "Battery Test & Clean",
+      id: 'srv_004',
+      name: 'Battery Test & Clean',
       description:
-        "Test battery performance and clean battery terminals for optimal electrical connection.",
-      estimatedDuration: "30 minutes",
+        'Test battery performance and clean battery terminals for optimal electrical connection.',
+      estimatedDuration: '30 minutes',
       estimatedCost: 5000.0,
-      status: "recommended",
-      category: "Electrical",
-      priority: "low",
-      requestedBy: "employee",
-      createdAt: "2025-10-15T10:00:00Z",
+      status: 'recommended',
+      category: 'Electrical',
+      priority: 'low',
+      requestedBy: 'employee',
+      createdAt: '2025-10-15T10:00:00Z',
     },
   ],
   additionalRequests: [],
   totalEstimatedCost: 73500.0,
   totalAcceptedCost: 0,
   acceptedServicesCount: 0,
-  createdAt: "2025-10-15T10:00:00Z",
-  updatedAt: "2025-10-15T10:00:00Z",
+  createdAt: '2025-10-15T10:00:00Z',
+  updatedAt: '2025-10-15T10:00:00Z',
 };
 
 /**
@@ -138,7 +139,7 @@ export default function ProjectsPage() {
    * Recalculates only when services array changes.
    */
   const acceptedServices = useMemo(
-    () => project.services.filter((s) => s.status === "accepted"),
+    () => project.services.filter((s) => s.status === 'accepted'),
     [project.services]
   );
 
@@ -165,7 +166,7 @@ export default function ProjectsPage() {
         ...prev,
         services: prev.services.map((service) =>
           service.id === serviceId
-            ? { ...service, status: "accepted" as const }
+            ? { ...service, status: 'accepted' as const }
             : service
         ),
         updatedAt: new Date().toISOString(),
@@ -174,10 +175,10 @@ export default function ProjectsPage() {
       // Initialize service progress as not-started
       setServiceProgress((prev) => ({
         ...prev,
-        [serviceId]: "not-started",
+        [serviceId]: 'not-started',
       }));
     } catch (error) {
-      console.error("Error accepting service:", error);
+      console.error('Error accepting service:', error);
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +197,7 @@ export default function ProjectsPage() {
         ...prev,
         services: prev.services.map((service) =>
           service.id === serviceId
-            ? { ...service, status: "recommended" as const }
+            ? { ...service, status: 'recommended' as const }
             : service
         ),
         updatedAt: new Date().toISOString(),
@@ -209,7 +210,7 @@ export default function ProjectsPage() {
         return newProgress;
       });
     } catch (error) {
-      console.error("Error unselecting service:", error);
+      console.error('Error unselecting service:', error);
     } finally {
       setIsLoading(false);
     }
@@ -221,10 +222,10 @@ export default function ProjectsPage() {
    */
   const cancelService = useCallback(
     async (serviceId: string) => {
-      const progress = serviceProgress[serviceId] || "not-started";
+      const progress = serviceProgress[serviceId] || 'not-started';
 
       // Business rule: cannot cancel services that have started
-      if (progress !== "not-started") {
+      if (progress !== 'not-started') {
         return;
       }
 
@@ -237,7 +238,7 @@ export default function ProjectsPage() {
           ...prev,
           services: prev.services.map((service) =>
             service.id === serviceId
-              ? { ...service, status: "cancelled" as const }
+              ? { ...service, status: 'cancelled' as const }
               : service
           ),
           updatedAt: new Date().toISOString(),
@@ -250,7 +251,7 @@ export default function ProjectsPage() {
           return newProgress;
         });
       } catch (error) {
-        console.error("Error cancelling service:", error);
+        console.error('Error cancelling service:', error);
       } finally {
         setIsLoading(false);
       }
@@ -269,13 +270,13 @@ export default function ProjectsPage() {
 
       setProject((prev) => ({
         ...prev,
-        status: "confirmed",
+        status: 'confirmed',
         totalAcceptedCost,
         acceptedServicesCount: acceptedServices.length,
         updatedAt: new Date().toISOString(),
       }));
     } catch (error) {
-      console.error("Error confirming services:", error);
+      console.error('Error confirming services:', error);
     } finally {
       setIsLoading(false);
     }
@@ -293,13 +294,13 @@ export default function ProjectsPage() {
 
         const newService: Service = {
           id: crypto.randomUUID ? crypto.randomUUID() : `srv_${Date.now()}`,
-          name: "Custom Service Request",
+          name: 'Custom Service Request',
           description: request.customRequest,
-          estimatedDuration: "TBD",
+          estimatedDuration: 'TBD',
           estimatedCost: 0,
-          status: "requested",
-          category: "Custom",
-          requestedBy: "customer",
+          status: 'requested',
+          category: 'Custom',
+          requestedBy: 'customer',
           createdAt: new Date().toISOString(),
         };
 
@@ -309,7 +310,7 @@ export default function ProjectsPage() {
           updatedAt: new Date().toISOString(),
         }));
       } catch (error) {
-        console.error("Error submitting additional service request:", error);
+        console.error('Error submitting additional service request:', error);
       } finally {
         setIsLoading(false);
       }
@@ -334,11 +335,11 @@ export default function ProjectsPage() {
 
       setProject((prev) => ({
         ...prev,
-        status: "cancelled",
+        status: 'cancelled',
         updatedAt: new Date().toISOString(),
       }));
     } catch (error) {
-      console.error("Error cancelling project:", error);
+      console.error('Error cancelling project:', error);
     } finally {
       setIsLoading(false);
     }
@@ -363,7 +364,7 @@ export default function ProjectsPage() {
               <h2 className="text-2xl font-bold mb-1">Project Details</h2>
               <div className="text-white/90 font-normal flex items-center gap-2">
                 <Calendar className="h-4 w-4" aria-hidden="true" />
-                Based on your consultation on{" "}
+                Based on your consultation on{' '}
                 {new Date(project.consultationDate).toLocaleDateString()}
               </div>
             </div>
@@ -398,10 +399,10 @@ export default function ProjectsPage() {
             >
               <Badge
                 className={cn(
-                  "text-sm font-semibold px-3 py-1 mb-2",
+                  'text-sm font-semibold px-3 py-1 mb-2',
                   statusInfo.color,
                   statusInfo.bgColor,
-                  "border-2"
+                  'border-2'
                 )}
                 aria-label={`Project status: ${statusInfo.label}`}
               >
@@ -429,7 +430,7 @@ export default function ProjectsPage() {
 
       {/* Service Confirmation Review */}
       {acceptedServices.length > 0 &&
-        project.status === "waiting-confirmation" && (
+        project.status === 'waiting-confirmation' && (
           <SelectionReviewCard
             acceptedServices={acceptedServices}
             totalCost={totalAcceptedCost}
@@ -441,7 +442,7 @@ export default function ProjectsPage() {
 
       {/* Accepted Services with Progress */}
       {acceptedServices.length > 0 &&
-        project.status !== "waiting-confirmation" && (
+        project.status !== 'waiting-confirmation' && (
           <AcceptedServicesSection
             acceptedServices={acceptedServices}
             projectStatus={project.status}
@@ -452,17 +453,17 @@ export default function ProjectsPage() {
         )}
 
       {/* Additional Service Request */}
-      {project.status === "waiting-confirmation" &&
+      {project.status === 'waiting-confirmation' &&
         acceptedServices.length > 0 && (
           <AdditionalServiceRequest
             onSubmit={submitAdditionalRequest}
             isLoading={isLoading}
-            disabled={project.status !== "waiting-confirmation"}
+            disabled={project.status !== 'waiting-confirmation'}
           />
         )}
 
       {/* Project Actions - No Services Selected */}
-      {project.status === "waiting-confirmation" &&
+      {project.status === 'waiting-confirmation' &&
         acceptedServices.length === 0 && (
           <ProjectActionsCard
             onCancelProject={cancelProject}
@@ -471,7 +472,7 @@ export default function ProjectsPage() {
         )}
 
       {/* Service Status Information */}
-      {(project.status === "confirmed" || acceptedServices.length > 0) && (
+      {(project.status === 'confirmed' || acceptedServices.length > 0) && (
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
