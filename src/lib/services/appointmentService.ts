@@ -4,16 +4,39 @@ import type {
   Appointment,
   AppointmentCreateRequest,
   AppointmentUpdateRequest,
-  ApiResponse
+  ApiResponse,
 } from '../types/Appointment';
 
 class AppointmentService {
 
-  // Get all appointments for the current customer
+  // Get all appointments
   async getAllAppointments(): Promise<Appointment[]> {
     try {
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.APPOINTMENTS.BASE,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch appointments');
+      }
+
+      const apiResponse: ApiResponse<Appointment[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching appointments:', error);
+      throw error;
+    }
+  }
+
+  // Get all appointments for the current customer
+  async getAllAppointmentsForCurrentCustomer(): Promise<Appointment[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/customer`,
         {
           method: 'GET',
         }
@@ -56,7 +79,9 @@ class AppointmentService {
   }
 
   // Create a new appointment
-  async createAppointment(appointmentData: AppointmentCreateRequest): Promise<Appointment> {
+  async createAppointment(
+    appointmentData: AppointmentCreateRequest
+  ): Promise<Appointment> {
     try {
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.APPOINTMENTS.BASE,
@@ -80,7 +105,10 @@ class AppointmentService {
   }
 
   // Update an appointment
-  async updateAppointment(id: number, appointmentData: AppointmentUpdateRequest): Promise<Appointment> {
+  async updateAppointment(
+    id: number,
+    appointmentData: AppointmentUpdateRequest
+  ): Promise<Appointment> {
     try {
       const response = await authService.authenticatedFetch(
         `${API_ENDPOINTS.APPOINTMENTS.BASE}/${id}`,
@@ -137,7 +165,11 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.warn('Employee appointments fetch returned non-OK status:', response.status, errorData);
+        console.warn(
+          'Employee appointments fetch returned non-OK status:',
+          response.status,
+          errorData
+        );
         // Return empty array on error to prevent page crash
         return [];
       }
@@ -163,7 +195,11 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.warn('Upcoming appointments fetch returned non-OK status:', response.status, errorData);
+        console.warn(
+          'Upcoming appointments fetch returned non-OK status:',
+          response.status,
+          errorData
+        );
         // Return empty array on error to prevent page crash
         return [];
       }
@@ -178,7 +214,11 @@ class AppointmentService {
   }
 
   // Get appointments by month and statuses
-  async getAppointmentsByMonth(year: number, month: number, statuses?: string[]): Promise<Appointment[]> {
+  async getAppointmentsByMonth(
+    year: number,
+    month: number,
+    statuses?: string[]
+  ): Promise<Appointment[]> {
     try {
       const params = new URLSearchParams({
         year: year.toString(),
@@ -186,7 +226,7 @@ class AppointmentService {
       });
 
       if (statuses && statuses.length > 0) {
-        statuses.forEach(status => params.append('statuses', status));
+        statuses.forEach((status) => params.append('statuses', status));
       }
 
       const response = await authService.authenticatedFetch(
@@ -198,7 +238,9 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch appointments by month');
+        throw new Error(
+          errorData.message || 'Failed to fetch appointments by month'
+        );
       }
 
       const apiResponse: ApiResponse<Appointment[]> = await response.json();
@@ -221,7 +263,9 @@ class AppointmentService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch appointments by date');
+        throw new Error(
+          errorData.message || 'Failed to fetch appointments by date'
+        );
       }
 
       const apiResponse: ApiResponse<Appointment[]> = await response.json();
@@ -236,7 +280,9 @@ class AppointmentService {
   async searchAppointments(keyword: string = ''): Promise<Appointment[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_ENDPOINTS.APPOINTMENTS.BASE}/search?keyword=${encodeURIComponent(keyword)}`,
+        `${API_ENDPOINTS.APPOINTMENTS.BASE}/search?keyword=${encodeURIComponent(
+          keyword
+        )}`,
         {
           method: 'GET',
         }
@@ -256,7 +302,10 @@ class AppointmentService {
   }
 
   // Admin: Assign employee to appointment
-  async assignEmployee(appointmentId: number, employeeId: number): Promise<Appointment> {
+  async assignEmployee(
+    appointmentId: number,
+    employeeId: number
+  ): Promise<Appointment> {
     try {
       const response = await authService.authenticatedFetch(
         `${API_ENDPOINTS.APPOINTMENTS.BASE}/${appointmentId}`,
