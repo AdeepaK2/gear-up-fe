@@ -105,7 +105,7 @@ export default function AppointmentsPage() {
         setVehicles(uiVehicles);
 
         // Fetch appointments
-        const appointmentsData = await appointmentService.getAllAppointments();
+        const appointmentsData = await appointmentService.getAllAppointmentsForCurrentCustomer();
         const uiAppointments = appointmentsData.map((apt) =>
           convertAppointmentToUIFormat(apt, vehiclesData)
         );
