@@ -99,6 +99,37 @@ class ProjectService {
     }
   }
 
+  // Get all projects for the current customer
+  async getAllProjectsForCurrentCustomer(): Promise<Project[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.PROJECTS.BASE,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.warn('Failed to fetch customer projects:', response.status, errorData);
+
+        // Return empty array on error instead of throwing
+        if (response.status === 400 || response.status === 404 || response.status === 500) {
+          return [];
+        }
+
+        throw new Error(errorData.message || 'Failed to fetch customer projects');
+      }
+
+      const apiResponse: ApiResponse<Project[]> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error fetching customer projects:', error);
+      // Return empty array instead of throwing to prevent page crash
+      return [];
+    }
+  }
+
   // Get project by ID
   async getProjectById(id: number): Promise<Project> {
     try {
@@ -118,6 +149,38 @@ class ProjectService {
       return apiResponse.data;
     } catch (error: any) {
       console.error('Error fetching project:', error);
+      throw error;
+    }
+  }
+
+  // Create a new project
+  async createProject(projectData: {
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    appointmentId: number;
+    vehicleId: number;
+    taskIds: number[];
+  }): Promise<Project> {
+    try {
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.PROJECTS.BASE,
+        {
+          method: 'POST',
+          body: JSON.stringify(projectData),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create project');
+      }
+
+      const apiResponse: ApiResponse<Project> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Error creating project:', error);
       throw error;
     }
   }

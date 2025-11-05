@@ -66,8 +66,12 @@ export default function AppointmentReportPage() {
     try {
       setSubmitting(true);
 
-      // Complete the appointment
-      await appointmentService.completeAppointment(appointmentId);
+      // Update the appointment with status and selected tasks
+      await appointmentService.updateAppointment(appointmentId, {
+        status: "COMPLETED",
+        taskIds: selectedTasks,
+        notes: reportNotes || undefined,
+      });
 
       toast.success("Report submitted successfully!");
 

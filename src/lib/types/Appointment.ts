@@ -119,4 +119,5 @@ export interface AppointmentUpdateRequest {
   notes?: string;
   startTime?: string; // HH:MM:SS format
   endTime?: string; // HH:MM:SS format
+  taskIds?: number[]; // Task IDs to link to this appointment
 }

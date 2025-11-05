@@ -120,7 +120,9 @@ const mockProject: ProjectData = {
  */
 export default function ProjectsPage() {
   const [project, setProject] = useState<ProjectData>(mockProject);
-  const [isLoading, setIsLoading] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasProjects, setHasProjects] = useState(false);
   const [serviceProgress, setServiceProgress] = useState<
     Record<string, ServiceProgress>
   >({});
@@ -344,6 +346,83 @@ export default function ProjectsPage() {
       setIsLoading(false);
     }
   }, [acceptedServices.length]);
+
+  /**
+   * Fetch projects from backend on component mount
+   */
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        const projectsData = await projectService.getAllProjectsForCurrentCustomer();
+        setProjects(projectsData);
+        setHasProjects(projectsData.length > 0);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        setHasProjects(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Show loading state
+  if (isLoading && !hasProjects) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no projects
+  if (!hasProjects || projects.length === 0) {
+    return (
+      <div className="min-h-screen space-y-6 p-6">
+        <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">My Projects</h1>
+              <div className="text-white/90 font-normal mt-2">
+                No projects available yet
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Projects Found</h2>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              You don't have any projects yet. Projects are created after appointments are completed
+              and service reports are submitted by employees.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <a
+                href="/customer/appointments"
+                className="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Book an Appointment
+              </a>
+              <a
+                href="/customer/dashboard"
+                className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Back to Dashboard
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen space-y-6">
