@@ -230,12 +230,12 @@ export default function EmployeesPage() {
 
       {/* Employees Table */}
       <Card className="bg-white shadow-lg border-0">
-        <div className="p-6">
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold text-gray-900">
+        <div className="">
+          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+            <h3 className="text-2xl font-semibold text-white">
               All Employees
             </h3>
-            <p className="text-gray-600 text-md">
+            <p className="text-white text-md">
               Manage employee accounts and team information
             </p>
           </div>

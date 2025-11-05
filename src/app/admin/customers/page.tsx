@@ -90,12 +90,12 @@ export default function CustomersPage() {
 
       {/* Customers Table */}
       <Card className="bg-white shadow-lg border-0">
-        <div className="p-6">
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold text-gray-900">
+        <div className="">
+          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6 space-y-2 mb-8">
+            <h3 className="text-2xl font-semibold text-white">
               All Customers
             </h3>
-            <p className="text-gray-600 text-md">
+            <p className="text-gray-200 text-md">
               Manage customer accounts and view membership details
             </p>
           </div>

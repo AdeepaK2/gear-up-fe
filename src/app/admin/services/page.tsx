@@ -189,12 +189,12 @@ export default function ServicesPage() {
 
       {/* Services Table */}
       <Card className="bg-white shadow-lg border-0">
-        <div className="p-6">
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold text-gray-900">
+        <div className="">
+          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6 space-y-2">
+            <h3 className="text-2xl font-semibold text-white">
               All Services
             </h3>
-            <p className="text-gray-600 text-md">
+            <p className="text-gray-200 text-md">
               Manage and organize your vehicle service offerings
             </p>
           </div>

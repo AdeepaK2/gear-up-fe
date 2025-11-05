@@ -282,7 +282,7 @@ function PendingApprovalTable({ data }: { data: typeof projectsData }) {
   return (
     <Card className="bg-white shadow-lg border-0">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <CardTitle className="text-xl font-bold text-orange-600 flex items-center gap-2">
           <Clock className="h-5 w-5 text-orange-600" />
           Projects Pending Approval
         </CardTitle>
