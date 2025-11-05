@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Calendar,
   Clock,
@@ -21,49 +21,56 @@ import {
   Save,
   X,
   HelpCircle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   AppointmentFormData,
   ConsultationType,
   Vehicle,
-} from "@/lib/types/Appointment";
+} from '@/lib/types/Appointment';
 
-// Consultation options with user-friendly labels
+// Consultation options with realistic durations (in minutes)
 const consultationTypes: {
   value: ConsultationType;
   label: string;
   description: string;
+  duration: number;
 }[] = [
   {
-    value: "general-checkup",
-    label: "General Vehicle Checkup",
-    description: "Overall health check and maintenance advice",
+    value: 'GENERAL_CHECKUP',
+    label: 'General Vehicle Checkup',
+    description: 'Overall health check and maintenance advice',
+    duration: 60,
   },
   {
-    value: "specific-issue",
-    label: "Specific Problem/Issue",
-    description: "I have a specific problem that needs diagnosis",
+    value: 'SPECIFIC_ISSUE',
+    label: 'Specific Problem/Issue',
+    description: 'I have a specific problem that needs diagnosis',
+    duration: 90,
   },
   {
-    value: "maintenance-advice",
-    label: "Maintenance Consultation",
-    description: "Advice on maintenance schedule and recommendations",
+    value: 'MAINTENANCE_ADVICE',
+    label: 'Maintenance Consultation',
+    description: 'Advice on maintenance schedule and recommendations',
+    duration: 90,
   },
   {
-    value: "performance-issue",
-    label: "Performance Issue",
-    description: "Vehicle not performing as expected",
+    value: 'PERFORMANCE_ISSUE',
+    label: 'Performance Issue',
+    description: 'Vehicle not performing as expected',
+    duration: 120,
   },
   {
-    value: "safety-concern",
-    label: "Safety Concern",
-    description: "Safety-related issues or concerns",
+    value: 'SAFETY_CONCERN',
+    label: 'Safety Concern',
+    description: 'Safety-related issues or concerns',
+    duration: 90,
   },
   {
-    value: "other",
-    label: "Other",
-    description: "Other consultation needs",
+    value: 'OTHER',
+    label: 'Other',
+    description: 'Other consultation needs',
+    duration: 60,
   },
 ];
 
@@ -83,14 +90,14 @@ export default function AppointmentForm({
   isLoading = false,
 }: AppointmentFormProps) {
   const [formData, setFormData] = useState({
-    vehicleId: editingAppointment?.vehicleId || "",
+    vehicleId: editingAppointment?.vehicleId || '',
     consultationType:
-      editingAppointment?.consultationType || ("" as ConsultationType),
-    appointmentDate: editingAppointment?.appointmentDate || "",
-    startTime: editingAppointment?.startTime || "",
-    endTime: editingAppointment?.endTime || "",
-    customerIssue: editingAppointment?.customerIssue || "",
-    notes: editingAppointment?.notes || "",
+      editingAppointment?.consultationType || ('' as ConsultationType),
+    appointmentDate: editingAppointment?.appointmentDate || '',
+    startTime: editingAppointment?.startTime || '',
+    endTime: editingAppointment?.endTime || '',
+    customerIssue: editingAppointment?.customerIssue || '',
+    notes: editingAppointment?.notes || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -99,32 +106,19 @@ export default function AppointmentForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.vehicleId) {
-      newErrors.vehicleId = "Please select a vehicle";
+      newErrors.vehicleId = 'Please select a vehicle';
     }
 
     if (!formData.consultationType) {
-      newErrors.consultationType = "Please select a consultation type";
+      newErrors.consultationType = 'Please select a consultation type';
     }
 
     if (!formData.appointmentDate) {
-      newErrors.appointmentDate = "Please select an appointment date";
+      newErrors.appointmentDate = 'Please select an appointment date';
     }
 
     if (!formData.startTime) {
-      newErrors.startTime = "Please enter a start time";
-    }
-
-    if (!formData.endTime) {
-      newErrors.endTime = "Please enter an end time";
-    }
-
-    // Validate that end time is after start time
-    if (
-      formData.startTime &&
-      formData.endTime &&
-      formData.startTime >= formData.endTime
-    ) {
-      newErrors.endTime = "End time must be after start time";
+      newErrors.startTime = 'Please enter a start time';
     }
 
     // Validate that appointment is not in the past
@@ -134,7 +128,7 @@ export default function AppointmentForm({
       );
 
       if (appointmentDateTime < new Date()) {
-        newErrors.appointmentDate = "Appointment cannot be in the past";
+        newErrors.appointmentDate = 'Appointment cannot be in the past';
       }
     }
 
@@ -160,17 +154,17 @@ export default function AppointmentForm({
       // Reset form if creating new appointment
       if (!editingAppointment) {
         setFormData({
-          vehicleId: "",
-          consultationType: "" as ConsultationType,
-          appointmentDate: "",
-          startTime: "",
-          endTime: "",
-          customerIssue: "",
-          notes: "",
+          vehicleId: '',
+          consultationType: '' as ConsultationType,
+          appointmentDate: '',
+          startTime: '',
+          endTime: '',
+          customerIssue: '',
+          notes: '',
         });
       }
     } catch (error) {
-      console.error("Error submitting appointment:", error);
+      console.error('Error submitting appointment:', error);
     }
   };
 
@@ -180,7 +174,17 @@ export default function AppointmentForm({
   );
 
   // Get today's date for min attribute
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
+
+  const calculateEndTime = (startTime: string, duration: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const start = new Date();
+    start.setHours(hours, minutes, 0, 0);
+    const end = new Date(start.getTime() + duration * 60000);
+
+    // Return in HH:mm format
+    return end.toTimeString().slice(0, 5);
+  };
 
   return (
     <Card className="w-full">
@@ -188,8 +192,8 @@ export default function AppointmentForm({
         <CardTitle className="flex items-center gap-2">
           <HelpCircle className="h-5 w-5" />
           {editingAppointment
-            ? "Edit Consultation Appointment"
-            : "Book Consultation Appointment"}
+            ? 'Edit Consultation Appointment'
+            : 'Book Consultation Appointment'}
         </CardTitle>
         <p className="text-sm text-white/90 mt-1">
           Book a consultation with our experts. Services will be recommended
@@ -217,8 +221,8 @@ export default function AppointmentForm({
               >
                 <SelectTrigger
                   className={cn(
-                    "border-2",
-                    errors.vehicleId && "border-red-500"
+                    'border-2',
+                    errors.vehicleId && 'border-red-500'
                   )}
                 >
                   <SelectValue placeholder="Choose your vehicle" />
@@ -260,14 +264,30 @@ export default function AppointmentForm({
             </Label>
             <Select
               value={formData.consultationType}
-              onValueChange={(value: ConsultationType) =>
-                setFormData({ ...formData, consultationType: value })
-              }
+              onValueChange={(value: ConsultationType) => {
+                const selectedType = consultationTypes.find(
+                  (c) => c.value === value
+                );
+                let endTime = formData.endTime;
+
+                if (formData.startTime && selectedType) {
+                  endTime = calculateEndTime(
+                    formData.startTime,
+                    selectedType.duration
+                  );
+                }
+
+                setFormData({
+                  ...formData,
+                  consultationType: value,
+                  endTime,
+                });
+              }}
             >
               <SelectTrigger
                 className={cn(
-                  "border-2",
-                  errors.consultationType && "border-red-500"
+                  'border-2',
+                  errors.consultationType && 'border-red-500'
                 )}
               >
                 <SelectValue placeholder="Select consultation type" />
@@ -322,8 +342,8 @@ export default function AppointmentForm({
                 setFormData({ ...formData, appointmentDate: e.target.value })
               }
               className={cn(
-                "border-2",
-                errors.appointmentDate && "border-red-500"
+                'border-2',
+                errors.appointmentDate && 'border-red-500'
               )}
             />
             {errors.appointmentDate && (
@@ -332,46 +352,41 @@ export default function AppointmentForm({
           </div>
 
           {/* Time Selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="startTime"
-                className="text-primary font-medium flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Start Time
-              </Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-                className={cn("border-2", errors.startTime && "border-red-500")}
-              />
-              {errors.startTime && (
-                <p className="text-red-500 text-sm">{errors.startTime}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="startTime"
+              className="text-primary font-medium flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              Preferred Start Time
+            </Label>
+            <Input
+              id="startTime"
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => {
+                const startTime = e.target.value;
+                const selectedType = consultationTypes.find(
+                  (c) => c.value === formData.consultationType
+                );
+                let endTime = formData.endTime;
 
-            <div className="space-y-2">
-              <Label htmlFor="endTime" className="text-primary font-medium">
-                End Time
-              </Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, endTime: e.target.value })
+                if (selectedType) {
+                  endTime = calculateEndTime(startTime, selectedType.duration);
                 }
-                className={cn("border-2", errors.endTime && "border-red-500")}
-              />
-              {errors.endTime && (
-                <p className="text-red-500 text-sm">{errors.endTime}</p>
-              )}
-            </div>
+
+                setFormData({ ...formData, startTime, endTime });
+              }}
+              className={cn('border-2', errors.startTime && 'border-red-500')}
+            />
+
+            {errors.startTime && (
+              <p className="text-red-500 text-sm">{errors.startTime}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              The duration will be determined by our service team based on your
+              needs
+            </p>
           </div>
 
           {/* Customer Issue Description */}
@@ -422,13 +437,13 @@ export default function AppointmentForm({
               disabled={isLoading}
             >
               {isLoading ? (
-                "Processing..."
+                'Processing...'
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
                   {editingAppointment
-                    ? "Update Consultation"
-                    : "Book Consultation"}
+                    ? 'Update Consultation'
+                    : 'Book Consultation'}
                 </>
               )}
             </Button>

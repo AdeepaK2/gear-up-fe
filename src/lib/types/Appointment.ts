@@ -1,19 +1,28 @@
+// API Response wrapper
+export interface ApiResponse<T> {
+  status: string;
+  message: string;
+  data: T;
+  timestamp: string;
+  path: string;
+}
+
 // Frontend types for appointment system
 export type AppointmentStatus =
-  | "pending"
-  | "confirmed"
-  | "in-progress"
-  | "completed"
-  | "cancelled";
+  | "PENDING"
+  | "CONFIRMED"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
 
 // Consultation types - what customer is seeking help for
 export type ConsultationType =
-  | "general-checkup"
-  | "specific-issue"
-  | "maintenance-advice"
-  | "performance-issue"
-  | "safety-concern"
-  | "other";
+  | "GENERAL_CHECKUP"
+  | "SPECIFIC_ISSUE"
+  | "MAINTENANCE_ADVICE"
+  | "PERFORMANCE_ISSUE"
+  | "SAFETY_CONCERN"
+  | "OTHER";
 
 // Vehicle interface for frontend
 export interface Vehicle {
@@ -74,4 +83,41 @@ export interface Notification {
   title: string;
   message: string;
   timestamp: Date;
+}
+
+// Backend API types (matching backend DTOs)
+export interface Appointment {
+  id: number;
+  appointmentDate: string; // LocalDate as string (matches AppointmentResponseDTO)
+  status: string;
+  notes: string | null;
+  startTime: string | null; // LocalTime as string
+  endTime: string | null; // LocalTime as string
+  vehicleId: number;
+  vehicleName: string;
+  vehicleDetails: string;
+  customerId: number;
+  employeeId: number | null;
+  consultationType: string;
+  consultationTypeLabel: string;
+  customerIssue: string | null;
+  taskIds: number[] | null;
+}
+
+export interface AppointmentCreateRequest {
+  appointmentDate: string; // YYYY-MM-DD format (matches backend DTO)
+  notes?: string;
+  vehicleId: number;
+  startTime: string; // HH:MM:SS format
+  endTime: string; // HH:MM:SS format
+  consultationType: string;
+}
+
+export interface AppointmentUpdateRequest {
+  appointmentDate?: string; // YYYY-MM-DD format (matches backend DTO)
+  status?: string;
+  notes?: string;
+  startTime?: string; // HH:MM:SS format
+  endTime?: string; // HH:MM:SS format
+  taskIds?: number[]; // Task IDs to link to this appointment
 }

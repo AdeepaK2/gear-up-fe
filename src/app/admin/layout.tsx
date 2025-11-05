@@ -1,23 +1,21 @@
+"use client";
+
 import React from "react";
-import Sidebar from "../../components/admin/Sidebar";
+import Sidebar from "../../components/admin/Sidebar"; 
 import Header from "../../components/admin/Header";
+import ProtectedRoute from "../../components/shared/ProtectedRoute";
+import { UserRole } from "../../lib/types/Auth";
 
-export const metadata = {
-  title: "Admin - Gear Up",
-};
-
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="admin-layout min-h-screen bg-gray-50 overflow-x-hidden w-full max-w-full">
-      <Sidebar />
-      <Header />
-      <main className="ml-64 pt-24 p-6 overflow-y-auto overflow-x-hidden min-h-screen">
-        <div className="overflow-x-hidden w-full max-w-full">{children}</div>
-      </main>
-    </div>
+    <ProtectedRoute requiredRole={UserRole.ADMIN} redirectTo="/login">
+      <div className="min-h-screen flex bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 flex flex-col ml-64">
+          <Header />
+          <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+        </div>
+      </div>
+    </ProtectedRoute>
   );
 }

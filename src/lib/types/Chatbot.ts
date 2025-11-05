@@ -9,6 +9,8 @@ export interface Message {
     fileUrl?: string;
     linkUrl?: string;
     actions?: QuickAction[];
+    sessionId?: string;
+    confidence?: number;
   };
 }
 

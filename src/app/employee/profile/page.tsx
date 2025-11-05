@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Save, Loader2 } from "lucide-react";
+import { employeeService } from '@/lib/services/employeeService';
+import type { Employee } from '@/lib/types/Employee';
+import { Button } from '@/components/ui/button';
 
 export default function EmployeeProfile() {
   const [tab, setTab] = useState<"profile" | "security">("profile");
@@ -15,6 +18,84 @@ export default function EmployeeProfile() {
   const [passwordValue, setPasswordValue] = useState("");
   const [newPasswordValue, setNewPasswordValue] = useState("");
   const [confirmPasswordValue, setConfirmPasswordValue] = useState("");
+
+  // Profile data state
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Form data state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    specialization: '',
+  });
+
+  // Load current employee data on component mount
+  useEffect(() => {
+    loadCurrentEmployee();
+  }, []);
+
+  const loadCurrentEmployee = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const currentEmployee = await employeeService.getCurrentEmployee();
+      setEmployee(currentEmployee);
+      setFormData({
+        name: currentEmployee.name || '',
+        email: currentEmployee.email || '',
+        specialization: currentEmployee.specialization || '',
+      });
+    } catch (err) {
+      console.error('Failed to load employee profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!employee || employee.employeeId === 0) {
+      setError('Cannot update profile: Employee record not found');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      // Only send changed fields
+      const updateData: any = {};
+      if (formData.name !== employee.name) updateData.name = formData.name;
+      if (formData.specialization !== employee.specialization) updateData.specialization = formData.specialization;
+
+      if (Object.keys(updateData).length === 0) {
+        setSuccessMessage('No changes to save');
+        return;
+      }
+
+      const updatedEmployee = await employeeService.updateEmployee(employee.employeeId, updateData);
+      setEmployee(updatedEmployee);
+      setSuccessMessage('Profile updated successfully');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear messages when user starts typing
+    if (error) setError(null);
+    if (successMessage) setSuccessMessage(null);
+  };
 
   return (
     <div className="container space-y-8 p-6 h-full">
@@ -43,9 +124,37 @@ export default function EmployeeProfile() {
         </button>
       </div>
       {/* Tab Content */}
-      {tab === "profile" && (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-lg">Loading profile...</span>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={loadCurrentEmployee}>Retry</Button>
+        </div>
+      ) : employee && employee.employeeId === 0 ? (
+        <div className="text-center py-12 bg-amber-50 border border-amber-200 rounded-lg p-8">
+          <p className="text-amber-800 mb-4 text-lg font-medium">Employee Record Not Found</p>
+          <p className="text-amber-700 mb-6">Your employee record appears to be missing from the system. Please contact your administrator.</p>
+          <Button onClick={loadCurrentEmployee} variant="outline">Try Again</Button>
+        </div>
+      ) : tab === "profile" && (
         <div className="flex gap-12 items-start">
-          <form className="max-w-xl flex-1">
+          <form onSubmit={handleFormSubmit} className="max-w-xl flex-1">
+            {/* Success/Error Messages */}
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+                {successMessage}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+                {error}
+              </div>
+            )}
+            
             <div className="mb-6">
               <label className="block mb-2 font-medium text-base" htmlFor="name">
                 Name
@@ -55,6 +164,9 @@ export default function EmployeeProfile() {
                 className="w-full border-secondary border-2 rounded-full px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
                 type="text"
                 autoComplete="off"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
               />
             </div>
             <div className="mb-6">
@@ -63,29 +175,66 @@ export default function EmployeeProfile() {
               </label>
               <input
                 id="email"
-                className="w-full border-secondary border-2 rounded-full px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
+                className="w-full border-secondary border-2 rounded-full px-4 py-2 bg-gray-100 cursor-not-allowed"
                 type="email"
                 autoComplete="off"
+                value={formData.email}
+                disabled
+                title="Email cannot be changed"
               />
+              <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
             </div>
-            <div className="mb-12">
-              <label className="block mb-2 font-medium text-base" htmlFor="contact">
-                Contact Number
+            <div className="mb-6">
+              <label className="block mb-2 font-medium text-base" htmlFor="specialization">
+                Specialization
               </label>
               <input
-                id="contact"
+                id="specialization"
                 className="w-full border-secondary border-2 rounded-full px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-secondary"
                 type="text"
                 autoComplete="off"
+                value={formData.specialization}
+                onChange={(e) => handleInputChange('specialization', e.target.value)}
+                placeholder="e.g., Engine Repair, Brake Systems, etc."
               />
             </div>
+            {employee && (
+              <div className="mb-12 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium text-base mb-2">Employment Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Employee ID:</span> {employee.employeeId}
+                  </div>
+                  <div>
+                    <span className="font-medium">Hire Date:</span> {new Date(employee.hireDate).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Created:</span> {new Date(employee.createdAt).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Last Updated:</span> {new Date(employee.updatedAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
-              <button
+              <Button
                 type="submit"
+                disabled={saving}
                 className="bg-primary hover:bg-secondary text-white rounded-full px-6 py-2 font-medium shadow transition-colors duration-200"
               >
-                Save Changes
-              </button>
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </div>
           </form>
           <div className="flex-shrink-0">

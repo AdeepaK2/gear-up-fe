@@ -1,9 +1,9 @@
-"use client";
-import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Table,
   TableBody,
@@ -11,15 +11,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Check,
   X,
@@ -28,109 +35,119 @@ import {
   User,
   Car,
   Filter,
-} from "lucide-react";
-
-// Dummy data for the tables
-const appointmentsData = [
-  {
-    id: 1,
-    customer: "Sophia Clark",
-    vehicle: "BMW X5 2023",
-    employee: "Alex Johnson",
-    date: "2024-07-20",
-    startTime: "10:00 AM",
-    endTime: "11:00 AM",
-    status: "Pending Approval",
-    service: "Oil Change",
-  },
-  {
-    id: 2,
-    customer: "Olivia Bennett",
-    vehicle: "Toyota Camry 2020",
-    employee: "Sarah Wilson",
-    date: "2024-07-22",
-    startTime: "11:00 AM",
-    endTime: "12:00 PM",
-    status: "In Progress",
-    service: "Brake Inspection",
-  },
-  {
-    id: 3,
-    customer: "Marcus Rodriguez",
-    vehicle: "Ford F-150 2022",
-    employee: "Michael Brown",
-    date: "2024-07-22",
-    startTime: "2:00 PM",
-    endTime: "3:00 PM",
-    status: "Completed",
-    service: "Engine Diagnostic",
-  },
-  {
-    id: 4,
-    customer: "Emma Davis",
-    vehicle: "Honda Civic 2021",
-    employee: "Emily Johnson",
-    date: "2024-10-15",
-    startTime: "9:00 AM",
-    endTime: "10:30 AM",
-    status: "Pending Approval",
-    service: "Tire Rotation",
-  },
-  {
-    id: 5,
-    customer: "James Wilson",
-    vehicle: "Mercedes C-Class 2022",
-    employee: "David Martinez",
-    date: "2024-10-18",
-    startTime: "2:00 PM",
-    endTime: "4:00 PM",
-    status: "In Progress",
-    service: "Full Service",
-  },
-  {
-    id: 6,
-    customer: "Lisa Thompson",
-    vehicle: "Audi Q7 2023",
-    employee: "Sarah Wilson",
-    date: "2024-11-05",
-    startTime: "11:00 AM",
-    endTime: "12:30 PM",
-    status: "Pending Approval",
-    service: "Battery Check",
-  },
-];
-
-// Dummy data for calendar - dates with appointments
-const appointmentDates = [
-  new Date(2024, 9, 15), // October 15, 2024
-  new Date(2024, 9, 18), // October 18, 2024
-  new Date(2024, 9, 22), // October 22, 2024
-  new Date(2024, 10, 5), // November 5, 2024
-  new Date(2024, 10, 12), // November 12, 2024
-  new Date(2024, 10, 20), // November 20, 2024
-];
+  UserPlus,
+} from 'lucide-react';
+import { appointmentService } from '@/lib/services/appointmentService';
+import { employeeService, type Employee } from '@/lib/services/employeeService';
+import type { Appointment } from '@/lib/types/Appointment';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function AppointmentsPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  // Set initial month to October 2024 to match the mockup
-  const [displayMonth, setDisplayMonth] = React.useState<Date>(
-    new Date(2024, 9)
-  );
+  const [displayMonth, setDisplayMonth] = React.useState<Date>(new Date());
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const { showToast } = useToast();
+
+  // Fetch appointments and employees on mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [appointmentsData, employeesData] = await Promise.all([
+        appointmentService.getAllAppointments(),
+        employeeService.getAllEmployees(),
+      ]);
+      setAppointments(appointmentsData);
+      setEmployees(employeesData);
+    } catch (error: any) {
+      showToast('Failed to load data: ' + error.message, 'error');
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusCounts = () => {
     return {
-      pending: appointmentsData.filter((a) => a.status === "Pending Approval")
-        .length,
-      inProgress: appointmentsData.filter((a) => a.status === "In Progress")
-        .length,
-      completed: appointmentsData.filter((a) => a.status === "Completed")
-        .length,
-      cancelled: appointmentsData.filter((a) => a.status === "Cancelled")
-        .length,
+      pending: appointments.filter((a) => a.status === 'PENDING').length,
+      confirmed: appointments.filter((a) => a.status === 'CONFIRMED').length,
+      inProgress: appointments.filter((a) => a.status === 'IN_PROGRESS').length,
+      completed: appointments.filter((a) => a.status === 'COMPLETED').length,
+      cancelled: appointments.filter((a) => a.status === 'CANCELLED').length,
     };
   };
 
+  const handleAssignEmployee = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setSelectedEmployeeId(appointment.employeeId?.toString() || '');
+    setAssignDialogOpen(true);
+  };
+
+  const confirmAssignEmployee = async () => {
+    if (!selectedAppointment || !selectedEmployeeId) {
+      showToast('Please select an employee', 'error');
+      return;
+    }
+
+    try {
+      await appointmentService.assignEmployee(
+        selectedAppointment.id,
+        parseInt(selectedEmployeeId)
+      );
+      showToast('Employee assigned successfully', 'success');
+      setAssignDialogOpen(false);
+      setSelectedAppointment(null);
+      setSelectedEmployeeId('');
+      fetchData(); // Refresh data
+    } catch (error: any) {
+      showToast('Failed to assign employee: ' + error.message, 'error');
+      console.error('Error assigning employee:', error);
+    }
+  };
+
+  const handleApprove = async (id: number) => {
+    try {
+      await appointmentService.updateAppointment(id, { status: 'CONFIRMED' });
+      showToast('Appointment approved successfully', 'success');
+      fetchData();
+    } catch (error: any) {
+      showToast('Failed to approve appointment: ' + error.message, 'error');
+      console.error('Error approving appointment:', error);
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    try {
+      await appointmentService.updateAppointment(id, { status: 'CANCELLED' });
+      showToast('Appointment rejected successfully', 'success');
+      fetchData();
+    } catch (error: any) {
+      showToast('Failed to reject appointment: ' + error.message, 'error');
+      console.error('Error rejecting appointment:', error);
+    }
+  };
+
   const statusCounts = getStatusCounts();
+
+  // Get dates that have appointments for calendar
+  const appointmentDates = appointments.map((a) => new Date(a.appointmentDate));
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-6">
@@ -295,33 +312,33 @@ export default function AppointmentsPage() {
                   className="rounded-lg border-0 bg-gray-50 p-6 w-full"
                   classNames={{
                     months:
-                      "flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start",
-                    month: "space-y-4 flex-1 min-w-0",
-                    caption: "flex justify-center items-center mb-6 relative",
+                      'flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start',
+                    month: 'space-y-4 flex-1 min-w-0',
+                    caption: 'flex justify-center items-center mb-6 relative',
                     caption_label:
-                      "text-lg font-semibold text-gray-700 text-center",
-                    nav: "hidden", // Hide default navigation since we have global navigation
-                    nav_button: "hidden",
-                    nav_button_previous: "hidden",
-                    nav_button_next: "hidden",
-                    table: "w-full border-collapse",
-                    head_row: "flex w-full mb-3",
+                      'text-lg font-semibold text-gray-700 text-center',
+                    nav: 'hidden', // Hide default navigation since we have global navigation
+                    nav_button: 'hidden',
+                    nav_button_previous: 'hidden',
+                    nav_button_next: 'hidden',
+                    table: 'w-full border-collapse',
+                    head_row: 'flex w-full mb-3',
                     head_cell:
-                      "text-gray-500 w-full font-medium text-sm text-center py-2 mx-1",
-                    row: "flex w-full mt-2",
-                    cell: "h-12 w-full text-center text-sm p-0 relative mx-1",
-                    day: "h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default",
-                    day_today: "bg-gray-200 text-gray-900 font-semibold",
-                    day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-300 opacity-50",
-                    day_hidden: "invisible",
+                      'text-gray-500 w-full font-medium text-sm text-center py-2 mx-1',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-12 w-full text-center text-sm p-0 relative mx-1',
+                    day: 'h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default',
+                    day_today: 'bg-gray-200 text-gray-900 font-semibold',
+                    day_outside: 'text-gray-300 opacity-50',
+                    day_disabled: 'text-gray-300 opacity-50',
+                    day_hidden: 'invisible',
                   }}
                   modifiers={{
                     appointment: appointmentDates,
                   }}
                   modifiersClassNames={{
                     appointment:
-                      "bg-primary text-white font-semibold hover:bg-primary",
+                      'bg-primary text-white font-semibold hover:bg-primary',
                   }}
                 />
               </div>
@@ -369,45 +386,121 @@ export default function AppointmentsPage() {
 
           <TabsContent value="pending-approval" className="mt-6">
             <PendingApprovalTable
-              data={appointmentsData.filter(
-                (a) => a.status === "Pending Approval"
-              )}
+              data={appointments.filter((a) => a.status === 'PENDING')}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
+            />
+          </TabsContent>
+          <TabsContent value="pending-approval" className="mt-6">
+            <TableWrapper
+              data={appointments.filter((a) => a.status === 'CONFIRMED')}
+              status="Confirmed"
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
             />
           </TabsContent>
           <TabsContent value="in-progress" className="mt-6">
             <TableWrapper
-              data={appointmentsData.filter((a) => a.status === "In Progress")}
+              data={appointments.filter((a) => a.status === 'IN_PROGRESS')}
               status="In Progress"
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
             />
           </TabsContent>
           <TabsContent value="completed" className="mt-6">
             <TableWrapper
-              data={appointmentsData.filter((a) => a.status === "Completed")}
+              data={appointments.filter((a) => a.status === 'COMPLETED')}
               status="Completed"
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
             />
           </TabsContent>
           <TabsContent value="cancelled" className="mt-6">
             <TableWrapper
-              data={appointmentsData.filter((a) => a.status === "Cancelled")}
+              data={appointments.filter((a) => a.status === 'CANCELLED')}
               status="Cancelled"
+              onAssignEmployee={handleAssignEmployee}
+              employees={employees}
             />
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Employee Assignment Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Employee to Appointment</DialogTitle>
+            <DialogDescription>
+              Select an employee to assign to this appointment. This will change
+              the appointment status to CONFIRMED.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="block text-sm font-medium mb-2">
+              Select Employee
+            </label>
+            <Select
+              value={selectedEmployeeId}
+              onValueChange={setSelectedEmployeeId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose an employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((emp) => (
+                  <SelectItem
+                    key={emp.employeeId}
+                    value={emp.employeeId.toString()}
+                  >
+                    {emp.name} - {emp.specialization}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAssignDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={confirmAssignEmployee}>Assign Employee</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // Pending Approval table component with action buttons
-function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
-  const handleApprove = (id: number) => {
-    console.log(`Approving appointment ${id}`);
-    // Here you would make an API call to approve the appointment
+interface PendingApprovalTableProps {
+  data: Appointment[];
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onAssignEmployee: (appointment: Appointment) => void;
+  employees: Employee[];
+}
+
+function PendingApprovalTable({
+  data,
+  onApprove,
+  onReject,
+  onAssignEmployee,
+  employees,
+}: PendingApprovalTableProps) {
+  const getEmployeeName = (employeeId: number | null) => {
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
   };
 
-  const handleReject = (id: number) => {
-    console.log(`Rejecting appointment ${id}`);
-    // Here you would make an API call to reject the appointment
+  const formatTime = (time: string | null) => {
+    if (!time) return 'N/A';
+    return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
   return (
@@ -437,14 +530,12 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">ID</TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Customer
+                Customer ID
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Service
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Vehicle
+                Vehicle ID
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
                 Employee
@@ -455,6 +546,9 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
               <TableHead className="font-semibold text-gray-700">
                 Time
               </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Notes
+              </TableHead>
               <TableHead className="text-center font-semibold text-gray-700">
                 Actions
               </TableHead>
@@ -462,49 +556,57 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
           </TableHeader>
           <TableBody>
             {data.length > 0 ? (
-              data.map((appointment) => (
+              data.map((appointment: Appointment) => (
                 <TableRow
                   key={appointment.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <TableCell className="font-medium py-6 text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      {appointment.customer}
-                    </div>
+                    {appointment.id}
                   </TableCell>
                   <TableCell className="py-6">
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200"
-                    >
-                      {appointment.service}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      {appointment.customerId}
+                    </div>
                   </TableCell>
                   <TableCell className="py-6 text-gray-700">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-gray-500" />
-                      {appointment.vehicle}
+                      {appointment.vehicleId}
                     </div>
                   </TableCell>
                   <TableCell className="py-6 text-gray-700">
-                    {appointment.employee}
+                    {getEmployeeName(appointment.employeeId)}
                   </TableCell>
                   <TableCell className="py-6 text-gray-700">
-                    {appointment.date}
+                    {appointment.appointmentDate}
                   </TableCell>
                   <TableCell className="py-6 text-gray-700">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-gray-500" />
-                      {appointment.startTime} - {appointment.endTime}
+                      {formatTime(appointment.startTime)} -{' '}
+                      {formatTime(appointment.endTime)}
                     </div>
+                  </TableCell>
+                  <TableCell className="py-6 text-gray-700 max-w-xs truncate">
+                    {appointment.notes || 'N/A'}
                   </TableCell>
                   <TableCell className="text-center py-6">
                     <div className="flex gap-3 justify-center">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleApprove(appointment.id)}
+                        onClick={() => onAssignEmployee(appointment)}
+                        className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Assign
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onApprove(appointment.id)}
                         className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
                       >
                         <Check className="h-5 w-5" />
@@ -512,7 +614,7 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleReject(appointment.id)}
+                        onClick={() => onReject(appointment.id)}
                         className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
                       >
                         <X className="h-5 w-5" />
@@ -524,7 +626,7 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -542,20 +644,28 @@ function PendingApprovalTable({ data }: { data: typeof appointmentsData }) {
 }
 
 // Helper component for the table to avoid repetition
+interface TableWrapperProps {
+  data: Appointment[];
+  status: string;
+  onAssignEmployee: (appointment: Appointment) => void;
+  employees: Employee[];
+}
+
 function TableWrapper({
   data,
   status,
-}: {
-  data: typeof appointmentsData;
-  status: string;
-}) {
+  onAssignEmployee,
+  employees,
+}: TableWrapperProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "In Progress":
+      case 'Confirmed':
         return <CalendarIcon className="h-5 w-5 text-primary" />;
-      case "Completed":
+      case 'In Progress':
+        return <CalendarIcon className="h-5 w-5 text-primary" />;
+      case 'Completed':
         return <Check className="h-5 w-5 text-green-600" />;
-      case "Cancelled":
+      case 'Cancelled':
         return <X className="h-5 w-5 text-red-600" />;
       default:
         return <CalendarIcon className="h-5 w-5 text-gray-600" />;
@@ -564,15 +674,28 @@ function TableWrapper({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "In Progress":
-        return "text-primary";
-      case "Completed":
-        return "text-green-600";
-      case "Cancelled":
-        return "text-red-600";
+      case 'Confirmed':
+        return 'text-primary';
+      case 'In Progress':
+        return 'text-primary';
+      case 'Completed':
+        return 'text-green-600';
+      case 'Cancelled':
+        return 'text-red-600';
       default:
-        return "text-gray-600";
+        return 'text-gray-600';
     }
+  };
+
+  const getEmployeeName = (employeeId: number | null) => {
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
+  };
+
+  const formatTime = (time: string | null) => {
+    if (!time) return 'N/A';
+    return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
   return (
@@ -606,14 +729,12 @@ function TableWrapper({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">ID</TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Customer
+                Customer ID
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Service
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Vehicle
+                Vehicle ID
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
                 Employee
@@ -624,53 +745,69 @@ function TableWrapper({
               <TableHead className="font-semibold text-gray-700">
                 Time
               </TableHead>
+              <TableHead className="font-semibold text-gray-700">
+                Notes
+              </TableHead>
+              <TableHead className="text-center font-semibold text-gray-700">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length > 0 ? (
-              data.map((appointment) => (
+              data.map((appointment: Appointment) => (
                 <TableRow
                   key={appointment.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <TableCell className="font-medium text-gray-900 py-6">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      {appointment.customer}
-                    </div>
+                    {appointment.id}
                   </TableCell>
                   <TableCell className="py-6">
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200"
-                    >
-                      {appointment.service}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      {appointment.customerId}
+                    </div>
                   </TableCell>
                   <TableCell className="text-gray-700 py-6">
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4 text-gray-500" />
-                      {appointment.vehicle}
+                      {appointment.vehicleId}
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-700 py-6">
-                    {appointment.employee}
+                    {getEmployeeName(appointment.employeeId)}
                   </TableCell>
                   <TableCell className="text-gray-700 py-6">
-                    {appointment.date}
+                    {appointment.appointmentDate}
                   </TableCell>
                   <TableCell className="text-gray-700 py-6">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-gray-500" />
-                      {appointment.startTime} - {appointment.endTime}
+                      {formatTime(appointment.startTime)} -{' '}
+                      {formatTime(appointment.endTime)}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-gray-700 py-6 max-w-xs truncate">
+                    {appointment.notes || 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-center py-6">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onAssignEmployee(appointment)}
+                      className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      {appointment.employeeId ? 'Reassign' : 'Assign'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="text-center py-8 text-gray-500"
                 >
                   <div className="flex flex-col items-center gap-2">
