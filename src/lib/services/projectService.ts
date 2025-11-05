@@ -102,6 +102,7 @@ class ProjectService {
   // Get all projects for the current customer
   async getAllProjectsForCurrentCustomer(): Promise<Project[]> {
     try {
+      console.log('Fetching projects from:', API_ENDPOINTS.PROJECTS.BASE);
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.PROJECTS.BASE,
         {
@@ -109,12 +110,15 @@ class ProjectService {
         }
       );
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
-        console.warn('Failed to fetch customer projects:', response.status, errorData);
+        console.error('Failed to fetch customer projects:', response.status, errorData);
 
         // Return empty array on error instead of throwing
         if (response.status === 400 || response.status === 404 || response.status === 500) {
+          console.warn('Returning empty array due to error status:', response.status);
           return [];
         }
 
@@ -122,9 +126,16 @@ class ProjectService {
       }
 
       const apiResponse: ApiResponse<Project[]> = await response.json();
-      return apiResponse.data;
+      console.log('Projects received:', apiResponse.data?.length || 0);
+      console.log('Projects data:', apiResponse.data);
+      return apiResponse.data || [];
     } catch (error: any) {
-      console.error('Error fetching customer projects:', error);
+      console.error('CRITICAL Error fetching customer projects:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       // Return empty array instead of throwing to prevent page crash
       return [];
     }
