@@ -17,12 +17,12 @@ export type AppointmentStatus =
 
 // Consultation types - what customer is seeking help for
 export type ConsultationType =
-  | "general-checkup"
-  | "specific-issue"
-  | "maintenance-advice"
-  | "performance-issue"
-  | "safety-concern"
-  | "other";
+  | "GENERAL_CHECKUP"
+  | "SPECIFIC_ISSUE"
+  | "MAINTENANCE_ADVICE"
+  | "PERFORMANCE_ISSUE"
+  | "SAFETY_CONCERN"
+  | "OTHER";
 
 // Vehicle interface for frontend
 export interface Vehicle {
@@ -108,7 +108,9 @@ export interface AppointmentCreateRequest {
   appointmentDate: string; // YYYY-MM-DD format (matches backend DTO)
   notes?: string;
   vehicleId: number;
-  startTime?: string; // HH:MM:SS format
+  startTime: string; // HH:MM:SS format
+  endTime: string; // HH:MM:SS format
+  consultationType: string;
 }
 
 export interface AppointmentUpdateRequest {

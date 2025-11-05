@@ -17,15 +17,12 @@ import NotificationCenter, {
   type NotificationType,
 } from '@/components/customer/NotificationCenter';
 import {
-  getConsultationLabel,
-  type ConsultationType,
-} from '@/lib/utils/appointments';
-import {
   AppointmentData,
   AppointmentFormData,
   Vehicle,
   Appointment,
-  AppointmentStatus
+  AppointmentStatus,
+  ConsultationType
 } from '@/lib/types/Appointment';
 import { appointmentService } from '@/lib/services/appointmentService';
 import { vehicleService } from '@/lib/services/vehicleService';
@@ -58,9 +55,9 @@ const convertAppointmentToUIFormat = (
   return {
     id: String(appointment.id),
     vehicleId: String(appointment.vehicleId),
-    vehicleName: vehicleUI?.name || 'Unknown Vehicle',
+    vehicleName: vehicleUI?.name || '',
     vehicleDetails: vehicleUI?.details || '',
-    consultationType: 'general-checkup', // Default since backend doesn't have this field
+    consultationType: appointment.consultationType as ConsultationType,
     consultationTypeLabel: 'General Service',
     appointmentDate: appointment.appointmentDate,
     startTime: appointment.startTime || '09:00',
@@ -204,7 +201,9 @@ export default function AppointmentsPage() {
           appointmentDate: data.appointmentDate,
           notes: data.notes || data.customerIssue,
           vehicleId: Number(data.vehicleId),
-          startTime: data.startTime ? `${data.startTime}:00` : undefined,
+          startTime: `${data.startTime}:00`,
+          endTime: `${data.endTime}:00`,
+          consultationType: data.consultationType,
         });
 
         // Convert backend response to UI format

@@ -68,12 +68,12 @@ const statusLabels: Record<AppointmentStatus, string> = {
 };
 
 const consultationTypeLabels: Record<ConsultationType, string> = {
-  "general-checkup": "General Checkup",
-  "specific-issue": "Specific Issue",
-  "maintenance-advice": "Maintenance Advice",
-  "performance-issue": "Performance Issue",
-  "safety-concern": "Safety Concern",
-  other: "Other",
+  "GENERAL_CHECKUP": "General Checkup",
+  "SPECIFIC_ISSUE": "Specific Issue",
+  "MAINTENANCE_ADVICE": "Maintenance Advice",
+  "PERFORMANCE_ISSUE": "Performance Issue",
+  "SAFETY_CONCERN": "Safety Concern",
+  "OTHER": "Other",
 };
 
 export default function AppointmentList({
