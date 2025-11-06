@@ -641,7 +641,7 @@ export default function VehiclesPage() {
                   name="licensePlate"
                   value={form.licensePlate}
                   onChange={handleChange}
-                  placeholder="e.g., ABC-1234"
+                  placeholder="e.g., WP ABC 1234 or 19-4567"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
                   aria-invalid={!!formErrors.licensePlate}
                   aria-describedby={
