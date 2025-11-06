@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { appointmentService } from "@/lib/services/appointmentService";
 import { taskService, type Task } from "@/lib/services/taskService";
-import { vehicleService } from "@/lib/services/vehicleService";
 import { projectService } from "@/lib/services/projectService";
 import type { Appointment } from "@/lib/types/Appointment";
 import { useToast } from "@/contexts/ToastContext";
@@ -33,13 +32,11 @@ export default function CreateProjectPage() {
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [selectedTaskIds, setSelectedTaskIds] = useState<number[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
 
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -73,15 +70,6 @@ export default function CreateProjectPage() {
 
       // Pre-select all appointment tasks
       setSelectedTaskIds(appointmentTasks.map(t => t.taskId));
-
-      // Load customer vehicles
-      const vehiclesData = await vehicleService.getMyVehicles();
-      setVehicles(vehiclesData);
-
-      // Auto-select vehicle if only one
-      if (vehiclesData.length === 1) {
-        setSelectedVehicleId(vehiclesData[0].id);
-      }
 
       // Set default dates
       const today = new Date().toISOString().split("T")[0];
@@ -124,8 +112,8 @@ export default function CreateProjectPage() {
       return;
     }
 
-    if (!selectedVehicleId) {
-      toast.error("Please select a vehicle");
+    if (!appointment?.vehicleId) {
+      toast.error("Vehicle information is missing from appointment");
       return;
     }
 
@@ -138,7 +126,7 @@ export default function CreateProjectPage() {
         startDate,
         endDate,
         appointmentId,
-        vehicleId: selectedVehicleId,
+        vehicleId: appointment.vehicleId,
         taskIds: selectedTaskIds,
       };
 
@@ -293,21 +281,25 @@ export default function CreateProjectPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="vehicle">Vehicle *</Label>
-                <select
-                  id="vehicle"
-                  value={selectedVehicleId || ""}
-                  onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
-                  className="w-full mt-1 p-3 border rounded-lg"
-                  required
-                >
-                  <option value="">Select a vehicle</option>
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
-                    </option>
-                  ))}
-                </select>
+                <Label>Vehicle</Label>
+                <div className="w-full mt-1 p-3 border rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {appointment.vehicleName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {appointment.vehicleDetails}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="bg-white">
+                      From Appointment
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Vehicle from appointment #{appointmentId}
+                </p>
               </div>
             </div>
           </Card>
@@ -404,7 +396,7 @@ export default function CreateProjectPage() {
 
             <Button
               type="submit"
-              disabled={submitting || selectedTasks.length === 0 || !selectedVehicleId}
+              disabled={submitting || selectedTasks.length === 0}
               className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 text-lg"
             >
               {submitting ? (
@@ -423,11 +415,6 @@ export default function CreateProjectPage() {
             {selectedTasks.length === 0 && (
               <p className="text-sm text-red-500 text-center mt-3">
                 Please select at least one service
-              </p>
-            )}
-            {!selectedVehicleId && (
-              <p className="text-sm text-red-500 text-center mt-2">
-                Please select a vehicle
               </p>
             )}
           </Card>

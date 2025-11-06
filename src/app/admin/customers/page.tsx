@@ -173,6 +173,10 @@ export default function CustomersPage() {
             <p className="text-gray-200 text-md">
               Manage customer accounts and view membership details
             </p>
+          </div>
+        </div>
+      </Card>
+
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-12">

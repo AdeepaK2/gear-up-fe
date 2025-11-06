@@ -227,6 +227,10 @@ export default function EmployeesPage() {
             <p className="text-white text-md">
               Manage employee accounts and team information
             </p>
+          </div>
+        </div>
+      </Card>
+
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
