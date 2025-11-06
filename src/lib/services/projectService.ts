@@ -200,7 +200,7 @@ class ProjectService {
   async updateProjectStatus(id: number, status: string): Promise<Project> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_ENDPOINTS.PROJECTS.BASE}/${id}`,
+        `${API_ENDPOINTS.PROJECTS.BASE}/${id}/status`,
         {
           method: 'PATCH',
           body: JSON.stringify({ status }),
