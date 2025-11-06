@@ -68,12 +68,12 @@ const statusLabels: Record<AppointmentStatus, string> = {
 };
 
 const consultationTypeLabels: Record<ConsultationType, string> = {
-  "GENERAL_CHECKUP": "General Checkup",
-  "SPECIFIC_ISSUE": "Specific Issue",
-  "MAINTENANCE_ADVICE": "Maintenance Advice",
-  "PERFORMANCE_ISSUE": "Performance Issue",
-  "SAFETY_CONCERN": "Safety Concern",
-  "OTHER": "Other",
+  GENERAL_CHECKUP: "General Checkup",
+  SPECIFIC_ISSUE: "Specific Issue",
+  MAINTENANCE_ADVICE: "Maintenance Advice",
+  PERFORMANCE_ISSUE: "Performance Issue",
+  SAFETY_CONCERN: "Safety Concern",
+  OTHER: "Other",
 };
 
 export default function AppointmentList({
@@ -113,8 +113,13 @@ export default function AppointmentList({
     });
   };
 
-  const canEditOrDelete = (status: AppointmentStatus) => {
+  // Allow editing for PENDING and CONFIRMED, but only allow deleting when PENDING
+  const canEdit = (status: AppointmentStatus) => {
     return status === "PENDING" || status === "CONFIRMED";
+  };
+
+  const canDelete = (status: AppointmentStatus) => {
+    return status === "PENDING";
   };
 
   if (appointments.length === 0) {
@@ -267,7 +272,7 @@ export default function AppointmentList({
                           <Eye className="h-4 w-4 text-green-600" />
                         </Button>
 
-                        {canEditOrDelete(appointment.status) && (
+                        {canEdit(appointment.status) && (
                           <>
                             <Button
                               variant="outline"
@@ -278,64 +283,70 @@ export default function AppointmentList({
                             >
                               <Edit className="h-4 w-4 text-blue-600" />
                             </Button>
-
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md border-2"
-                                  disabled={
-                                    isLoading || deletingId === appointment.id
-                                  }
-                                >
-                                  <X className="h-4 w-4 text-red-600" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle className="flex items-center gap-2">
-                                    <AlertCircle className="h-5 w-5 text-red-500" />
-                                    Cancel Consultation?
-                                  </DialogTitle>
-                                  <DialogDescription>
-                                    Are you sure you want to cancel this
-                                    consultation appointment? This action cannot
-                                    be undone.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="bg-gray-50 p-3 rounded-lg mt-4">
-                                  <p className="text-sm text-gray-600">
-                                    <strong>Vehicle:</strong>{" "}
-                                    {appointment.vehicleName}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    <strong>Date:</strong>{" "}
-                                    {formatDate(appointment.appointmentDate)}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    <strong>Time:</strong>{" "}
-                                    {formatTime(appointment.startTime)} -{" "}
-                                    {formatTime(appointment.endTime)}
-                                  </p>
-                                </div>
-                                <DialogFooter>
+                            {canDelete(appointment.status) && (
+                              <Dialog>
+                                <DialogTrigger asChild>
                                   <Button
-                                    variant="destructive"
-                                    onClick={() => handleDelete(appointment.id)}
-                                    disabled={deletingId === appointment.id}
+                                    variant="outline"
+                                    size="sm"
+                                    className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md border-2"
+                                    disabled={
+                                      isLoading || deletingId === appointment.id
+                                    }
                                   >
-                                    {deletingId === appointment.id
-                                      ? "Cancelling..."
-                                      : "Yes, Cancel Appointment"}
+                                    <X className="h-4 w-4 text-red-600" />
                                   </Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2">
+                                      <AlertCircle className="h-5 w-5 text-red-500" />
+                                      Cancel Consultation?
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to cancel this
+                                      consultation appointment? This action
+                                      cannot be undone.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="bg-gray-50 p-3 rounded-lg mt-4">
+                                    <p className="text-sm text-gray-600">
+                                      <strong>Vehicle:</strong>{" "}
+                                      {appointment.vehicleName}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      <strong>Date:</strong>{" "}
+                                      {formatDate(appointment.appointmentDate)}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      <strong>Time:</strong>{" "}
+                                      {formatTime(appointment.startTime)} -{" "}
+                                      {formatTime(appointment.endTime)}
+                                    </p>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() =>
+                                        handleDelete(appointment.id)
+                                      }
+                                      disabled={deletingId === appointment.id}
+                                    >
+                                      {deletingId === appointment.id
+                                        ? "Cancelling..."
+                                        : "Yes, Cancel Appointment"}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            )}
                           </>
                         )}
 
-                        {!canEditOrDelete(appointment.status) && (
+                        {!(
+                          canEdit(appointment.status) ||
+                          canDelete(appointment.status)
+                        ) && (
                           <span className="text-sm text-gray-500 italic">
                             Cannot modify
                           </span>
@@ -380,7 +391,7 @@ export default function AppointmentList({
                     </Badge>
 
                     <div className="flex gap-2">
-                      {canEditOrDelete(appointment.status) && (
+                      {canEdit(appointment.status) && (
                         <>
                           <Button
                             variant="outline"
@@ -392,40 +403,44 @@ export default function AppointmentList({
                             <Edit className="h-4 w-4 text-blue-600" />
                           </Button>
 
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={
-                                  isLoading || deletingId === appointment.id
-                                }
-                                className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm"
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Cancel Consultation?</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to cancel this
-                                  consultation appointment?
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter>
+                          {canDelete(appointment.status) && (
+                            <Dialog>
+                              <DialogTrigger asChild>
                                 <Button
-                                  variant="destructive"
-                                  onClick={() => handleDelete(appointment.id)}
-                                  disabled={deletingId === appointment.id}
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={
+                                    isLoading || deletingId === appointment.id
+                                  }
+                                  className="hover:bg-red-50 hover:border-red-300 transition-all duration-200 shadow-sm"
                                 >
-                                  {deletingId === appointment.id
-                                    ? "Cancelling..."
-                                    : "Cancel Appointment"}
+                                  <X className="h-4 w-4 text-red-600" />
                                 </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>
+                                    Cancel Consultation?
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to cancel this
+                                    consultation appointment?
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleDelete(appointment.id)}
+                                    disabled={deletingId === appointment.id}
+                                  >
+                                    {deletingId === appointment.id
+                                      ? "Cancelling..."
+                                      : "Cancel Appointment"}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </>
                       )}
                     </div>
