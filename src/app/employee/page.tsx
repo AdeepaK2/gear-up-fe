@@ -285,14 +285,10 @@ export default function EmployeeDashboard() {
 				</CardContent>
 			</Card>
 
-			{/* Recent Activity */}
-			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
-					<CardTitle className="text-2xl font-bold text-white">Recent Activity</CardTitle>
 			{/* Quick Actions */}
 			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader>
-					<CardTitle className="text-2xl font-bold text-gray-900">Quick Actions</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Quick Actions</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">

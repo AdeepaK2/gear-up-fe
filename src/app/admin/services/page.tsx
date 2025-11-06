@@ -469,49 +469,6 @@ export default function ServicesPage() {
       </div>
 
       {/* Services Table */}
-      <Card className="bg-white shadow-lg border-0">
-        <div className="">
-          <div className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6 space-y-2">
-            <h3 className="text-2xl font-semibold text-white">
-              All Services
-            </h3>
-            <p className="text-gray-200 text-md">
-              Manage and organize your vehicle service offerings
-            </p>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-200">
-                <TableHead className="font-semibold text-gray-700">
-                  Service Name
-                </TableHead>
-                <TableHead className="font-semibold text-gray-700">
-                  Service Type
-                </TableHead>
-                <TableHead className="font-semibold text-gray-700">
-                  Estimated Hours
-                </TableHead>
-                <TableHead className="font-semibold text-gray-700">
-                  Created Date
-                </TableHead>
-                <TableHead className="text-center font-semibold text-gray-700">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {servicesData.map((service) => (
-                <TableRow
-                  key={service.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <TableCell className="py-6 text-gray-900 font-medium">
-                    {service.name}
-                  </TableCell>
-                  <TableCell className="py-6">
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200"
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
