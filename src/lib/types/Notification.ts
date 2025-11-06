@@ -1,11 +1,12 @@
 // Backend response types
 export interface BackendNotification {
   id: number;
-  userId: string;
+  userId?: string;
   title: string;
   message: string;
   type: string;
-  createdAt: string;
+  createdAt?: string;
+  timestamp?: string; // Backend uses timestamp in SSE
   read: boolean;
   timeAgo?: string;
 }

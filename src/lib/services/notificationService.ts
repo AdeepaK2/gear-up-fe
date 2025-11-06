@@ -16,7 +16,10 @@ function getTimeAgo(date: Date): string {
 
 // Convert backend notification to frontend format
 function adaptNotification(backend: BackendNotification): Notification {
-  const createdAt = new Date(backend.createdAt);
+  // Backend uses 'timestamp' in SSE and 'createdAt' in REST API
+  const dateString = backend.timestamp || backend.createdAt;
+  const createdAt = dateString ? new Date(dateString) : new Date();
+  
   return {
     id: backend.id.toString(),
     title: backend.title,
@@ -172,6 +175,11 @@ class NotificationService {
             if (eventType === 'connected' || data === 'Connected to notification stream') {
               console.log('SSE connection established');
               return;
+            }
+            
+            // If no data field found, check if the entire event is JSON
+            if (!data && event.trim().startsWith('{')) {
+              data = event.trim();
             }
             
             // Only process if we have data and it looks like JSON
