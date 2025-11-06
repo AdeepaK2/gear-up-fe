@@ -16,6 +16,7 @@ import { Check, X, FolderOpen, Loader2, AlertCircle, RefreshCw, FileText, CheckC
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/ToastContext";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,7 @@ export default function ProjectsPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/projects`, {
+      const response = await fetch(`${API_ENDPOINTS.PROJECTS.BASE}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -135,7 +136,7 @@ export default function ProjectsPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/employees`, {
+      const response = await fetch(`${API_ENDPOINTS.EMPLOYEE.BASE}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -208,7 +209,7 @@ export default function ProjectsPage() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/projects/${selectedProject.id}/assign-employees`,
+        `${API_ENDPOINTS.PROJECTS.BASE}/${selectedProject.id}/assign-employees`,
         {
           method: 'POST',
           headers: {
