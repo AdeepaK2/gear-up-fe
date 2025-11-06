@@ -246,7 +246,7 @@ export default function AppointmentList({
                     </TableCell>
 
                     <TableCell className="py-8 px-4">
-                      <div className="flex justify-center">
+                      <div className="flex justify-start">
                         <Badge
                           className={cn(
                             "border-2 px-4 py-2 text-sm font-semibold rounded-full",
@@ -260,7 +260,7 @@ export default function AppointmentList({
                     </TableCell>
 
                     <TableCell className="py-8 px-4 pr-6">
-                      <div className="flex justify-center gap-2">
+                      <div className="flex justify-start gap-2">
                         {/* View Button */}
                         <Button
                           variant="outline"
@@ -341,15 +341,6 @@ export default function AppointmentList({
                               </Dialog>
                             )}
                           </>
-                        )}
-
-                        {!(
-                          canEdit(appointment.status) ||
-                          canDelete(appointment.status)
-                        ) && (
-                          <span className="text-sm text-gray-500 italic">
-                            Cannot modify
-                          </span>
                         )}
                       </div>
                     </TableCell>
