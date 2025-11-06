@@ -113,9 +113,9 @@ export default function AppointmentList({
     });
   };
 
-  // Allow editing for PENDING and CONFIRMED, but only allow deleting when PENDING
+  // Allow editing only for PENDING appointments; deleting still only allowed when PENDING
   const canEdit = (status: AppointmentStatus) => {
-    return status === "PENDING" || status === "CONFIRMED";
+    return status === "PENDING";
   };
 
   const canDelete = (status: AppointmentStatus) => {
