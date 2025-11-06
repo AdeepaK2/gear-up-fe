@@ -1,48 +1,68 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Edit, ChevronDown, Loader2, RefreshCw } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Loader2, RefreshCw, Users, Crown, Filter, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { projectService, type Project } from '@/lib/services/projectService';
 import { Button } from '@/components/ui/button';
 
-const statusOptions = [
-	"pending",
-	"in_progress", 
-	"completed",
-	"cancelled",
-];
+type StatusFilter = "all" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 const getStatusBadgeStyle = (status: string) => {
-	switch (status.toLowerCase()) {
-		case "new":
-			return "bg-yellow-50 text-yellow-800 border-yellow-200";
-		case "in_progress":
-		case "in progress":
-			return "bg-blue-50 text-blue-800 border-blue-200";
-		case "on hold":
-			return "bg-orange-100 text-orange-800 border-orange-200";
-		case "completed":
-			return "bg-green-50 text-green-800 border-green-200";
-		case "cancelled":
-			return "bg-red-50 text-red-800 border-red-200";
+	const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+	switch (normalizedStatus) {
+		case "CREATED":
+		case "NEW":
+			return "bg-yellow-50 text-yellow-800 border-yellow-300";
+		case "RECOMMENDED":
+		case "CONFIRMED":
+			return "bg-blue-50 text-blue-800 border-blue-300";
+		case "IN_PROGRESS":
+		case "IN PROGRESS":
+			return "bg-blue-100 text-blue-900 border-blue-400 font-semibold";
+		case "ON_HOLD":
+		case "ON HOLD":
+			return "bg-orange-100 text-orange-800 border-orange-300";
+		case "COMPLETED":
+			return "bg-green-100 text-green-900 border-green-400 font-semibold";
+		case "CANCELLED":
+		case "REJECTED":
+			return "bg-red-100 text-red-900 border-red-400 font-semibold";
 		default:
-			return "bg-gray-50 text-gray-800 border-gray-200";
+			return "bg-gray-50 text-gray-800 border-gray-300";
 	}
 };
 
-const statusStyles: Record<string, string> = {
-	New: "bg-yellow-50 text-yellow-800 border-yellow-200",
-	In_Progress: "bg-blue-50 text-blue-800 border-blue-200",
-	"On Hold": "bg-orange-100 text-orange-800 border-orange-200",
-	Completed: "bg-green-50 text-green-800 border-green-200",
-	Cancelled: "bg-red-50 text-red-800 border-red-200",
+const getStatusDisplayName = (status: string) => {
+	const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+	switch (normalizedStatus) {
+		case "CREATED":
+			return "Created";
+		case "RECOMMENDED":
+			return "Recommended";
+		case "CONFIRMED":
+			return "Confirmed";
+		case "IN_PROGRESS":
+		case "IN PROGRESS":
+			return "In Progress";
+		case "ON_HOLD":
+		case "ON HOLD":
+			return "On Hold";
+		case "COMPLETED":
+			return "Completed";
+		case "CANCELLED":
+		case "REJECTED":
+			return "Cancelled";
+		default:
+			return status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+	}
 };
 
 export default function EmployeeProjects() {
+	const router = useRouter();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [editingProject, setEditingProject] = useState<number | null>(null);
-	const [newStatus, setNewStatus] = useState<string>('');
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
 	// Load projects on component mount
 	useEffect(() => {
@@ -63,30 +83,66 @@ export default function EmployeeProjects() {
 		}
 	};
 
-	const handleStatusUpdate = async (projectId: number, status: string) => {
+	const handleMarkAsCompleted = async (projectId: number) => {
 		try {
-			const updatedProject = await projectService.updateProjectStatus(projectId, status);
+			const updatedProject = await projectService.updateProjectStatus(projectId, "COMPLETED");
 			setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p));
-			setEditingProject(null);
 		} catch (err) {
 			console.error('Failed to update project status:', err);
 			setError(err instanceof Error ? err.message : 'Failed to update status');
 		}
 	};
 
-	const startEditing = (projectId: number, currentStatus: string) => {
-		setEditingProject(projectId);
-		setNewStatus(currentStatus);
+	const isInProgress = (status: string): boolean => {
+		const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+		return normalizedStatus === "IN_PROGRESS";
 	};
 
-	const cancelEditing = () => {
-		setEditingProject(null);
-		setNewStatus('');
+	const isCompleted = (status: string): boolean => {
+		const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+		return normalizedStatus === "COMPLETED";
 	};
+
+	const handleSendReport = (projectId: number) => {
+		router.push(`/employee/projects/${projectId}/report`);
+	};
+
+	const filteredProjects = useMemo(() => {
+		if (statusFilter === "all") {
+			return projects;
+		}
+		return projects.filter(project => {
+			const normalizedStatus = project.status.toUpperCase().replace(/\s+/g, "_");
+			return normalizedStatus === statusFilter;
+		});
+	}, [projects, statusFilter]);
+
+	const filterOptions: { value: StatusFilter; label: string; count: number }[] = [
+		{ value: "all", label: "All Projects", count: projects.length },
+		{ value: "IN_PROGRESS", label: "In Progress", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "IN_PROGRESS").length },
+		{ value: "COMPLETED", label: "Completed", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "COMPLETED").length },
+		{ value: "CANCELLED", label: "Cancelled", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "CANCELLED").length },
+	];
 
 	return (
 		<div className="min-h-screen space-y-8 p-6">
-			<h1 className="text-3xl font-bold mb-8 text-primary">Assigned Projects</h1>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-3xl font-bold text-primary">Assigned Projects</h1>
+				<div className="flex items-center gap-2">
+					<Filter className="w-5 h-5 text-gray-600" />
+					<select
+						value={statusFilter}
+						onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+						className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+					>
+						{filterOptions.map(option => (
+							<option key={option.value} value={option.value}>
+								{option.label} ({option.count})
+							</option>
+						))}
+					</select>
+				</div>
+			</div>
 			<div className="bg-white rounded-xl border overflow-x-auto">
 				<table className="min-w-full text-sm">
 					<thead>
@@ -95,24 +151,22 @@ export default function EmployeeProjects() {
 							<th className="px-4 py-3 text-left font-bold">Customer</th>
 							<th className="px-4 py-3 text-left font-bold">Vehicle</th>
 							<th className="px-4 py-3 text-left font-bold">Due Date</th>
-							<th className="px-4 py-3 text-left font-bold">
-								Estimated Time
-							</th>
+							<th className="px-4 py-3 text-left font-bold">Assigned Employees</th>
 							<th className="px-4 py-3 text-left font-bold">Status</th>
-							<th className="px-4 py-3 text-left font-bold">Edit</th>
+							<th className="px-4 py-3 text-left font-bold">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{loading ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center">
+								<td colSpan={7} className="px-4 py-8 text-center">
 									<Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
 									Loading projects...
 								</td>
 							</tr>
 						) : error ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center text-red-600">
+								<td colSpan={7} className="px-4 py-8 text-center text-red-600">
 									Error: {error}
 									<Button 
 										onClick={loadProjects} 
@@ -123,68 +177,79 @@ export default function EmployeeProjects() {
 									</Button>
 								</td>
 							</tr>
-						) : projects.length === 0 ? (
+						) : filteredProjects.length === 0 ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-									No projects assigned
+								<td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+									{projects.length === 0 ? "No projects assigned" : `No ${statusFilter === "all" ? "" : filterOptions.find(o => o.value === statusFilter)?.label.toLowerCase() + " "}projects found`}
 								</td>
 							</tr>
 						) : (
-							projects.map((project) => (
+							filteredProjects.map((project) => (
 								<tr key={project.id} className="border-b last:border-0 hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
-									<td className="px-4 py-3">{project.name}</td>
-									<td className="px-4 py-3">Customer #{project.customerId || 'N/A'}</td>
+									<td className="px-4 py-3">
+										<div className="flex items-center gap-2">
+											{project.name}
+											{project.isMainRepresentative && (
+												<span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-full">
+													<Crown className="w-3 h-3" />
+													Main Rep
+												</span>
+											)}
+										</div>
+									</td>
+									<td className="px-4 py-3">{project.customerName || `Customer #${project.customerId || 'N/A'}`}</td>
 									<td className="px-4 py-3">{project.vehicleName || 'N/A'}</td>
 									<td className="px-4 py-3">{project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'N/A'}</td>
-									<td className="px-4 py-3">N/A</td>
 									<td className="px-4 py-3">
-										{editingProject === project.id ? (
-											<div className="flex items-center gap-2">
-												<select
-													value={newStatus}
-													onChange={(e) => setNewStatus(e.target.value)}
-													className="px-2 py-1 border rounded text-xs"
-												>
-													{statusOptions.map(status => (
-														<option key={status} value={status}>
-															{status.replace('_', ' ').toUpperCase()}
-														</option>
-													))}
-												</select>
-												<Button
-													onClick={() => handleStatusUpdate(project.id, newStatus)}
-													className="px-2 py-1 text-xs bg-green-500 hover:bg-green-600"
-												>
-													Save
-												</Button>
-												<Button
-													onClick={cancelEditing}
-													className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600"
-												>
-													Cancel
-												</Button>
+										{project.assignedEmployees && project.assignedEmployees.length > 0 ? (
+											<div className="flex flex-col gap-1">
+												{project.assignedEmployees.map((emp) => (
+													<div key={emp.employeeId} className="flex items-center gap-2 text-xs">
+														<Users className="w-3 h-3 text-gray-500" />
+														<span className={emp.employeeId === project.mainRepresentativeEmployeeId ? "font-semibold text-yellow-700" : ""}>
+															{emp.name}
+															{emp.employeeId === project.mainRepresentativeEmployeeId && (
+																<Crown className="w-3 h-3 inline ml-1 text-yellow-600" />
+															)}
+														</span>
+														<span className="text-gray-500">({emp.specialization})</span>
+													</div>
+												))}
 											</div>
 										) : (
-											<span
-												className={`inline-block rounded-full px-6 py-1 text-xs font-semibold border w-32 text-center ${
-													statusStyles[project.status] ||
-													"bg-gray-50 text-gray-800 border-gray-200"
-												}`}
-											>
-												{project.status.replace("_", " ").toUpperCase()}
-											</span>
+											<span className="text-gray-400">No employees assigned</span>
 										)}
 									</td>
 									<td className="px-4 py-3">
-										<button
-											type="button"
-											className="p-2 rounded-lg bg-white border border-blue-200 text-blue-900 hover:bg-blue-100 transition-colors duration-200"
-											aria-label="Edit"
-											onClick={() => startEditing(project.id, project.status)}
-									>
-										<Edit className="w-4 h-4" />
-									</button>
-								</td>
+										<span
+											className={`inline-block rounded-full px-4 py-1.5 text-xs font-semibold border text-center min-w-[100px] ${getStatusBadgeStyle(project.status)}`}
+										>
+											{getStatusDisplayName(project.status)}
+										</span>
+									</td>
+									<td className="px-4 py-3">
+										<div className="flex items-center gap-2">
+											{isInProgress(project.status) && (
+												<Button
+													type="button"
+													onClick={() => handleMarkAsCompleted(project.id)}
+													className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+												>
+													Mark as Completed
+												</Button>
+											)}
+											{isCompleted(project.status) && (
+												<Button
+													type="button"
+													onClick={() => handleSendReport(project.id)}
+													className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+												>
+													<FileText className="w-4 h-4" />
+													Send Report
+												</Button>
+											)}
+										</div>
+									</td>
 							</tr>
 						))
 						)}
