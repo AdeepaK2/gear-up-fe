@@ -52,7 +52,7 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen space-y-8 p-6">
+      <div className="space-y-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Notifications</h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
@@ -63,7 +63,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen space-y-8 p-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
@@ -78,7 +78,7 @@ export default function NotificationsPage() {
           )}
         </div>
         <button
-          className="text-sm font-medium text-gray-600 hover:underline"
+          className="text-sm font-medium text-gray-600 hover:underline hover:text-gray-800"
           onClick={markAllAsRead}
         >
           Mark all as read
