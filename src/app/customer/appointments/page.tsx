@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   useState,
@@ -6,16 +6,16 @@ import React, {
   useMemo,
   useRef,
   useEffect,
-} from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar, Plus } from "lucide-react";
-import AppointmentForm from "@/components/customer/AppointmentForm";
-import AppointmentList from "@/components/customer/AppointmentList";
+} from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Plus } from 'lucide-react';
+import AppointmentForm from '@/components/customer/AppointmentForm';
+import AppointmentList from '@/components/customer/AppointmentList';
 import NotificationCenter, {
   createNotification,
   type Notification,
   type NotificationType,
-} from "@/components/customer/NotificationCenter";
+} from '@/components/customer/NotificationCenter';
 import {
   AppointmentData,
   AppointmentFormData,
@@ -23,11 +23,11 @@ import {
   Appointment,
   AppointmentStatus,
   ConsultationType,
-} from "@/lib/types/Appointment";
-import { appointmentService } from "@/lib/services/appointmentService";
-import { vehicleService } from "@/lib/services/vehicleService";
-import type { Vehicle as BackendVehicle } from "@/lib/types/Vehicle";
-import { useToast } from "@/contexts/ToastContext";
+} from '@/lib/types/Appointment';
+import { appointmentService } from '@/lib/services/appointmentService';
+import { vehicleService } from '@/lib/services/vehicleService';
+import type { Vehicle as BackendVehicle } from '@/lib/types/Vehicle';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * Helper function to convert backend vehicle to UI vehicle format
@@ -52,19 +52,29 @@ const convertAppointmentToUIFormat = (
   const vehicle = vehicles.find((v) => v.id === appointment.vehicleId);
   const vehicleUI = vehicle ? convertVehicleToUIFormat(vehicle) : null;
 
+  // Helper to normalize backend time (HH:mm:ss or HH:mm) to UI friendly HH:mm
+  const normalizeToHHMM = (t?: string | null) => {
+    if (!t) return undefined;
+    // If time already contains seconds (HH:MM:SS), slice to HH:MM
+    if (/^\d{2}:\d{2}:\d{2}$/.test(t)) return t.slice(0, 5);
+    if (/^\d{2}:\d{2}$/.test(t)) return t;
+    return t; // fallback
+  };
+
   return {
     id: String(appointment.id),
     vehicleId: String(appointment.vehicleId),
-    vehicleName: vehicleUI?.name || "",
-    vehicleDetails: vehicleUI?.details || "",
+    vehicleName: vehicleUI?.name || '',
+    vehicleDetails: vehicleUI?.details || '',
     consultationType: appointment.consultationType as ConsultationType,
-    consultationTypeLabel: "General Service",
+    consultationTypeLabel: 'General Service',
     appointmentDate: appointment.appointmentDate,
-    startTime: appointment.startTime || "09:00",
-    endTime: appointment.endTime || "10:00",
+    // convert backend times to HH:mm for inputs
+    startTime: normalizeToHHMM(appointment.startTime) || '09:00',
+    endTime: normalizeToHHMM(appointment.endTime) || '10:00',
     status: appointment.status as AppointmentStatus,
-    customerIssue: appointment.customerIssue || appointment.notes || "",
-    notes: appointment.notes || "",
+    customerIssue: appointment.customerIssue || appointment.notes || '',
+    notes: appointment.notes || '',
   };
 };
 
@@ -112,8 +122,8 @@ export default function AppointmentsPage() {
         );
         setAppointments(uiAppointments);
       } catch (error: any) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load appointments and vehicles");
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load appointments and vehicles');
       } finally {
         setInitialLoading(false);
       }
@@ -158,7 +168,7 @@ export default function AppointmentsPage() {
           apt.id !== excludeId &&
           apt.vehicleId === vehicleId &&
           apt.appointmentDate === appointmentDate &&
-          apt.status !== "CANCELLED"
+          apt.status !== 'CANCELLED'
       );
     },
     [appointments]
@@ -179,9 +189,9 @@ export default function AppointmentsPage() {
 
         if (overlapping) {
           addNotification(
-            "error",
-            "Booking Failed",
-            "There is already an appointment for this vehicle on the selected date. Please choose a different date."
+            'error',
+            'Booking Failed',
+            'There is already an appointment for this vehicle on the selected date. Please choose a different date.'
           );
           return;
         }
@@ -190,20 +200,30 @@ export default function AppointmentsPage() {
 
         if (!vehicle) {
           addNotification(
-            "error",
-            "Booking Failed",
-            "Invalid vehicle selected."
+            'error',
+            'Booking Failed',
+            'Invalid vehicle selected.'
           );
           return;
         }
 
         // Call backend API to create appointment
+        // Ensure times are in HH:mm:ss expected by backend
+        const formatTimeForBackend = (t?: string): string => {
+          if (!t) return '';
+          if (/^\d{2}:\d{2}:\d{2}$/.test(t)) return t; // already HH:mm:ss
+          if (/^\d{2}:\d{2}$/.test(t)) return `${t}:00`;
+          // fallback: try to take first 8 chars, pad if necessary
+          const s = t.slice(0, 8);
+          return s.padEnd(8, '0');
+        };
+
         const createdAppointment = await appointmentService.createAppointment({
           appointmentDate: data.appointmentDate,
           notes: data.notes || data.customerIssue,
           vehicleId: Number(data.vehicleId),
-          startTime: `${data.startTime}:00`,
-          endTime: `${data.endTime}:00`,
+          startTime: formatTimeForBackend(data.startTime),
+          endTime: formatTimeForBackend(data.endTime),
           consultationType: data.consultationType,
         });
 
@@ -214,10 +234,10 @@ export default function AppointmentsPage() {
         );
 
         setAppointments((prev) => [...prev, newAppointment]);
-        toast.success("Appointment booked successfully!");
+        toast.success('Appointment booked successfully!');
         addNotification(
-          "success",
-          "Appointment Booked!",
+          'success',
+          'Appointment Booked!',
           `Your appointment has been successfully scheduled.`
         );
         setShowForm(false);
@@ -227,9 +247,9 @@ export default function AppointmentsPage() {
       } catch (error: any) {
         const errorMessage =
           error.message ||
-          "An error occurred while booking your appointment. Please try again.";
+          'An error occurred while booking your appointment. Please try again.';
         toast.error(errorMessage);
-        addNotification("error", "Booking Failed", errorMessage);
+        addNotification('error', 'Booking Failed', errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -262,13 +282,22 @@ export default function AppointmentsPage() {
 
           if (overlapping) {
             addNotification(
-              "error",
-              "Update Failed",
-              "There is already an appointment for this vehicle on the selected date. Please choose a different date."
+              'error',
+              'Update Failed',
+              'There is already an appointment for this vehicle on the selected date. Please choose a different date.'
             );
             return;
           }
         }
+
+        // Ensure times are in HH:mm:ss expected by backend
+        const formatTimeForBackend = (t?: string): string => {
+          if (!t) return '';
+          if (/^\d{2}:\d{2}:\d{2}$/.test(t)) return t; // already HH:mm:ss
+          if (/^\d{2}:\d{2}$/.test(t)) return `${t}:00`;
+          const s = t.slice(0, 8);
+          return s.padEnd(8, '0');
+        };
 
         // Call backend API to update appointment
         const updatedAppointment = await appointmentService.updateAppointment(
@@ -276,8 +305,9 @@ export default function AppointmentsPage() {
           {
             appointmentDate: data.appointmentDate,
             notes: data.notes || data.customerIssue,
-            startTime: data.startTime ? `${data.startTime}:00` : undefined,
-            status: data.status,
+            startTime: formatTimeForBackend(data.startTime),
+            endTime: formatTimeForBackend(data.endTime),
+            consultationType: data.consultationType,
           }
         );
 
@@ -293,11 +323,11 @@ export default function AppointmentsPage() {
           )
         );
 
-        toast.success("Appointment updated successfully!");
+        toast.success('Appointment updated successfully!');
         addNotification(
-          "success",
-          "Appointment Updated!",
-          "Your appointment has been successfully updated."
+          'success',
+          'Appointment Updated!',
+          'Your appointment has been successfully updated.'
         );
         setEditingAppointment(null);
         setShowForm(false);
@@ -307,9 +337,9 @@ export default function AppointmentsPage() {
       } catch (error: any) {
         const errorMessage =
           error.message ||
-          "An error occurred while updating your appointment. Please try again.";
+          'An error occurred while updating your appointment. Please try again.';
         toast.error(errorMessage);
-        addNotification("error", "Update Failed", errorMessage);
+        addNotification('error', 'Update Failed', errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -356,18 +386,18 @@ export default function AppointmentsPage() {
           prev.filter((apt) => apt.id !== appointmentId)
         );
 
-        toast.success("Appointment cancelled successfully!");
+        toast.success('Appointment cancelled successfully!');
         addNotification(
-          "success",
-          "Appointment Cancelled",
-          "Your appointment has been successfully cancelled."
+          'success',
+          'Appointment Cancelled',
+          'Your appointment has been successfully cancelled.'
         );
       } catch (error: any) {
         const errorMessage =
           error.message ||
-          "An error occurred while cancelling your appointment. Please try again.";
+          'An error occurred while cancelling your appointment. Please try again.';
         toast.error(errorMessage);
-        addNotification("error", "Cancellation Failed", errorMessage);
+        addNotification('error', 'Cancellation Failed', errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -467,8 +497,8 @@ export default function AppointmentsPage() {
           <section aria-labelledby="form-heading" className="max-w-3xl mx-auto">
             <h2 id="form-heading" className="sr-only">
               {editingAppointment
-                ? "Edit Appointment"
-                : "Create New Appointment"}
+                ? 'Edit Appointment'
+                : 'Create New Appointment'}
             </h2>
             <AppointmentForm
               vehicles={vehicles}
