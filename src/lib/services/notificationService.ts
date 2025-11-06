@@ -144,16 +144,45 @@ class NotificationService {
           }
 
           const chunk = decoder.decode(value);
-          const lines = chunk.split('\n\n');
+          console.log('SSE Raw chunk received:', chunk);
+          
+          // Split by double newlines for SSE events
+          const events = chunk.split('\n\n');
 
-          lines.forEach(line => {
-            if (line.startsWith('data: ')) {
+          events.forEach(event => {
+            if (!event.trim()) return;
+            
+            console.log('SSE Event:', event);
+            
+            // Parse SSE event format
+            const lines = event.split('\n');
+            let eventType = '';
+            let data = '';
+            
+            lines.forEach(line => {
+              if (line.startsWith('event:')) {
+                eventType = line.substring(6).trim();
+              } else if (line.startsWith('data:')) {
+                // Handle both "data:" and "data: " formats
+                data = line.startsWith('data: ') ? line.substring(6) : line.substring(5);
+              }
+            });
+            
+            // Ignore connection messages
+            if (eventType === 'connected' || data === 'Connected to notification stream') {
+              console.log('SSE connection established');
+              return;
+            }
+            
+            // Only process if we have data and it looks like JSON
+            if (data && data.trim().startsWith('{')) {
               try {
-                const data = line.substring(6);
+                console.log('Parsing SSE data:', data);
                 const notification: BackendNotification = JSON.parse(data);
+                console.log('Received notification:', notification);
                 this.notifyListeners(adaptNotification(notification));
               } catch (error) {
-                console.error('Failed to parse SSE message:', error);
+                console.error('Failed to parse SSE message:', error, 'Data:', data);
               }
             }
           });
