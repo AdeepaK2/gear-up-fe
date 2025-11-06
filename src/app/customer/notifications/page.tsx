@@ -84,7 +84,7 @@ export default function NotificationsPage() {
           Mark all as read
         </button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center my-6">
           <div className="flex-1 h-px bg-gray-300"></div>
           <div className="flex items-center gap-2 px-4">
@@ -97,34 +97,46 @@ export default function NotificationsPage() {
         </div>
 
         {newNotifications.length === 0 ? (
-          <div className="flex items-center justify-center py-4">
+          <div className="flex items-center justify-center py-8">
             <span className="text-gray-500 text-lg">No new notifications</span>
           </div>
         ) : (
           newNotifications.map((n, idx) => (
             <div
               key={n.id}
-              className={`flex items-center bg-white rounded-lg px-4 py-3 shadow-sm border-l-4 ${getTypeColor(n.type, n.read)} hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
-                selectedIdx === idx ? "border-2 border-blue-500" : ""
+              className={`group relative flex items-start gap-4 bg-gradient-to-r from-white to-blue-50/30 rounded-xl px-5 py-4 shadow-sm hover:shadow-md border border-gray-100 hover:border-blue-200 transition-all duration-300 cursor-pointer ${
+                selectedIdx === idx ? "ring-2 ring-blue-400 shadow-md" : ""
               }`}
               onClick={() => handleMarkAsRead(n.id, idx)}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 mr-4 flex-shrink-0">
+              {/* Unread indicator */}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-blue-600 rounded-r-full"></div>
+              
+              {/* Icon */}
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center ring-1 ring-blue-200">
                 {getTypeIcon(n.type)}
               </div>
-              <div className="flex-1">
-                <div className="text-base font-medium">{n.title}</div>
-                <div className="text-sm text-gray-600 mt-1">{n.message}</div>
-                <div className="text-xs text-gray-400 mt-1">{n.timeAgo}</div>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{n.title}</h3>
+                  <span className="flex-shrink-0 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {n.timeAgo}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1.5 line-clamp-2">{n.message}</p>
               </div>
+              
+              {/* Delete button */}
               <button
-                className="text-gray-400 hover:text-gray-600 ml-4"
+                className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 hover:bg-red-50 rounded-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDismiss(n.id);
                 }}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 text-gray-400 hover:text-red-500" />
               </button>
             </div>
           ))
@@ -144,24 +156,33 @@ export default function NotificationsPage() {
         {oldNotifications.map((n, idx) => (
           <div
             key={n.id}
-            className={`flex items-center bg-white rounded-lg px-4 py-3 shadow-sm border-l-4 ${getTypeColor(n.type, n.read)} hover:bg-blue-50 transition-all duration-200 cursor-pointer`}
+            className="group relative flex items-start gap-4 bg-white rounded-xl px-5 py-4 shadow-sm hover:shadow border border-gray-100 hover:border-gray-200 transition-all duration-300 cursor-pointer opacity-75 hover:opacity-100"
           >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 mr-4 flex-shrink-0">
+            {/* Icon */}
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center ring-1 ring-gray-200">
               {getTypeIcon(n.type)}
             </div>
-            <div className="flex-1">
-              <div className="text-base">{n.title}</div>
-              <div className="text-sm text-gray-600 mt-1">{n.message}</div>
-              <div className="text-xs text-gray-400 mt-1">{n.timeAgo}</div>
+            
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-base font-medium text-gray-800 line-clamp-1">{n.title}</h3>
+                <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                  {n.timeAgo}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1.5 line-clamp-2">{n.message}</p>
             </div>
+            
+            {/* Delete button */}
             <button
-              className="text-gray-400 hover:text-gray-600 ml-4"
+              className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 hover:bg-red-50 rounded-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDismiss(n.id);
               }}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 text-gray-400 hover:text-red-500" />
             </button>
           </div>
         ))}
