@@ -1,9 +1,15 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, RefreshCw, Users, Crown, Filter, FileText } from "lucide-react";
+import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { projectService, type Project } from '@/lib/services/projectService';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/contexts/ToastContext';
 
 type StatusFilter = "all" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
@@ -59,10 +65,25 @@ const getStatusDisplayName = (status: string) => {
 
 export default function EmployeeProjects() {
 	const router = useRouter();
+	const { showToast } = useToast();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+	
+	// Update dialog state
+	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+	const [updateFormData, setUpdateFormData] = useState({
+		message: '',
+		completedTasks: '',
+		totalTasks: '',
+		additionalCost: '',
+		additionalCostReason: '',
+		estimatedCompletionDate: '',
+		updateType: 'PROGRESS' as 'PROGRESS' | 'COST_CHANGE' | 'DELAY' | 'COMPLETION' | 'GENERAL',
+	});
+	const [submittingUpdate, setSubmittingUpdate] = useState(false);
 
 	// Load projects on component mount
 	useEffect(() => {
@@ -105,6 +126,53 @@ export default function EmployeeProjects() {
 
 	const handleSendReport = (projectId: number) => {
 		router.push(`/employee/projects/${projectId}/report`);
+	};
+
+	const handlePostUpdate = (project: Project) => {
+		setSelectedProject(project);
+		setUpdateFormData({
+			message: '',
+			completedTasks: '',
+			totalTasks: '',
+			additionalCost: '',
+			additionalCostReason: '',
+			estimatedCompletionDate: '',
+			updateType: 'PROGRESS',
+		});
+		setShowUpdateDialog(true);
+	};
+
+	const handleViewUpdates = (projectId: number) => {
+		router.push(`/employee/projects/${projectId}/updates`);
+	};
+
+	const handleSubmitUpdate = async () => {
+		if (!selectedProject || !updateFormData.message.trim()) {
+			showToast('Please provide a message for the update', 'error');
+			return;
+		}
+
+		setSubmittingUpdate(true);
+		try {
+			await projectService.createProjectUpdate(selectedProject.id, {
+				message: updateFormData.message,
+				completedTasks: updateFormData.completedTasks ? parseInt(updateFormData.completedTasks) : undefined,
+				totalTasks: updateFormData.totalTasks ? parseInt(updateFormData.totalTasks) : undefined,
+				additionalCost: updateFormData.additionalCost ? parseFloat(updateFormData.additionalCost) : undefined,
+				additionalCostReason: updateFormData.additionalCostReason || undefined,
+				estimatedCompletionDate: updateFormData.estimatedCompletionDate || undefined,
+				updateType: updateFormData.updateType,
+			});
+
+			showToast('Project update posted successfully', 'success');
+			setShowUpdateDialog(false);
+			setSelectedProject(null);
+		} catch (err) {
+			console.error('Failed to post update:', err);
+			showToast(err instanceof Error ? err.message : 'Failed to post update', 'error');
+		} finally {
+			setSubmittingUpdate(false);
+		}
 	};
 
 	const filteredProjects = useMemo(() => {
@@ -230,23 +298,53 @@ export default function EmployeeProjects() {
 									<td className="px-4 py-3">
 										<div className="flex items-center gap-2">
 											{isInProgress(project.status) && (
-												<Button
-													type="button"
-													onClick={() => handleMarkAsCompleted(project.id)}
-													className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
-												>
-													Mark as Completed
-												</Button>
+												<>
+													{project.isMainRepresentative && (
+														<Button
+															type="button"
+															onClick={() => handlePostUpdate(project)}
+															className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+														>
+															<MessageSquarePlus className="w-4 h-4" />
+															Post Update
+														</Button>
+													)}
+													<Button
+														type="button"
+														onClick={() => handleMarkAsCompleted(project.id)}
+														className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+													>
+														Mark as Completed
+													</Button>
+													<Button
+														type="button"
+														onClick={() => handleViewUpdates(project.id)}
+														className="px-3 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<MessageSquare className="w-4 h-4" />
+														View Updates
+													</Button>
+												</>
 											)}
 											{isCompleted(project.status) && (
-												<Button
-													type="button"
-													onClick={() => handleSendReport(project.id)}
-													className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
-												>
-													<FileText className="w-4 h-4" />
-													Send Report
-												</Button>
+												<>
+													<Button
+														type="button"
+														onClick={() => handleSendReport(project.id)}
+														className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<FileText className="w-4 h-4" />
+														Send Report
+													</Button>
+													<Button
+														type="button"
+														onClick={() => handleViewUpdates(project.id)}
+														className="px-3 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<MessageSquare className="w-4 h-4" />
+														View Updates
+													</Button>
+												</>
 											)}
 										</div>
 									</td>
@@ -256,6 +354,145 @@ export default function EmployeeProjects() {
 					</tbody>
 				</table>
 			</div>
+
+			{/* Post Update Dialog */}
+			<Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold">Post Project Update</DialogTitle>
+						<DialogDescription>
+							Send an update to the customer about project progress, costs, or any changes.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="updateType">Update Type *</Label>
+							<Select
+								value={updateFormData.updateType}
+								onValueChange={(value: any) => setUpdateFormData({ ...updateFormData, updateType: value })}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select update type" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="PROGRESS">Progress Update</SelectItem>
+									<SelectItem value="COST_CHANGE">Cost Change</SelectItem>
+									<SelectItem value="DELAY">Delay Notice</SelectItem>
+									<SelectItem value="COMPLETION">Completion Notice</SelectItem>
+									<SelectItem value="GENERAL">General Update</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="message">Message *</Label>
+							<Textarea
+								id="message"
+								placeholder="Describe the update for the customer..."
+								value={updateFormData.message}
+								onChange={(e) => setUpdateFormData({ ...updateFormData, message: e.target.value })}
+								rows={5}
+								className="resize-none"
+								required
+							/>
+							<p className="text-xs text-gray-500">
+								{updateFormData.message.length}/2000 characters
+							</p>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="completedTasks">Completed Tasks</Label>
+								<Input
+									id="completedTasks"
+									type="number"
+									placeholder="e.g., 5"
+									value={updateFormData.completedTasks}
+									onChange={(e) => setUpdateFormData({ ...updateFormData, completedTasks: e.target.value })}
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="totalTasks">Total Tasks</Label>
+								<Input
+									id="totalTasks"
+									type="number"
+									placeholder="e.g., 10"
+									value={updateFormData.totalTasks}
+									onChange={(e) => setUpdateFormData({ ...updateFormData, totalTasks: e.target.value })}
+								/>
+							</div>
+						</div>
+
+						{updateFormData.updateType === 'COST_CHANGE' && (
+							<>
+								<div className="space-y-2">
+									<Label htmlFor="additionalCost">Additional Cost (LKR)</Label>
+									<Input
+										id="additionalCost"
+										type="number"
+										step="0.01"
+										placeholder="e.g., 5000.00"
+										value={updateFormData.additionalCost}
+										onChange={(e) => setUpdateFormData({ ...updateFormData, additionalCost: e.target.value })}
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor="additionalCostReason">Reason for Additional Cost</Label>
+									<Textarea
+										id="additionalCostReason"
+										placeholder="Explain why additional costs are needed..."
+										value={updateFormData.additionalCostReason}
+										onChange={(e) => setUpdateFormData({ ...updateFormData, additionalCostReason: e.target.value })}
+										rows={3}
+										className="resize-none"
+									/>
+								</div>
+							</>
+						)}
+
+						{(updateFormData.updateType === 'DELAY' || updateFormData.updateType === 'COMPLETION') && (
+							<div className="space-y-2">
+								<Label htmlFor="estimatedCompletionDate">
+									{updateFormData.updateType === 'DELAY' ? 'New Estimated Completion Date' : 'Completion Date'}
+								</Label>
+								<Input
+									id="estimatedCompletionDate"
+									type="date"
+									value={updateFormData.estimatedCompletionDate}
+									onChange={(e) => setUpdateFormData({ ...updateFormData, estimatedCompletionDate: e.target.value })}
+								/>
+							</div>
+						)}
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowUpdateDialog(false)}
+							disabled={submittingUpdate}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleSubmitUpdate}
+							disabled={submittingUpdate || !updateFormData.message.trim()}
+							className="bg-primary hover:bg-primary/90"
+						>
+							{submittingUpdate ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Posting...
+								</>
+							) : (
+								'Post Update'
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 		</div>
 	);

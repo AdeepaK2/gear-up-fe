@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, FolderOpen, Loader2, AlertCircle, RefreshCw, FileText, CheckCircle2, PlayCircle, UserPlus, Users, Clock, User } from "lucide-react";
+import { Check, X, FolderOpen, Loader2, AlertCircle, RefreshCw, FileText, CheckCircle2, PlayCircle, UserPlus, Users, Clock, User, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/contexts/ToastContext";
@@ -65,6 +65,9 @@ export default function ProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assignStep, setAssignStep] = useState<'select-employees' | 'select-representative'>(
+    'select-employees'
+  );
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<number[]>([]);
   const [mainRepresentativeId, setMainRepresentativeId] = useState<number | null>(null);
@@ -212,6 +215,7 @@ export default function ProjectsPage() {
 
   const handleCloseAssignDialog = () => {
     setAssignDialogOpen(false);
+    setAssignStep('select-employees');
     setSelectedProject(null);
     setSelectedEmployees([]);
     setMainRepresentativeId(null);
@@ -223,44 +227,44 @@ export default function ProjectsPage() {
         ? prev.filter(id => id !== employeeId)
         : [...prev, employeeId];
       
-      // If the removed employee was the main representative, clear it
-      if (prev.includes(employeeId) && mainRepresentativeId === employeeId) {
-        setMainRepresentativeId(null);
-      }
-      
-      // If only one employee is selected, make them the main representative automatically
-      if (newSelection.length === 1) {
-        setMainRepresentativeId(newSelection[0]);
-      } else if (newSelection.length === 0) {
-        setMainRepresentativeId(null);
-      } else if (mainRepresentativeId === null && newSelection.length > 0) {
-        // Auto-select first as main representative if none selected and multiple employees
-        setMainRepresentativeId(newSelection[0]);
-      }
-      
       return newSelection;
     });
   };
 
-  const handleAssignEmployees = async () => {
+  const handleNextToRepresentative = () => {
+    if (selectedEmployees.length === 0) {
+      toast.error("Please select at least one employee");
+      return;
+    }
+
+    // If only one employee, auto-select as main representative and proceed
+    if (selectedEmployees.length === 1) {
+      setMainRepresentativeId(selectedEmployees[0]);
+      // Skip to assignment
+      handleAssignEmployees(selectedEmployees[0]);
+      return;
+    }
+
+    // Multiple employees - move to representative selection
+    setAssignStep('select-representative');
+  };
+
+  const handleBackToEmployees = () => {
+    setAssignStep('select-employees');
+  };
+
+  const handleAssignEmployees = async (autoMainRepId?: number) => {
+    const finalMainRepId = autoMainRepId || mainRepresentativeId;
+    
     if (!selectedProject || selectedEmployees.length === 0) {
       toast.error("Please select at least one employee");
       return;
     }
 
     // Validate main representative is selected if multiple employees
-    // Note: Single employee is automatically set as main representative in the UI
-    if (selectedEmployees.length > 1 && !mainRepresentativeId) {
-      toast.error("Please select a main representative when assigning multiple employees");
+    if (selectedEmployees.length > 1 && !finalMainRepId) {
+      toast.error("Please select a main representative");
       return;
-    }
-    
-    // Ensure single employee is set as main representative
-    if (selectedEmployees.length === 1) {
-      // This should already be set by handleToggleEmployee, but ensure it's set
-      if (!mainRepresentativeId) {
-        setMainRepresentativeId(selectedEmployees[0]);
-      }
     }
 
     setAssigning(true);
@@ -275,9 +279,9 @@ export default function ProjectsPage() {
         employeeIds: selectedEmployees,
       };
 
-      // Include main representative ID if multiple employees or if explicitly set
+      // Include main representative ID
       if (selectedEmployees.length > 1) {
-        requestBody.mainRepresentativeEmployeeId = mainRepresentativeId;
+        requestBody.mainRepresentativeEmployeeId = finalMainRepId;
       } else if (selectedEmployees.length === 1) {
         // Single employee automatically becomes main representative
         requestBody.mainRepresentativeEmployeeId = selectedEmployees[0];
@@ -309,23 +313,19 @@ export default function ProjectsPage() {
       const updatedProject = apiResponse.data;
       
       // Ensure we have the assignedEmployeeIds from the response
-      // Use the response data if available, otherwise fall back to what we sent
       const assignedIds = updatedProject?.assignedEmployeeIds && Array.isArray(updatedProject.assignedEmployeeIds) && updatedProject.assignedEmployeeIds.length > 0
         ? updatedProject.assignedEmployeeIds
         : selectedEmployees;
       
       // Update the project in local state immediately with the response data
-      // This ensures the UI updates before the full refresh
-      // IMPORTANT: Preserve the project status - it should remain CREATED until approval
       setProjects(prevProjects => 
         prevProjects.map(p => 
           p.id === selectedProject.id 
             ? { 
                 ...p, 
                 assignedEmployeeIds: assignedIds,
-                mainRepresentativeEmployeeId: updatedProject?.mainRepresentativeEmployeeId || mainRepresentativeId || null,
-                // Explicitly preserve status - do NOT change status on employee assignment
-                status: p.status // Keep existing status (should be CREATED)
+                mainRepresentativeEmployeeId: updatedProject?.mainRepresentativeEmployeeId || finalMainRepId || null,
+                status: p.status
               }
             : p
         )
@@ -336,8 +336,7 @@ export default function ProjectsPage() {
       // Close dialog first
       handleCloseAssignDialog();
       
-      // Then refresh projects list to get the latest data from database
-      // This ensures the state is properly synchronized
+      // Then refresh projects list
       await fetchProjects();
     } catch (err: any) {
       toast.error(err.message || "Failed to assign employees");
@@ -618,141 +617,180 @@ export default function ProjectsPage() {
 
       {/* Employee Assignment Dialog */}
       <Dialog open={assignDialogOpen} onOpenChange={handleCloseAssignDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Assign Employees</DialogTitle>
+            <DialogTitle>
+              {assignStep === 'select-employees' ? 'Step 1: Select Employees' : 'Step 2: Select Main Representative'}
+            </DialogTitle>
             <DialogDescription>
-              Select employees to assign to the project: {selectedProject?.name}
+              {assignStep === 'select-employees' 
+                ? `Select employees to assign to the project: ${selectedProject?.name}`
+                : 'Choose the main representative who will be the primary point of contact for this project'
+              }
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
+          <div className="flex-1 overflow-y-auto py-4">
             {loadingEmployees ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Loading employees...
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {employees.map((employee) => (
-                    <div
-                      key={employee.employeeId}
-                      className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50"
-                    >
-                      <input
-                        type="checkbox"
-                        id={`employee-${employee.employeeId}`}
-                        checked={selectedEmployees.includes(employee.employeeId)}
-                        onChange={() => handleToggleEmployee(employee.employeeId)}
-                        className="rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                      <label
-                        htmlFor={`employee-${employee.employeeId}`}
-                        className="flex-1 cursor-pointer"
+              <>
+                {/* Step 1: Select Employees */}
+                {assignStep === 'select-employees' && (
+                  <div className="space-y-3">
+                    {employees.map((employee) => (
+                      <div
+                        key={employee.employeeId}
+                        className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          selectedEmployees.includes(employee.employeeId)
+                            ? 'border-primary bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                        onClick={() => handleToggleEmployee(employee.employeeId)}
                       >
-                        <div className="font-medium">{employee.name}</div>
-                        <div className="text-sm text-gray-500">{employee.specialization}</div>
-                      </label>
-                    </div>
-                  ))}
-                  {employees.length === 0 && (
-                    <div className="text-center py-4 text-gray-500">
-                      No employees available
-                    </div>
-                  )}
-                </div>
-
-                {/* Main Representative Selection - Show when employees are selected */}
-                {selectedEmployees.length > 0 && (
-                  <div className="pt-4 border-t">
-                    {selectedEmployees.length === 1 ? (
-                      // Single employee - automatically main representative
-                      <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                          <div>
-                            <label className="text-sm font-semibold text-blue-900 block">
-                              Main Representative (Auto-selected):
-                            </label>
-                            {employees
-                              .filter(emp => selectedEmployees.includes(emp.employeeId))
-                              .map((employee) => (
-                                <div key={employee.employeeId} className="mt-1">
-                                  <div className="font-medium text-blue-900">{employee.name}</div>
-                                  <div className="text-sm text-blue-700">{employee.specialization}</div>
-                                </div>
-                              ))}
-                            <p className="text-xs text-blue-600 mt-2">
-                              The selected employee is automatically set as the main representative.
-                            </p>
+                        <input
+                          type="checkbox"
+                          id={`employee-${employee.employeeId}`}
+                          checked={selectedEmployees.includes(employee.employeeId)}
+                          onChange={() => handleToggleEmployee(employee.employeeId)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary w-5 h-5"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <label
+                          htmlFor={`employee-${employee.employeeId}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-500" />
+                            <span className="font-semibold text-gray-900">{employee.name}</span>
                           </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // Multiple employees - show selection
-                      <>
-                        <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                          Select Main Representative:
+                          <div className="text-sm text-gray-600 mt-1">{employee.specialization}</div>
                         </label>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {employees
-                            .filter(emp => selectedEmployees.includes(emp.employeeId))
-                            .map((employee) => (
-                              <div
-                                key={employee.employeeId}
-                                className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50"
-                              >
-                                <input
-                                  type="radio"
-                                  id={`main-rep-${employee.employeeId}`}
-                                  name="mainRepresentative"
-                                  checked={mainRepresentativeId === employee.employeeId}
-                                  onChange={() => setMainRepresentativeId(employee.employeeId)}
-                                  className="border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <label
-                                  htmlFor={`main-rep-${employee.employeeId}`}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  <div className="font-medium">{employee.name}</div>
-                                  <div className="text-sm text-gray-500">{employee.specialization}</div>
-                                </label>
-                              </div>
-                            ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          The main representative will be the primary point of contact for this project.
+                        {selectedEmployees.includes(employee.employeeId) && (
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                    ))}
+                    {employees.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                        <p>No employees available</p>
+                      </div>
+                    )}
+                    {selectedEmployees.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                        <p className="text-sm text-blue-900">
+                          <strong>{selectedEmployees.length}</strong> employee{selectedEmployees.length > 1 ? 's' : ''} selected
                         </p>
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
-              </div>
+
+                {/* Step 2: Select Main Representative */}
+                {assignStep === 'select-representative' && (
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-blue-900 flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        You have selected <strong>{selectedEmployees.length}</strong> employees. 
+                        Please choose one as the main representative.
+                      </p>
+                    </div>
+                    {employees
+                      .filter(emp => selectedEmployees.includes(emp.employeeId))
+                      .map((employee) => (
+                        <div
+                          key={employee.employeeId}
+                          className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            mainRepresentativeId === employee.employeeId
+                              ? 'border-primary bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setMainRepresentativeId(employee.employeeId)}
+                        >
+                          <input
+                            type="radio"
+                            id={`main-rep-${employee.employeeId}`}
+                            name="mainRepresentative"
+                            checked={mainRepresentativeId === employee.employeeId}
+                            onChange={() => setMainRepresentativeId(employee.employeeId)}
+                            className="border-gray-300 text-primary focus:ring-primary w-5 h-5"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <label
+                            htmlFor={`main-rep-${employee.employeeId}`}
+                            className="flex-1 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <span className="font-semibold text-gray-900">{employee.name}</span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">{employee.specialization}</div>
+                          </label>
+                          {mainRepresentativeId === employee.employeeId && (
+                            <Badge className="bg-primary text-white">Main Representative</Badge>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleCloseAssignDialog}
-              disabled={assigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignEmployees}
-              disabled={assigning || selectedEmployees.length === 0}
-            >
-              {assigning ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Assigning...
-                </>
-              ) : (
-                'Assign Employees'
-              )}
-            </Button>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
+            {assignStep === 'select-employees' ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCloseAssignDialog}
+                  disabled={assigning}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleNextToRepresentative}
+                  disabled={selectedEmployees.length === 0}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Next: Select Representative
+                  <Users className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleBackToEmployees}
+                  disabled={assigning}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={() => handleAssignEmployees()}
+                  disabled={assigning || !mainRepresentativeId}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {assigning ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Assigning...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assign Employees
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -789,6 +827,50 @@ function StandardProjectTable({
   onReject?: (project: Project) => void;
   projects?: Project[];
 }) {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    // Fetch employees if we're showing IN_PROGRESS or COMPLETED projects
+    if (status === "IN_PROGRESS" || status === "COMPLETED") {
+      fetchEmployees();
+    }
+  }, [status]);
+
+  const getAuthToken = () => {
+    return localStorage.getItem("accessToken") || localStorage.getItem("token");
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_ENDPOINTS.EMPLOYEE.BASE}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const apiResponse = await response.json();
+        const employeesData = Array.isArray(apiResponse.data) 
+          ? apiResponse.data 
+          : Array.isArray(apiResponse) 
+          ? apiResponse 
+          : [];
+        setEmployees(employeesData);
+      }
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+    }
+  };
+
+  const getEmployeeName = (employeeId: number) => {
+    const employee = employees.find(e => e.employeeId === employeeId);
+    return employee?.name || `Employee #${employeeId}`;
+  };
+
   const getStatusIcon = (status: ProjectStatus) => {
     switch (status) {
       case "CREATED":
@@ -865,34 +947,47 @@ function StandardProjectTable({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-200">
-              <TableHead className="font-semibold text-gray-700">
-                Project Name
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Description
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Customer
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Start Date
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                End Date
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Services
-              </TableHead>
-              {(status === "CREATED" || status === "CONFIRMED" || status === "IN_PROGRESS") && (
-                <TableHead className="font-semibold text-gray-700 text-center">
-                  Actions
+        {/* Scroll hint */}
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700 flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+          Scroll horizontally to see all columns
+        </div>
+        <div className="overflow-x-auto overflow-y-visible scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <Table className="w-full table-auto">
+            <TableHeader>
+              <TableRow className="border-gray-200">
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[120px]">
+                  Project Name
                 </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap w-[120px]">
+                  Description
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[100px]">
+                  Customer
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[90px]">
+                  Start Date
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[90px]">
+                  End Date
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[80px]">
+                  Services
+                </TableHead>
+                {(status === "IN_PROGRESS" || status === "COMPLETED") && (
+                  <TableHead className="font-semibold text-gray-700 whitespace-nowrap min-w-[150px]">
+                    Employees
+                  </TableHead>
+                )}
+                {(status === "CREATED" || status === "CONFIRMED" || status === "IN_PROGRESS") && (
+                  <TableHead className="font-semibold text-gray-700 text-center whitespace-nowrap min-w-[140px]">
+                    Actions
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {data.length > 0 ? (
               data.map((project) => (
@@ -900,36 +995,64 @@ function StandardProjectTable({
                   key={project.id}
                   className="align-top hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell className="font-medium py-4 text-gray-900">
-                    <div className="text-sm leading-relaxed whitespace-normal break-words">
+                  <TableCell className="font-medium py-3 text-gray-900 min-w-[120px]">
+                    <div className="text-xs leading-tight whitespace-normal break-words max-w-[120px]">
                       {project.name}
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-48 py-4">
-                    <div className="text-sm leading-relaxed whitespace-normal break-words text-gray-600">
+                  <TableCell className="py-3 w-[120px]">
+                    <div className="text-xs leading-tight whitespace-normal break-words text-gray-600 line-clamp-2 max-w-[120px]" title={project.description || "No description"}>
                       {project.description || "No description"}
                     </div>
                   </TableCell>
-                  <TableCell className="py-4 text-gray-900">
-                    {project.customerName}
+                  <TableCell className="py-3 text-gray-900 whitespace-nowrap min-w-[100px]">
+                    <div className="text-xs">{project.customerName}</div>
                   </TableCell>
-                  <TableCell className="py-4 text-gray-600">
-                    {formatDate(project.startDate)}
+                  <TableCell className="py-3 text-gray-600 whitespace-nowrap min-w-[90px]">
+                    <div className="text-xs">{formatDate(project.startDate)}</div>
                   </TableCell>
-                  <TableCell className="py-4 text-gray-600">
-                    {formatDate(project.endDate)}
+                  <TableCell className="py-3 text-gray-600 whitespace-nowrap min-w-[90px]">
+                    <div className="text-xs">{formatDate(project.endDate)}</div>
                   </TableCell>
-                  <TableCell className="py-4">
+                  <TableCell className="py-3 whitespace-nowrap min-w-[80px]">
                     <Badge
                       variant="outline"
-                      className="bg-blue-50 text-blue-700 border-blue-200"
+                      className="bg-blue-50 text-blue-700 border-blue-200 text-xs px-2 py-0"
                     >
-                      {project.taskIds.length} services
+                      {project.taskIds.length}
                     </Badge>
                   </TableCell>
+                  {(status === "IN_PROGRESS" || status === "COMPLETED") && (
+                    <TableCell className="py-3 min-w-[150px]">
+                      {project.assignedEmployeeIds && project.assignedEmployeeIds.length > 0 ? (
+                        <div className="space-y-1">
+                          {project.assignedEmployeeIds.map((empId) => (
+                            <div
+                              key={empId}
+                              className={`flex items-center gap-1 text-xs ${
+                                empId === project.mainRepresentativeEmployeeId
+                                  ? 'font-semibold text-primary'
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              <User className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{getEmployeeName(empId)}</span>
+                              {empId === project.mainRepresentativeEmployeeId && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-primary text-white border-primary">
+                                  Lead
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">None</span>
+                      )}
+                    </TableCell>
+                  )}
                   {(status === "CREATED" || status === "CONFIRMED" || status === "IN_PROGRESS") && (
-                    <TableCell className="py-4 text-center">
-                      <div className="flex gap-3 justify-center items-center">
+                    <TableCell className="py-3 text-center min-w-[140px]">
+                      <div className="flex gap-1 justify-center items-center whitespace-nowrap">
                         {status === "CREATED" && onApprove && onReject && (() => {
                           const hasEmployees = project.assignedEmployeeIds && project.assignedEmployeeIds.length > 0;
                           return (
@@ -940,21 +1063,21 @@ function StandardProjectTable({
                                 onClick={() => onApprove(project)}
                                 disabled={!hasEmployees}
                                 title={!hasEmployees ? "Assign at least one employee before approving" : "Approve project"}
-                                className={`h-10 w-10 p-0 rounded-full shadow-sm hover:shadow-md transition-all duration-200 ${
+                                className={`h-7 w-7 p-0 rounded-full ${
                                   hasEmployees
-                                    ? "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 cursor-pointer"
-                                    : "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed opacity-50"
+                                    ? "bg-green-100 text-green-700 hover:bg-green-200 border border-green-300"
+                                    : "bg-gray-100 text-gray-400 border border-gray-300 opacity-50"
                                 }`}
                               >
-                                <Check className="h-5 w-5" />
+                                <Check className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onReject?.(project)}
-                                className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                                className="h-7 w-7 p-0 bg-red-100 text-red-700 hover:bg-red-200 border border-red-300 rounded-full"
                               >
-                                <X className="h-5 w-5" />
+                                <X className="h-3 w-3" />
                               </Button>
                             </>
                           );
@@ -963,9 +1086,9 @@ function StandardProjectTable({
                           variant="outline"
                           size="sm"
                           onClick={() => onAssignEmployees?.(project)}
-                          className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
+                          className="h-7 px-2 bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300 text-[10px] font-medium"
                         >
-                          <UserPlus className="h-4 w-4 mr-2" />
+                          <UserPlus className="h-3 w-3 mr-1" />
                           Assign
                         </Button>
                       </div>
@@ -976,18 +1099,25 @@ function StandardProjectTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={(status === "CREATED" || status === "CONFIRMED" || status === "IN_PROGRESS") ? 7 : 6}
+                  colSpan={
+                    (status === "IN_PROGRESS" || status === "COMPLETED") 
+                      ? 8 
+                      : (status === "CREATED" || status === "CONFIRMED") 
+                      ? 7 
+                      : 6
+                  }
                   className="text-center py-8 text-gray-500"
                 >
                   <div className="flex flex-col items-center gap-2">
                     {getStatusIcon(status)}
-                    <span>No {getStatusLabel(status).toLowerCase()} projects found.</span>
+                    <span className="text-sm">No {getStatusLabel(status).toLowerCase()} projects found.</span>
                   </div>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   );
