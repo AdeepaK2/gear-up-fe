@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import Image from "next/image";
-import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Link from 'next/link';
+import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Car,
@@ -13,44 +13,44 @@ import {
   MessageSquare,
   LogOut,
   FileText,
-} from "lucide-react";
-import { authService } from "@/lib/services/authService";
-import type { User as UserType } from "@/lib/types/Auth";
-import { useToast } from "@/contexts/ToastContext";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+} from 'lucide-react';
+import { authService } from '@/lib/services/authService';
+import type { User as UserType } from '@/lib/types/Auth';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 const navItems = [
-  { href: "/customer/dashboard", label: "Dashboard", icon: Home },
-  { href: "/customer/vehicles", label: "My Vehicles", icon: Car },
-  { href: "/customer/appointments", label: "My Appointments", icon: Calendar },
-  { href: "/customer/reports", label: "Service Reports", icon: FileText },
-  { href: "/customer/projects", label: "My Projects", icon: Folder },
-  { href: "/customer/profile", label: "Profile", icon: User },
-  { href: "/customer/chatbot", label: "Chatbot", icon: MessageSquare },
+  { href: '/customer/dashboard', label: 'Dashboard', icon: Home },
+  { href: '/customer/vehicles', label: 'My Vehicles', icon: Car },
+  { href: '/customer/appointments', label: 'My Appointments', icon: Calendar },
+  { href: '/customer/reports', label: 'Service Reports', icon: FileText },
+  { href: '/customer/projects', label: 'My Projects', icon: Folder },
+  { href: '/customer/profile', label: 'Profile', icon: User },
+  { href: '/customer/chatbot', label: 'Chatbot', icon: MessageSquare },
 ];
 
 export default function CustomerSidebar() {
-  const rawPathname = usePathname() || "/customer/dashboard";
+  const rawPathname = usePathname() || '/customer/dashboard';
   const router = useRouter();
   const toast = useToast();
-
+  
   // Remove trailing slash to normalize the pathname
-  const pathname = rawPathname.endsWith("/")
+  const pathname = rawPathname.endsWith('/')
     ? rawPathname.slice(0, -1)
     : rawPathname;
 
-  const [user, setUser] = React.useState<UserType | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
+  const [user, setUser] = useState<UserType | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Fetch authenticated user on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
 
     // If not authenticated, redirect to login
     if (!currentUser || !authService.isAuthenticated()) {
-      router.push("/login");
+      router.push('/login');
     }
   }, [router]);
 
@@ -62,13 +62,13 @@ export default function CustomerSidebar() {
     try {
       setIsLoggingOut(true);
       await authService.logout();
-      toast.success("Logged out successfully");
-      router.push("/login");
+      toast.success('Logged out successfully');
+      router.push('/login');
     } catch (error) {
-      console.error("Error logging out:", error);
-      toast.error("Logout failed, but redirecting to login");
+      console.error('Error logging out:', error);
+      toast.error('Logout failed, but redirecting to login');
       // Still redirect to login even if logout API fails
-      router.push("/login");
+      router.push('/login');
     } finally {
       setIsLoggingOut(false);
     }
@@ -89,7 +89,9 @@ export default function CustomerSidebar() {
       </div>
 
       <div className="mb-4 text-center">
-        <p className="font-semibold text-gray-800">{user?.name || "Loading..."}</p>
+        <p className="font-semibold text-gray-800">
+          {user?.name || 'Loading...'}
+        </p>
         <p className="text-xs text-gray-500 mt-1">{user?.email}</p>
       </div>
 
@@ -98,8 +100,8 @@ export default function CustomerSidebar() {
           // Proper logic: exact match OR sub-route match (except for dashboard which is exact only)
           const active =
             pathname === item.href ||
-            (pathname?.startsWith(item.href + "/") &&
-              item.href !== "/customer/dashboard");
+            (pathname?.startsWith(item.href + '/') &&
+              item.href !== '/customer/dashboard');
 
           const Icon = item.icon;
           return (
@@ -108,19 +110,19 @@ export default function CustomerSidebar() {
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ease-in-out ${
                 active
-                  ? "bg-primary text-white font-medium shadow-lg border-l-4 border-secondary"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-primary"
+                  ? 'bg-primary text-white font-medium shadow-lg border-l-4 border-secondary'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-primary'
               }`}
             >
               <Icon
                 size={16}
                 className={`transition-colors duration-200 ${
-                  active ? "text-white" : "text-gray-500"
+                  active ? 'text-white' : 'text-gray-500'
                 }`}
               />
               <span
                 className={`transition-colors duration-200 ${
-                  active ? "text-white" : ""
+                  active ? 'text-white' : ''
                 }`}
               >
                 {item.label}
@@ -137,7 +139,7 @@ export default function CustomerSidebar() {
           className={`flex items-center gap-3 rounded-md px-3 py-2 w-full bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           <LogOut size={16} className="text-white" />
-          <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+          <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
         </button>
       </div>
 

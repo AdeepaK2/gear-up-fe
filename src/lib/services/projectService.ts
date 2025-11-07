@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../config/api';
 import { authService } from './authService';
+import { type Task } from './taskService';
 
 export interface AssignedEmployee {
   employeeId: number;
@@ -30,18 +31,11 @@ export interface Project {
   isMainRepresentative?: boolean;
 }
 
-export interface Task {
-  id: number;
-  name: string;
-  description: string;
-  status: string;
-  priority: string;
-  createdAt: string;
-  updatedAt: string;
-  dueDate?: string;
-  projectId?: number;
-  assignedEmployeeId?: number;
-  assignedEmployeeName?: string;
+export interface TaskCompletion {
+  taskId: number;
+  taskName: string;
+  isCompleted: boolean;
+  completionPercentage: number;
 }
 
 export interface ProjectUpdate {
@@ -61,13 +55,6 @@ export interface ProjectUpdate {
   overallCompletionPercentage?: number;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface TaskCompletion {
-  taskId: number;
-  taskName: string;
-  isCompleted: boolean;
-  completionPercentage: number;
 }
 
 export interface ProjectResponse {
