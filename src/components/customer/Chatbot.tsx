@@ -253,6 +253,12 @@ export default function Chatbot({
         action: "book_appointment",
         icon: "📝",
       },
+      {
+        id: "4",
+        label: "Contact Details",
+        action: "contact_details",
+        icon: "📞",
+      },
     ],
     []
   );
@@ -346,6 +352,32 @@ export default function Chatbot({
             "View service pricing",
             "Get quote",
             "Compare packages",
+          ],
+        };
+      }
+
+      if (
+        lowerMessage.includes("contact") ||
+        lowerMessage.includes("phone") ||
+        lowerMessage.includes("email") ||
+        lowerMessage.includes("address") ||
+        lowerMessage.includes("location")
+      ) {
+        return {
+          message:
+            "Here are our contact details:\n\n📍 **Address:** 123 Gear Up Street, Auto City, AC 12345\n📞 **Phone:** (555) 123-4567\n📧 **Email:** support@gearup.code102.site\n🕒 **Hours:** Mon-Fri 8AM-6PM, Sat 9AM-4PM\n\nYou can also visit our contact page for more information.",
+          suggestions: [
+            "Visit contact page",
+            "Call us now",
+            "Send email",
+          ],
+          quickActions: [
+            {
+              id: "qa6",
+              label: "Visit Contact Page",
+              action: "contact_details",
+              icon: "📞",
+            },
           ],
         };
       }
@@ -491,6 +523,12 @@ export default function Chatbot({
         setTimeout(() => {
           handleSendMessage();
         }, 0);
+        return;
+      }
+
+      // Special handling for contact details - navigate to contact page
+      if (action.action === "contact_details") {
+        window.open("https://gearup.code102.site/contact/", "_blank");
         return;
       }
 
