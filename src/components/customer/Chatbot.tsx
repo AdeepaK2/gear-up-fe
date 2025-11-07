@@ -249,21 +249,15 @@ export default function Chatbot({
       },
       {
         id: "3",
-        label: "Request a New Service",
-        action: "request_service",
-        icon: "➕",
+        label: "Book Appointment",
+        action: "book_appointment",
+        icon: "📝",
       },
       {
         id: "4",
-        label: "Update My Profile",
-        action: "update_profile",
-        icon: "👤",
-      },
-      {
-        id: "5",
-        label: "Contact Support",
-        action: "contact_support",
-        icon: "🎧",
+        label: "Contact Details",
+        action: "contact_details",
+        icon: "📞",
       },
     ],
     []
@@ -358,6 +352,32 @@ export default function Chatbot({
             "View service pricing",
             "Get quote",
             "Compare packages",
+          ],
+        };
+      }
+
+      if (
+        lowerMessage.includes("contact") ||
+        lowerMessage.includes("phone") ||
+        lowerMessage.includes("email") ||
+        lowerMessage.includes("address") ||
+        lowerMessage.includes("location")
+      ) {
+        return {
+          message:
+            "Here are our contact details:\n\n📍 **Address:** 123 Gear Up Street, Auto City, AC 12345\n📞 **Phone:** (555) 123-4567\n📧 **Email:** support@gearup.code102.site\n🕒 **Hours:** Mon-Fri 8AM-6PM, Sat 9AM-4PM\n\nYou can also visit our contact page for more information.",
+          suggestions: [
+            "Visit contact page",
+            "Call us now",
+            "Send email",
+          ],
+          quickActions: [
+            {
+              id: "qa6",
+              label: "Visit Contact Page",
+              action: "contact_details",
+              icon: "📞",
+            },
           ],
         };
       }
@@ -496,6 +516,22 @@ export default function Chatbot({
    */
   const handleQuickAction = useCallback(
     (action: QuickAction) => {
+      // Special handling for book appointment - automatically send the message
+      if (action.action === "book_appointment") {
+        setInputValue("I need to book an appointment");
+        // Use setTimeout to ensure input value is set before sending
+        setTimeout(() => {
+          handleSendMessage();
+        }, 0);
+        return;
+      }
+
+      // Special handling for contact details - navigate to contact page
+      if (action.action === "contact_details") {
+        window.open("https://gearup.code102.site/contact/", "_blank");
+        return;
+      }
+
       const actionMessage: Message = {
         id: Date.now().toString(),
         content: `Selected: ${action.label}`,
@@ -547,7 +583,7 @@ export default function Chatbot({
         }, 1000);
       }
     },
-    [onActionClick]
+    [onActionClick, handleSendMessage]
   );
 
   /**
@@ -685,68 +721,16 @@ export default function Chatbot({
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white/80 backdrop-blur-sm">
-        {/* Top Header with Back Button, Menu Button, and New Chat */}
-        <div className="flex items-center justify-between p-4 border-b border-blue-100 bg-white/90 backdrop-blur-md shadow-sm">
-          {/* Left Side: Back Button, Menu Button, and Title */}
-          <div className="flex items-center space-x-3">
-            {/* Back Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/customer")}
-              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-              title="Back to dashboard"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-
-            {/* Vertical Divider */}
-            <div className="h-6 w-px bg-gray-300"></div>
-
-            {/* Menu Button (Sidebar Toggle) */}
-            {!sidebarOpen && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(true)}
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                title="Show chat history"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            )}
-
-            {/* Session Title */}
-            <div className="flex items-center space-x-2">
-              
-
-              
-              {!backendConnected && (
-                <span className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium shadow-sm">
-                  Local Mode
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Right Side: New Chat Button */}
-          <Button
-            onClick={handleNewChat}
-            variant="outline"
-            size="sm"
-            className="text-blue-600 hover:text-blue-700 border-blue-300 hover:bg-blue-50 rounded-xl font-medium shadow-sm hover:shadow-md transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Chat
-          </Button>
-        </div>
-
-        {/* Customer Context Header */}
+        {/* Top Header with Branding and Navigation */}
         <div className="flex-shrink-0">
           <ChatHeader
             customerContext={customerContext}
             isEscalated={isEscalated}
             estimatedWaitTime={estimatedWaitTime}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            onNewChat={handleNewChat}
+            backendConnected={backendConnected}
           />
         </div>
 
