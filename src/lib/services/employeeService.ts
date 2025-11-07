@@ -114,19 +114,11 @@ class EmployeeService {
   // Create new employee (Admin only)
   async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
     try {
-      // Generate temporary password if not provided
-      const tempPassword = data.password || this.generateTemporaryPassword();
-      
-      const requestData = {
-        ...data,
-        password: tempPassword
-      };
-      
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.ADMIN.EMPLOYEES,
         {
           method: 'POST',
-          body: JSON.stringify(requestData),
+          body: JSON.stringify(data),
         }
       );
 
@@ -135,14 +127,18 @@ class EmployeeService {
         throw new Error(errorData.message || 'Failed to create employee');
       }
 
-      const apiResponse: ApiResponse<{email: string, name: string}> = await response.json();
-      
-      // Return the response with the generated temporary password
+      const apiResponse: ApiResponse<{
+        employee: { email: string; name: string };
+        temporaryPassword: string;
+        message: string;
+      }> = await response.json();
+
+      // Return the response with the temporary password from backend
       return {
-        email: apiResponse.data.email,
-        name: apiResponse.data.name,
-        temporaryPassword: tempPassword,
-        message: 'Employee created successfully! Please share the temporary password with the employee.'
+        email: apiResponse.data.employee.email,
+        name: apiResponse.data.employee.name,
+        temporaryPassword: apiResponse.data.temporaryPassword,
+        message: apiResponse.data.message || 'Employee created successfully!'
       };
     } catch (error: any) {
       console.error('Create employee error:', error);

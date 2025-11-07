@@ -114,7 +114,7 @@
     </div>
     
     <script>
-        const API_BASE = 'http://localhost:8080/api/v1';
+    const API_BASE = (window.__RUNTIME_CONFIG__ && window.__RUNTIME_CONFIG__.NEXT_PUBLIC_API_URL) || 'http://localhost:8080/api/v1';
         let freshToken = null;
         
         function checkToken() {

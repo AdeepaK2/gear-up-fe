@@ -1,6 +1,7 @@
 "use client"; // This is a client component to manage the dialog state
 
 import React, { useState, useEffect } from "react";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import {
   Table,
   TableBody,
@@ -80,7 +81,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/tasks", {
+      const response = await fetch(`${API_ENDPOINTS.TASKS.BASE}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -118,7 +119,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks`, {
+  const response = await fetch(`${API_ENDPOINTS.TASKS.BASE}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +180,7 @@ export default function ServicesPage() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks/${serviceId}`,
+        `${API_ENDPOINTS.TASKS.BASE}/${serviceId}`,
         {
           method: "DELETE",
           headers: {

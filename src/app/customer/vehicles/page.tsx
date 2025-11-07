@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Car, Edit2, Trash2, Plus } from 'lucide-react';
-import { vehicleService } from '@/lib/services/vehicleService';
-import type { Vehicle, VehicleCreateRequest } from '@/lib/types/Vehicle';
-import { useToast } from '@/contexts/ToastContext';
-import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import React from "react";
+import { Car, Edit2, Trash2, Plus } from "lucide-react";
+import { vehicleService } from "@/lib/services/vehicleService";
+import type { Vehicle, VehicleCreateRequest } from "@/lib/types/Vehicle";
+import { useToast } from "@/contexts/ToastContext";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export default function VehiclesPage() {
   const toast = useToast();
@@ -21,13 +21,16 @@ export default function VehiclesPage() {
     null
   );
   const [form, setForm] = React.useState({
-    make: '',
-    model: '',
-    year: '',
-    licensePlate: '',
-    vin: '',
+    make: "",
+    model: "",
+    year: "",
+    licensePlate: "",
+    vin: "",
   });
   const [submitting, setSubmitting] = React.useState(false);
+  const [formErrors, setFormErrors] = React.useState<{ [key: string]: string }>(
+    {}
+  );
 
   // Fetch vehicles on component mount
   React.useEffect(() => {
@@ -41,8 +44,8 @@ export default function VehiclesPage() {
       const data = await vehicleService.getCurrentCustomerVehicles();
       setVehicles(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch vehicles');
-      console.error('Error fetching vehicles:', err);
+      setError(err.message || "Failed to fetch vehicles");
+      console.error("Error fetching vehicles:", err);
     } finally {
       setLoading(false);
     }
@@ -51,7 +54,8 @@ export default function VehiclesPage() {
   const openModal = () => {
     setIsEditMode(false);
     setEditingVehicleId(null);
-    setForm({ make: '', model: '', year: '', licensePlate: '', vin: '' });
+    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -65,6 +69,7 @@ export default function VehiclesPage() {
       licensePlate: vehicle.licensePlate,
       vin: vehicle.vin,
     });
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -72,12 +77,162 @@ export default function VehiclesPage() {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingVehicleId(null);
-    setForm({ make: '', model: '', year: '', licensePlate: '', vin: '' });
+    setForm({ make: "", model: "", year: "", licensePlate: "", vin: "" });
+    setFormErrors({});
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    // If editing make field, allow letters, numbers, spaces and hyphens; trim and limit length
+    if (name === "make") {
+      // remove disallowed characters, collapse multiple spaces, trim ends, limit to 40
+      const sanitized = value
+        .replace(/[^A-Za-z0-9\s-]/g, "")
+        .replace(/\s+/g, " ")
+        .slice(0, 40);
+      const trimmed = sanitized.replace(/^\s+|\s+$/g, "");
+      setForm((f) => ({ ...f, [name]: trimmed }));
+      if (value !== sanitized) {
+        const msg =
+          value.length > 40
+            ? "Make must be 2–40 characters."
+            : "Only letters, numbers, spaces and hyphens are allowed.";
+        setFormErrors((prev) => ({ ...prev, make: msg }));
+      } else {
+        setFormErrors((prev) => ({ ...prev, make: "" }));
+      }
+      return;
+    }
+    // If editing the model field, sanitize to allowed chars and limit length
+    if (name === "model") {
+      // allow letters, digits, slashes and hyphens only
+      const sanitized = value.replace(/[^A-Za-z0-9\/-]/g, "").slice(0, 40);
+      setForm((f) => ({ ...f, [name]: sanitized }));
+      if (value !== sanitized) {
+        const msg =
+          value.length > 40
+            ? "Model must be 1–40 characters."
+            : "Only letters, digits, slashes and hyphens are allowed.";
+        setFormErrors((prev) => ({ ...prev, model: msg }));
+      } else {
+        setFormErrors((prev) => ({ ...prev, model: "" }));
+      }
+      return;
+    }
+
+    // If editing year field, sanitize to digits and validate range inline
+    if (name === "year") {
+      const digits = value.replace(/\D/g, "");
+      const currentYear = new Date().getFullYear();
+      const minYear = 1900;
+      const maxYear = currentYear + 1;
+      setForm((f) => ({ ...f, [name]: digits }));
+      // clear previous year error
+      setFormErrors((prev) => ({ ...prev, year: "" }));
+      if (digits) {
+        const num = Number(digits);
+        if (!Number.isInteger(num) || num < minYear || num > maxYear) {
+          setFormErrors((prev) => ({
+            ...prev,
+            year: `Year must be an integer between ${minYear} and ${maxYear}`,
+          }));
+        }
+      }
+      return;
+    }
+
+    // If editing VIN field, trim spaces, auto-uppercase, limit length and show inline errors
+    if (name === "vin") {
+      const trimmed = value.replace(/\s+/g, "");
+      const upper = trimmed.toUpperCase();
+      // remove any non alphanumeric chars (keeps letters and digits)
+      const sanitized = upper.replace(/[^A-Z0-9]/g, "").slice(0, 17);
+      setForm((f) => ({ ...f, [name]: sanitized }));
+
+      // determine inline error messages
+      let vinError = "";
+      if (/[IOQ]/.test(upper)) {
+        vinError = "VIN must not contain the letters I, O or Q.";
+      } else if (/[^A-Za-z0-9\s]/.test(value)) {
+        vinError =
+          "VIN may only contain letters and digits; special characters were removed.";
+      } else if (trimmed.length > 17) {
+        vinError = "VIN was truncated to 17 characters.";
+      }
+
+      setFormErrors((prev) => ({ ...prev, vin: vinError }));
+      return;
+    }
+
+    // If editing licensePlate, trim, uppercase and validate inline (Sri Lanka formats)
+    if (name === "licensePlate") {
+      const upper = value.toUpperCase();
+      const trimmed = upper.trim().replace(/\s+/g, " ");
+      // remove characters except letters, digits, spaces and hyphen
+      const sanitized = trimmed.replace(/[^A-Z0-9\s-]/g, "");
+      setForm((f) => ({ ...f, [name]: sanitized }));
+      // inline validation: if non-empty and not matching allowed formats, show hint
+      if (sanitized && !isValidLicensePlate(sanitized)) {
+        setFormErrors((prev) => ({
+          ...prev,
+          licensePlate:
+            "License plate must match Sri Lanka formats (e.g. WP ABC 1234 or 19-4567).",
+        }));
+      } else {
+        setFormErrors((prev) => ({ ...prev, licensePlate: "" }));
+      }
+      return;
+    }
+
     setForm((f) => ({ ...f, [name]: value }));
+  };
+
+  // Validate year: integer only, range 1900 -> currentYear + 1
+  const isValidYear = (yearStr: string) => {
+    if (!yearStr) return false;
+    // only digits, no decimals or text
+    if (!/^\d+$/.test(yearStr)) return false;
+    const yearNum = Number(yearStr);
+    const currentYear = new Date().getFullYear();
+    const minYear = 1900;
+    const maxYear = currentYear + 1;
+    if (!Number.isInteger(yearNum)) return false;
+    if (yearNum < minYear || yearNum > maxYear) return false;
+    return true;
+  };
+
+  // Validate model: letters, digits, slashes, hyphens only; length 1-40
+  const isValidModel = (modelStr: string) => {
+    if (!modelStr) return false;
+    // allowed characters A-Z a-z 0-9 / - , no spaces
+    if (!/^[A-Za-z0-9\/-]{1,40}$/.test(modelStr)) return false;
+    return true;
+  };
+
+  // Validate make: letters, numbers, spaces or hyphens allowed; length 2-40
+  const isValidMake = (makeStr: string) => {
+    if (!makeStr) return false;
+    const trimmed = makeStr.trim();
+    if (trimmed.length < 2 || trimmed.length > 40) return false;
+    if (!/^[A-Za-z0-9\s-]{2,40}$/.test(trimmed)) return false;
+    return true;
+  };
+
+  // Validate VIN: exactly 17 chars, uppercase letters & digits only, exclude I,O,Q
+  const isValidVin = (vinStr: string) => {
+    if (!vinStr) return false;
+    // already expected to be trimmed and uppercased
+    if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vinStr)) return false;
+    return true;
+  };
+
+  // Validate Sri Lanka license plate: new or old formats
+  const isValidLicensePlate = (plate: string) => {
+    if (!plate) return false;
+    const normalized = plate.toUpperCase().trim();
+    const newFmt = /^[A-Z]{1,2}\s?[A-Z]{1,3}\s?[0-9]{4}$/; // WP ABC 1234
+    const oldFmt = /^([0-9]{1,2}-[0-9]{1,4}|[0-9]{1,2}\s?SRI\s?[0-9]{1,4})$/; // 19-4567 or 18 SRI 3456
+    return newFmt.test(normalized) || oldFmt.test(normalized);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,7 +246,71 @@ export default function VehiclesPage() {
       !form.licensePlate ||
       !form.vin
     ) {
-      toast.warning('Please fill all required fields');
+      toast.warning("Please fill all required fields");
+      return;
+    }
+
+    // Make validation: ensure allowed chars and length
+    if (!isValidMake(form.make)) {
+      setFormErrors({
+        make: "Make must be 2–40 characters and may only contain letters, numbers, spaces and hyphens.",
+      });
+      const el = document.querySelector(
+        'input[name="make"]'
+      ) as HTMLInputElement | null;
+      el?.focus();
+      return;
+    }
+
+    // Model validation: ensure allowed chars and length
+    if (!isValidModel(form.model)) {
+      setFormErrors({
+        model:
+          "Model must be 1–40 characters and may only contain letters, digits, slashes and hyphens.",
+      });
+      const el = document.querySelector(
+        'input[name="model"]'
+      ) as HTMLInputElement | null;
+      el?.focus();
+      return;
+    }
+
+    // VIN validation: must be exactly 17 chars, uppercase letters & digits only, exclude I,O,Q
+    if (!isValidVin(form.vin)) {
+      setFormErrors({
+        vin: "VIN must be exactly 17 characters and may contain only uppercase letters (no I, O, Q) and digits.",
+      });
+      const elVin = document.querySelector(
+        'input[name="vin"]'
+      ) as HTMLInputElement | null;
+      elVin?.focus();
+      return;
+    }
+
+    // License Plate validation (Sri Lanka): new or old formats
+    if (!isValidLicensePlate(form.licensePlate)) {
+      setFormErrors({
+        licensePlate:
+          "License plate must match Sri Lanka formats (e.g. WP ABC 1234 or 19-4567).",
+      });
+      const el = document.querySelector(
+        'input[name="licensePlate"]'
+      ) as HTMLInputElement | null;
+      el?.focus();
+      return;
+    }
+
+    // Year specific validation: integer only, range 1900 -> currentYear + 1
+    const currentYear = new Date().getFullYear();
+    const maxAllowed = currentYear + 1;
+    if (!isValidYear(form.year)) {
+      setFormErrors({
+        year: `Year must be an integer between 1900 and ${maxAllowed}`,
+      });
+      const el = document.querySelector(
+        'input[name="year"]'
+      ) as HTMLInputElement | null;
+      el?.focus();
       return;
     }
 
@@ -113,7 +332,7 @@ export default function VehiclesPage() {
         setVehicles((prev) =>
           prev.map((v) => (v.id === editingVehicleId ? updatedVehicle : v))
         );
-        toast.success('Vehicle updated successfully');
+        toast.success("Vehicle updated successfully");
       } else {
         // Create new vehicle
         const vehicleData: VehicleCreateRequest = {
@@ -125,16 +344,16 @@ export default function VehiclesPage() {
         };
         const newVehicle = await vehicleService.createVehicle(vehicleData);
         setVehicles((prev) => [newVehicle, ...prev]);
-        toast.success('Vehicle added successfully');
+        toast.success("Vehicle added successfully");
       }
 
       closeModal();
     } catch (err: any) {
       toast.error(
-        err.message || `Failed to ${isEditMode ? 'update' : 'create'} vehicle`
+        err.message || `Failed to ${isEditMode ? "update" : "create"} vehicle`
       );
       console.error(
-        `Error ${isEditMode ? 'updating' : 'creating'} vehicle:`,
+        `Error ${isEditMode ? "updating" : "creating"} vehicle:`,
         err
       );
     } finally {
@@ -159,11 +378,11 @@ export default function VehiclesPage() {
     try {
       await vehicleService.deleteVehicle(deleteVehicleId);
       setVehicles((prev) => prev.filter((v) => v.id !== deleteVehicleId));
-      toast.success('Vehicle deleted successfully');
+      toast.success("Vehicle deleted successfully");
       setDeleteVehicleId(null);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete vehicle');
-      console.error('Error deleting vehicle:', err);
+      toast.error(err.message || "Failed to delete vehicle");
+      console.error("Error deleting vehicle:", err);
     }
   };
 
@@ -296,7 +515,7 @@ export default function VehiclesPage() {
           <div className="bg-custom rounded-lg shadow-lg p-6 w-full max-w-md animate-fade-in">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-primary font-bold text-xl">
-                {isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}
+                {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
               </h3>
               <button onClick={closeModal} className="hover:text-secondary">
                 ✕
@@ -313,13 +532,21 @@ export default function VehiclesPage() {
                   value={form.vin}
                   onChange={handleChange}
                   placeholder="e.g., 1HGBH41JXMN109186"
-                  minLength={11}
+                  minLength={17}
                   maxLength={17}
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                  aria-invalid={!!formErrors.vin}
+                  aria-describedby={formErrors.vin ? "vin-error" : undefined}
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Vehicle Identification Number (11-17 characters)
+                  Vehicle Identification Number (17 characters, uppercase
+                  letters and digits only — no I, O, Q)
                 </p>
+                {formErrors.vin && (
+                  <p id="vin-error" className="mt-1 text-sm text-red-600">
+                    {formErrors.vin}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -332,7 +559,14 @@ export default function VehiclesPage() {
                   onChange={handleChange}
                   placeholder="e.g., Toyota"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                  aria-invalid={!!formErrors.make}
+                  aria-describedby={formErrors.make ? "make-error" : undefined}
                 />
+                {formErrors.make && (
+                  <p id="make-error" className="mt-1 text-sm text-red-600">
+                    {formErrors.make}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -345,7 +579,16 @@ export default function VehiclesPage() {
                   onChange={handleChange}
                   placeholder="e.g., Camry"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                  aria-invalid={!!formErrors.model}
+                  aria-describedby={
+                    formErrors.model ? "model-error" : undefined
+                  }
                 />
+                {formErrors.model && (
+                  <p id="model-error" className="mt-1 text-sm text-red-600">
+                    {formErrors.model}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -359,9 +602,35 @@ export default function VehiclesPage() {
                   type="number"
                   placeholder="e.g., 2022"
                   min="1900"
-                  max="2099"
+                  max={String(new Date().getFullYear() + 1)}
+                  step={1}
+                  inputMode="numeric"
+                  pattern="\\d*"
+                  onKeyDown={(e) => {
+                    // Prevent entering 'e', '.', '+', '-' in number input
+                    if (
+                      e.key === "e" ||
+                      e.key === "E" ||
+                      e.key === "." ||
+                      e.key === "+" ||
+                      e.key === "-"
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onWheel={(e) => {
+                    // Prevent changing the number with wheel scroll
+                    (e.target as HTMLInputElement).blur();
+                  }}
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                  aria-invalid={!!formErrors.year}
+                  aria-describedby={formErrors.year ? "year-error" : undefined}
                 />
+                {formErrors.year && (
+                  <p id="year-error" className="mt-1 text-sm text-red-600">
+                    {formErrors.year}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -372,9 +641,18 @@ export default function VehiclesPage() {
                   name="licensePlate"
                   value={form.licensePlate}
                   onChange={handleChange}
-                  placeholder="e.g., ABC-1234"
+                  placeholder="e.g., WP ABC 1234 or 19-4567"
                   className="mt-1 w-full rounded-md border border-ternary bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-gray-400"
+                  aria-invalid={!!formErrors.licensePlate}
+                  aria-describedby={
+                    formErrors.licensePlate ? "license-error" : undefined
+                  }
                 />
+                {formErrors.licensePlate && (
+                  <p id="license-error" className="mt-1 text-sm text-red-600">
+                    {formErrors.licensePlate}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -393,11 +671,11 @@ export default function VehiclesPage() {
                 >
                   {submitting
                     ? isEditMode
-                      ? 'Updating...'
-                      : 'Creating...'
+                      ? "Updating..."
+                      : "Creating..."
                     : isEditMode
-                    ? 'Update'
-                    : 'Save'}
+                    ? "Update"
+                    : "Save"}
                 </button>
               </div>
             </form>

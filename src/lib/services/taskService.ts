@@ -27,7 +27,7 @@ class TaskService {
   async getAllTasks(): Promise<Task[]> {
     try {
       const response = await authService.authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks`,
+        `${API_ENDPOINTS.TASKS.BASE}`,
         {
           method: 'GET',
         }
@@ -50,7 +50,7 @@ class TaskService {
   async getTaskById(taskId: number): Promise<Task> {
     try {
       const response = await authService.authenticatedFetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/tasks/${taskId}`,
+        `${API_ENDPOINTS.TASKS.BASE}/${taskId}`,
         {
           method: 'GET',
         }

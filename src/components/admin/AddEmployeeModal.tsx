@@ -152,23 +152,37 @@ export default function AddEmployeeModal({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
               <div className="flex items-center space-x-2 text-blue-800">
                 <Mail className="h-5 w-5" />
-                <span className="font-semibold">Credentials Sent</span>
+                <span className="font-semibold">Credentials Generated</span>
               </div>
 
               <div className="space-y-2">
                 <p className="text-sm text-gray-700">
-                  The temporary login credentials have been sent to:
+                  Email address:
                 </p>
                 <div className="bg-white px-4 py-3 rounded border">
                   <p className="font-medium text-gray-900">{success.email}</p>
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700">
+                  Temporary Password (one-time display):
+                </p>
+                <div className="bg-white px-4 py-3 rounded border">
+                  <p className="font-mono font-bold text-lg text-gray-900 select-all">
+                    {success.temporaryPassword}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-600 italic">
+                  ⚠️ Save this password now - it won't be shown again!
+                </p>
+              </div>
+
               <Alert className="bg-amber-50 border-amber-200">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-amber-800 text-xs ml-2">
-                  The employee should check their email for login credentials
-                  and change their password after first login.
+                  The employee will receive an email with their credentials
+                  and must change their password after first login.
                 </AlertDescription>
               </Alert>
             </div>
