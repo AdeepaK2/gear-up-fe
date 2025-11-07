@@ -29,6 +29,7 @@ export interface Project {
   mainRepresentativeEmployeeId?: number;
   mainRepresentativeEmployeeName?: string;
   isMainRepresentative?: boolean;
+  taskIds?: number[];
 }
 
 export interface TaskCompletion {
