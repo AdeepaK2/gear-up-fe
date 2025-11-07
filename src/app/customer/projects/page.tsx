@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   AlertTriangle,
   MessageSquare,
+  CheckCircle2,
 } from 'lucide-react';
 import ProjectHeader from '@/components/customer/ProjectHeader';
 import ProjectInfoTile from '@/components/customer/ProjectInfoTile';
@@ -487,11 +488,28 @@ export default function ProjectsPage() {
                 <div className="flex items-center gap-2">
                   <Car className="h-4 w-4 text-gray-500" />
                   <div>
-                    <p className="text-xs text-gray-500">Vehicle ID</p>
-                    <p className="text-sm font-medium">#{proj.vehicleId || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Vehicle</p>
+                    <p className="text-sm font-medium">{proj.vehicleName || `#${proj.vehicleId}` || 'N/A'}</p>
                   </div>
                 </div>
               </div>
+
+              {/* Completion Message - Only show for completed projects */}
+              {proj.status === 'COMPLETED' && proj.completionMessage && (
+                <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-green-900 mb-1">
+                        Project Completion Message
+                      </p>
+                      <p className="text-sm text-green-800">
+                        {proj.completionMessage}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 mt-4">
                 <a

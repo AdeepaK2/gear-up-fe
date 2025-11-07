@@ -30,7 +30,10 @@ import {
   AlertCircle,
   HelpCircle,
   Eye,
+  FileText,
+  CheckCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   AppointmentData,
@@ -81,9 +84,15 @@ export default function AppointmentList({
   onDelete,
   isLoading = false,
 }: AppointmentListProps) {
+  const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingAppointment, setViewingAppointment] =
     useState<AppointmentData | null>(null);
+
+  // Check if appointment has a report ready
+  const hasReportReady = (appointment: AppointmentData) => {
+    return appointment.status === "COMPLETED" && !!appointment.notes && appointment.notes.trim().length > 0;
+  };
 
   const handleDelete = async (appointmentId: string) => {
     try {
@@ -256,10 +265,33 @@ export default function AppointmentList({
                           {statusLabels[appointment.status]}
                         </Badge>
                       </div>
+                      {/* Report Ready Indicator */}
+                      {hasReportReady(appointment) && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-green-700 font-semibold">
+                            Report Ready
+                          </span>
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell className="py-8 px-4 pr-6">
                       <div className="flex justify-start gap-2">
+                        {/* View Report Button for Completed Appointments with Notes */}
+                        {hasReportReady(appointment) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push('/customer/reports')}
+                            className="hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm hover:shadow-md border-2 flex items-center gap-1"
+                            disabled={isLoading}
+                          >
+                            <FileText className="h-4 w-4 text-green-600" />
+                            <span className="text-xs font-medium">View Report</span>
+                          </Button>
+                        )}
+                        
                         {/* View Button */}
                         <Button
                           variant="outline"
@@ -370,15 +402,26 @@ export default function AppointmentList({
               >
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <Badge
-                      className={cn(
-                        "border-2 px-3 py-1 text-sm font-semibold rounded-full shadow-sm",
-                        statusColors[appointment.status]
+                    <div className="flex flex-col gap-2">
+                      <Badge
+                        className={cn(
+                          "border-2 px-3 py-1 text-sm font-semibold rounded-full shadow-sm w-fit",
+                          statusColors[appointment.status]
+                        )}
+                        variant="outline"
+                      >
+                        {statusLabels[appointment.status]}
+                      </Badge>
+                      {/* Report Ready Indicator */}
+                      {hasReportReady(appointment) && (
+                        <div className="flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span className="text-xs text-green-700 font-semibold">
+                            Report Ready
+                          </span>
+                        </div>
                       )}
-                      variant="outline"
-                    >
-                      {statusLabels[appointment.status]}
-                    </Badge>
+                    </div>
 
                     <div className="flex gap-2">
                       {canEdit(appointment.status) && (
@@ -543,6 +586,19 @@ export default function AppointmentList({
                             </p>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* View Report Button for Mobile */}
+                    {hasReportReady(appointment) && (
+                      <div className="mt-4">
+                        <Button
+                          onClick={() => router.push('/customer/reports')}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Technician Report
+                        </Button>
                       </div>
                     )}
                   </div>

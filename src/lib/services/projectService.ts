@@ -29,6 +29,9 @@ export interface Project {
   mainRepresentativeEmployeeId?: number;
   mainRepresentativeEmployeeName?: string;
   isMainRepresentative?: boolean;
+  taskIds?: number[]; // List of task IDs associated with this project
+  assignedEmployeeIds?: number[]; // List of assigned employee IDs
+  completionMessage?: string; // Completion message from employee
 }
 
 export interface TaskCompletion {

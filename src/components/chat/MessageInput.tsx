@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, KeyboardEvent } from "react";
-import { Send, Paperclip, X } from "lucide-react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -7,35 +7,28 @@ interface MessageInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
-  onFileSelect?: (file: File) => void;
-  onFileRemove?: () => void;
-  selectedFile?: File | null;
   disabled?: boolean;
   placeholder?: string;
 }
 
 /**
  * MessageInput component
- * Text input with file attachment support and keyboard shortcuts
- * Supports Enter to send, Shift+Enter for newline
+ * Modern text input with keyboard shortcuts
+ * Supports Enter to send
  */
 export const MessageInput = React.memo<MessageInputProps>(
   ({
     value,
     onChange,
     onSend,
-    onFileSelect,
-    onFileRemove,
-    selectedFile,
     disabled = false,
     placeholder = "Type your message...",
   }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const textInputRef = useRef<HTMLInputElement>(null);
     const [sendStatus, setSendStatus] = useState<string>("");
 
     const handleSend = useCallback(() => {
-      if ((!value.trim() && !selectedFile) || disabled) return;
+      if (!value.trim() || disabled) return;
 
       onSend();
       setSendStatus("Message sent");
@@ -45,11 +38,10 @@ export const MessageInput = React.memo<MessageInputProps>(
         textInputRef.current?.focus();
         setSendStatus("");
       }, 100);
-    }, [value, selectedFile, disabled, onSend]);
+    }, [value, disabled, onSend]);
 
     const handleKeyPress = useCallback(
       (e: KeyboardEvent<HTMLInputElement>) => {
-        // Enter to send (unless Shift is held for newline, though input doesn't support multiline)
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           handleSend();
@@ -58,95 +50,42 @@ export const MessageInput = React.memo<MessageInputProps>(
       [handleSend]
     );
 
-    const handleFileChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file && onFileSelect) {
-          onFileSelect(file);
-        }
-      },
-      [onFileSelect]
-    );
-
-    const handleFileAttachClick = useCallback(() => {
-      fileInputRef.current?.click();
-    }, []);
-
-    const canSend = (value.trim() || selectedFile) && !disabled;
+    const canSend = value.trim() && !disabled;
 
     return (
-      <div className="border-t-2 border-gray-200 bg-white px-6 py-4">
-        {/* File Preview */}
-        {selectedFile && onFileRemove && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Paperclip className="w-4 h-4 text-blue-500" aria-hidden="true" />
-              <span className="text-sm text-blue-700">{selectedFile.name}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onFileRemove}
-              aria-label="Remove attached file"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </Button>
-          </div>
-        )}
-
+      <div className="border-t border-gray-100 bg-gradient-to-r from-white to-blue-50/30 px-6 py-5 shadow-lg">
         {/* Input Row */}
-        <div className="flex space-x-3">
-          {/* Hidden File Input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={handleFileChange}
-            accept="image/*,.pdf,.doc,.docx"
-            aria-label="Attach file"
-          />
-
-          {/* File Attach Button */}
-          {onFileSelect && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleFileAttachClick}
-              disabled={disabled}
-              aria-label="Attach file"
-            >
-              <Paperclip className="w-4 h-4" aria-hidden="true" />
-            </Button>
-          )}
-
+        <div className="flex items-center space-x-3 max-w-5xl mx-auto">
           {/* Text Input */}
-          <Input
-            ref={textInputRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            onKeyPress={handleKeyPress}
-            disabled={disabled}
-            className="flex-1 py-3 px-4 text-base border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            aria-label="Message input"
-            autoFocus
-          />
+          <div className="flex-1 relative">
+            <Input
+              ref={textInputRef}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              onKeyPress={handleKeyPress}
+              disabled={disabled}
+              className="w-full py-4 px-5 text-base border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 shadow-sm hover:shadow-md bg-white"
+              aria-label="Message input"
+              autoFocus
+            />
+          </div>
 
           {/* Send Button */}
           <Button
             onClick={handleSend}
             disabled={!canSend}
             aria-label="Send message"
-            className="px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300"
+            className="px-6 py-4 h-auto bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-gray-300 disabled:to-gray-300 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
           >
             <Send className="w-5 h-5" aria-hidden="true" />
           </Button>
         </div>
 
-        {/* Helper Text and Status */}
-        <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-gray-500">
-            Press Enter to send • Attach files up to 10MB
+        {/* Helper Text */}
+        <div className="flex justify-center items-center mt-3">
+          <span className="text-xs text-gray-400">
+            Press Enter to send
           </span>
 
           {/* Live region for send status (for screen readers) */}
