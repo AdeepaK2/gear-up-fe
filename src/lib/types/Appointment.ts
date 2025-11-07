@@ -13,7 +13,7 @@ export type AppointmentStatus =
   | 'CONFIRMED'
   | 'IN_PROGRESS'
   | 'COMPLETED'
-  | 'CANCELLED';
+  | 'CANCELED';
 
 // Consultation types - what customer is seeking help for
 export type ConsultationType =
