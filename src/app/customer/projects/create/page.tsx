@@ -53,12 +53,15 @@ export default function CreateProjectPage() {
       setLoading(true);
 
       // Load appointment details
-      const aptData = await appointmentService.getAppointmentById(appointmentId);
+      const aptData = await appointmentService.getAppointmentById(
+        appointmentId
+      );
       setAppointment(aptData);
 
       // Generate suggested project name
-      const serviceName = aptData.consultationTypeLabel || aptData.consultationType || 'Service';
-      const vehicleName = aptData.vehicleName || 'Vehicle';
+      const serviceName =
+        aptData.consultationTypeLabel || aptData.consultationType || "Service";
+      const vehicleName = aptData.vehicleName || "Vehicle";
       const suggestedName = `${serviceName} - ${vehicleName}`;
       setProjectName(suggestedName);
 
@@ -68,12 +71,12 @@ export default function CreateProjectPage() {
 
       // Filter tasks for this appointment
       const appointmentTasks = tasksData.filter(
-        task => task.appointmentId === appointmentId
+        (task) => task.appointmentId === appointmentId
       );
       setAvailableTasks(appointmentTasks);
 
       // Pre-select all appointment tasks
-      setSelectedTaskIds(appointmentTasks.map(t => t.taskId));
+      setSelectedTaskIds(appointmentTasks.map((t) => t.taskId));
 
       // Set default dates
       const today = new Date().toISOString().split("T")[0];
@@ -91,21 +94,21 @@ export default function CreateProjectPage() {
   };
 
   const toggleTaskSelection = (taskId: number) => {
-    setSelectedTaskIds(prev =>
+    setSelectedTaskIds((prev) =>
       prev.includes(taskId)
-        ? prev.filter(id => id !== taskId)
+        ? prev.filter((id) => id !== taskId)
         : [...prev, taskId]
     );
   };
 
   const addAdditionalTask = (taskId: number) => {
     if (!selectedTaskIds.includes(taskId)) {
-      setSelectedTaskIds(prev => [...prev, taskId]);
+      setSelectedTaskIds((prev) => [...prev, taskId]);
     }
   };
 
   const removeTask = (taskId: number) => {
-    setSelectedTaskIds(prev => prev.filter(id => id !== taskId));
+    setSelectedTaskIds((prev) => prev.filter((id) => id !== taskId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,7 +140,7 @@ export default function CreateProjectPage() {
       await projectService.createProject(projectData);
 
       toast.success("Project created successfully!");
-      
+
       // Redirect immediately to projects page
       router.push("/customer/projects");
     } catch (err: any) {
@@ -153,7 +156,10 @@ export default function CreateProjectPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">Invalid appointment ID</p>
-          <Button onClick={() => router.push("/customer/reports")} className="mt-4">
+          <Button
+            onClick={() => router.push("/customer/reports")}
+            className="mt-4"
+          >
             Back to Reports
           </Button>
         </div>
@@ -175,7 +181,10 @@ export default function CreateProjectPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">Appointment not found</p>
-          <Button onClick={() => router.push("/customer/reports")} className="mt-4">
+          <Button
+            onClick={() => router.push("/customer/reports")}
+            className="mt-4"
+          >
             Back to Reports
           </Button>
         </div>
@@ -183,13 +192,23 @@ export default function CreateProjectPage() {
     );
   }
 
-  const selectedTasks = allTasks.filter(task => selectedTaskIds.includes(task.taskId));
+  const selectedTasks = allTasks.filter((task) =>
+    selectedTaskIds.includes(task.taskId)
+  );
   const unselectedTasks = allTasks.filter(
-    task => !selectedTaskIds.includes(task.taskId) && task.appointmentId !== appointmentId
+    (task) =>
+      !selectedTaskIds.includes(task.taskId) &&
+      task.appointmentId !== appointmentId
   );
 
-  const totalCost = selectedTasks.reduce((sum, task) => sum + task.estimatedCost, 0);
-  const totalHours = selectedTasks.reduce((sum, task) => sum + task.estimatedHours, 0);
+  const totalCost = selectedTasks.reduce(
+    (sum, task) => sum + task.estimatedCost,
+    0
+  );
+  const totalHours = selectedTasks.reduce(
+    (sum, task) => sum + task.estimatedHours,
+    0
+  );
 
   return (
     <div className="min-h-screen p-6 space-y-6">
@@ -211,7 +230,10 @@ export default function CreateProjectPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      >
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Appointment Info */}
@@ -222,14 +244,19 @@ export default function CreateProjectPage() {
                 <Package className="h-5 w-5 text-primary" />
                 <div>
                   <p className="text-sm text-gray-600">Service Type</p>
-                  <p className="font-medium">{appointment.consultationTypeLabel || appointment.consultationType}</p>
+                  <p className="font-medium">
+                    {appointment.consultationTypeLabel ||
+                      appointment.consultationType}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
                 <div>
                   <p className="text-sm text-gray-600">Date</p>
-                  <p className="font-medium">{new Date(appointment.appointmentDate).toLocaleDateString()}</p>
+                  <p className="font-medium">
+                    {new Date(appointment.appointmentDate).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -240,7 +267,10 @@ export default function CreateProjectPage() {
             <h2 className="text-xl font-semibold mb-4">Project Information</h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="projectName" className="flex items-center gap-2">
+                <Label
+                  htmlFor="projectName"
+                  className="flex items-center gap-2"
+                >
                   Project Name *
                   <span className="text-xs text-gray-500 font-normal flex items-center gap-1">
                     <Lightbulb className="w-3 h-3" />
@@ -279,7 +309,9 @@ export default function CreateProjectPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="requestedCompletionDate">Requested Completion Date *</Label>
+                  <Label htmlFor="requestedCompletionDate">
+                    Requested Completion Date *
+                  </Label>
                   <Input
                     id="requestedCompletionDate"
                     type="date"
@@ -294,8 +326,16 @@ export default function CreateProjectPage() {
               {/* Warning Message */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
                 <div className="flex-shrink-0">
-                  <svg className="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-yellow-600 mt-0.5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
                 <div>
@@ -303,8 +343,10 @@ export default function CreateProjectPage() {
                     Please note: This is a requested completion date
                   </p>
                   <p className="text-sm text-yellow-700 mt-1">
-                    The actual completion date may vary depending on employee workload, parts availability, and project complexity. 
-                    Our team will provide you with a more accurate timeline once the project is reviewed and assigned.
+                    The actual completion date may vary depending on employee
+                    workload, parts availability, and project complexity. Our
+                    team will provide you with a more accurate timeline once the
+                    project is reviewed and assigned.
                   </p>
                 </div>
               </div>
@@ -336,7 +378,9 @@ export default function CreateProjectPage() {
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Selected Services</h2>
             {selectedTasks.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No services selected</p>
+              <p className="text-gray-500 text-center py-8">
+                No services selected
+              </p>
             ) : (
               <div className="space-y-3">
                 {selectedTasks.map((task) => (
@@ -346,16 +390,26 @@ export default function CreateProjectPage() {
                   >
                     <div className="flex-1">
                       <h4 className="font-semibold">{task.name}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {task.description}
+                      </p>
                       <div className="flex gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">{task.category}</Badge>
-                        <Badge variant="outline" className="text-xs">{task.priority}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {task.category}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {task.priority}
+                        </Badge>
                       </div>
                     </div>
                     <div className="flex items-start gap-3 ml-4">
                       <div className="text-right">
-                        <div className="font-bold text-primary">${task.estimatedCost.toFixed(2)}</div>
-                        <div className="text-sm text-gray-500">{task.estimatedHours}h</div>
+                        <div className="font-bold text-primary">
+                          LKR {task.estimatedCost.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {task.estimatedHours}h
+                        </div>
                       </div>
                       <Button
                         type="button"
@@ -376,7 +430,9 @@ export default function CreateProjectPage() {
           {/* Add Additional Services */}
           {unselectedTasks.length > 0 && (
             <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Add Additional Services</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Add Additional Services
+              </h2>
               <div className="space-y-2">
                 {unselectedTasks.slice(0, 5).map((task) => (
                   <div
@@ -385,7 +441,10 @@ export default function CreateProjectPage() {
                   >
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{task.name}</h4>
-                      <p className="text-xs text-gray-600">${task.estimatedCost.toFixed(2)} • {task.estimatedHours}h</p>
+                      <p className="text-xs text-gray-600">
+                        LKR {task.estimatedCost.toFixed(2)} •{" "}
+                        {task.estimatedHours}h
+                      </p>
                     </div>
                     <Button
                       type="button"
@@ -410,7 +469,9 @@ export default function CreateProjectPage() {
             <div className="space-y-4 mb-6">
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Selected Services</p>
-                <p className="text-2xl font-bold text-primary">{selectedTasks.length}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {selectedTasks.length}
+                </p>
               </div>
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Total Hours</p>
@@ -418,7 +479,9 @@ export default function CreateProjectPage() {
               </div>
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Total Cost</p>
-                <p className="text-2xl font-bold text-green-600">${totalCost.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  ${totalCost.toFixed(2)}
+                </p>
               </div>
             </div>
 
