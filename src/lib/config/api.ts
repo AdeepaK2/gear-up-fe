@@ -1,5 +1,14 @@
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+// API Configuration - Runtime config takes precedence over build-time env
+const getApiUrl = () => {
+  // Check for runtime config (injected by Docker/K8s)
+  if (typeof window !== 'undefined' && (window as any).__RUNTIME_CONFIG__?.NEXT_PUBLIC_API_URL) {
+    return (window as any).__RUNTIME_CONFIG__.NEXT_PUBLIC_API_URL;
+  }
+  // Fallback to build-time env variable
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+};
+
+const API_BASE_URL = getApiUrl();
 
 // API Endpoints
 export const API_ENDPOINTS = {

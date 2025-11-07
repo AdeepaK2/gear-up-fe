@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -83,7 +84,7 @@ function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/auth/reset-password`, {
+      const response = await fetch(`${API_ENDPOINTS.AUTH.RESET_PASSWORD}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
