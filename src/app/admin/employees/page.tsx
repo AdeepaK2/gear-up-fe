@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddEmployeeModal from "@/components/admin/AddEmployeeModal";
+import EditEmployeeModal from "@/components/admin/EditEmployeeModal";
 import {
   employeeService,
   Employee,
@@ -39,6 +40,8 @@ export default function EmployeesPage() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   // Delete confirmation states
@@ -102,6 +105,11 @@ export default function EmployeesPage() {
     } finally {
       setIsCheckingDependencies(false);
     }
+  };
+
+  const handleEditClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsEditModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -275,6 +283,7 @@ export default function EmployeesPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleEditClick(employee)}
                       disabled={actionLoading === employee.employeeId}
                     >
                       <Pencil className="h-4 w-4" />
@@ -304,6 +313,13 @@ export default function EmployeesPage() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSuccess={handleModalSuccess}
+      />
+
+      <EditEmployeeModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSuccess={fetchEmployees}
+        employee={selectedEmployee}
       />
 
       <ConfirmationDialog

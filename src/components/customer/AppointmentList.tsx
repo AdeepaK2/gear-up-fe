@@ -25,7 +25,6 @@ import {
   Calendar,
   Clock,
   Car,
-  MessageSquare,
   Edit,
   X,
   AlertCircle,

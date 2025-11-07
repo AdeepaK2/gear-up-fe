@@ -1,8 +1,9 @@
-import React from "react";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle } from "lucide-react";
+import React from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Clock, CheckCircle } from 'lucide-react';
+import type { Vehicle } from '@/lib/types/Vehicle';
 
 /**
  * VehicleCard Component
@@ -23,11 +24,10 @@ interface VehicleCardProps {
   model: string;
   year: number;
   licensePlate: string;
-  nextService: string | null;
 }
 
 const VehicleCard: React.FC<VehicleCardProps> = React.memo(
-  ({ make, model, year, licensePlate, nextService }) => (
+  ({ make, model, year, licensePlate }) => (
     <div className="p-4 border-2 border-gray-100 rounded-xl space-y-3 hover:border-gray-200 hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-gray-50">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-gray-900">
@@ -40,7 +40,7 @@ const VehicleCard: React.FC<VehicleCardProps> = React.memo(
       <p className="text-sm text-gray-700 font-medium">
         License: <span className="text-primary">{licensePlate}</span>
       </p>
-      {nextService ? (
+      {/* {nextService ? (
         <div className="flex items-center text-sm bg-orange-50 p-2 rounded-lg">
           <Clock className="w-4 h-4 mr-2 text-orange-500" />
           <span className="text-orange-700 font-medium">
@@ -52,12 +52,12 @@ const VehicleCard: React.FC<VehicleCardProps> = React.memo(
           <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
           <span className="text-green-700 font-medium">Up to date</span>
         </div>
-      )}
+      )} */}
     </div>
   )
 );
 
-VehicleCard.displayName = "VehicleCard";
+VehicleCard.displayName = 'VehicleCard';
 
 /**
  * VehiclesList Component
@@ -69,14 +69,6 @@ VehicleCard.displayName = "VehicleCard";
  * @param {Array} props.vehicles - Array of vehicle objects
  * @returns {JSX.Element} Rendered vehicles list card
  */
-interface Vehicle {
-  id: number;
-  make: string;
-  model: string;
-  year: number;
-  licensePlate: string;
-  nextService: string | null;
-}
 
 interface VehiclesListProps {
   vehicles: Vehicle[];
@@ -113,7 +105,7 @@ const VehiclesList: React.FC<VehiclesListProps> = ({ vehicles }) => {
               model={vehicle.model}
               year={vehicle.year}
               licensePlate={vehicle.licensePlate}
-              nextService={vehicle.nextService}
+              // nextService={vehicle.nextService}
             />
           ))
         ) : (

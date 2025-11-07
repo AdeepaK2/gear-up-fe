@@ -20,7 +20,7 @@ import {
   User,
 } from 'lucide-react';
 import { projectService } from '@/lib/services/projectService';
-import { taskService, type Task } from '@/lib/services/taskService';
+import { type Task } from '@/lib/services/taskService';
 import { useToast } from '@/contexts/ToastContext';
 
 export default function ProjectDetailsPage() {
@@ -47,20 +47,17 @@ export default function ProjectDetailsPage() {
       console.log('Project data received:', projectData);
       setProject(projectData);
 
-      // Fetch tasks for this project
-      console.log('Project taskIds:', projectData.taskIds);
-      if (projectData.taskIds && projectData.taskIds.length > 0) {
-        console.log('Fetching tasks...');
-        const allTasks = await taskService.getAllTasks();
-        console.log('All tasks fetched:', allTasks.length);
-
-        const projectTasks = allTasks.filter(task =>
-          projectData.taskIds.includes(task.taskId)
-        );
-        console.log('Project tasks filtered:', projectTasks.length, projectTasks);
+      // Fetch tasks for this project using the project-specific endpoint
+      console.log('Fetching tasks for project:', projectId);
+      try {
+        const projectTasks = await projectService.getProjectTasks(projectId);
+        console.log('Project tasks fetched:', projectTasks.length, projectTasks);
         setTasks(projectTasks);
-      } else {
-        console.warn('No taskIds found in project data');
+      } catch (taskError: any) {
+        console.error('Error fetching tasks:', taskError);
+        // Don't fail the whole page if tasks fail to load
+        toast.error('Failed to load project tasks');
+        setTasks([]);
       }
     } catch (error: any) {
       console.error('Failed to load project details:', error);
