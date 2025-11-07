@@ -9,7 +9,7 @@ import type {
 
 class VehicleService {
 
-  // Get all vehicles for the current user
+  // Get all vehicles
   async getAllVehicles(): Promise<Vehicle[]> {
     try {
       const response = await authService.authenticatedFetch(
