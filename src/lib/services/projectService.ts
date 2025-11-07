@@ -1,19 +1,33 @@
 import { API_ENDPOINTS } from '../config/api';
 import { authService } from './authService';
 
+export interface AssignedEmployee {
+  employeeId: number;
+  name: string;
+  specialization: string;
+}
+
 export interface Project {
   id: number;
+  projectId?: number;
   name: string;
+  projectName?: string;
   description: string;
   status: string;
   createdAt: string;
   updatedAt: string;
   dueDate?: string;
+  startDate?: string;
+  endDate?: string;
   customerId?: number;
   customerName?: string;
   vehicleId?: number;
   vehicleName?: string;
   appointmentId?: number;
+  assignedEmployees?: AssignedEmployee[];
+  mainRepresentativeEmployeeId?: number;
+  mainRepresentativeEmployeeName?: string;
+  isMainRepresentative?: boolean;
 }
 
 export interface Task {
@@ -49,7 +63,7 @@ class ProjectService {
   async getEmployeeProjects(): Promise<Project[]> {
     try {
       const response = await authService.authenticatedFetch(
-        API_ENDPOINTS.PROJECTS.EMPLOYEE,
+        API_ENDPOINTS.PROJECTS.MY_ASSIGNED,
         {
           method: 'GET',
         }
@@ -68,7 +82,11 @@ class ProjectService {
       }
 
       const apiResponse: ApiResponse<Project[]> = await response.json();
-      return apiResponse.data;
+      return apiResponse.data.map((p: any) => ({
+        ...p,
+        id: p.projectId || p.id,
+        name: p.projectName || p.name,
+      }));
     } catch (error: any) {
       console.error('Error fetching employee projects:', error);
       // Return empty array instead of throwing to prevent page crash
@@ -200,7 +218,7 @@ class ProjectService {
   async updateProjectStatus(id: number, status: string): Promise<Project> {
     try {
       const response = await authService.authenticatedFetch(
-        `${API_ENDPOINTS.PROJECTS.BASE}/${id}`,
+        `${API_ENDPOINTS.PROJECTS.BASE}/${id}/status`,
         {
           method: 'PATCH',
           body: JSON.stringify({ status }),
@@ -217,6 +235,41 @@ class ProjectService {
     } catch (error: any) {
       console.error('Error updating project status:', error);
       throw error;
+    }
+  }
+
+  // Get projects with reports for current customer
+  async getProjectsWithReports(): Promise<Project[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        API_ENDPOINTS.PROJECTS.REPORTS,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to fetch projects with reports:', response.status, errorData);
+        if (response.status === 400 || response.status === 404 || response.status === 500) {
+          return [];
+        }
+        throw new Error(errorData.message || 'Failed to fetch projects with reports');
+      }
+
+      const apiResponse: ApiResponse<Project[]> = await response.json();
+      const projects = apiResponse.data || [];
+      console.log('Projects with reports fetched:', projects.length, projects);
+      
+      // Map projectId to id for consistency
+      return projects.map((p: any) => ({
+        ...p,
+        id: p.projectId || p.id,
+        name: p.projectName || p.name,
+      }));
+    } catch (error: any) {
+      console.error('Error fetching projects with reports:', error);
+      return [];
     }
   }
 }

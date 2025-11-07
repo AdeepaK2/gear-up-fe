@@ -8,7 +8,9 @@ import { User, Edit, Calendar, Wrench, CheckCircle, Clock, X } from 'lucide-reac
 import Link from 'next/link';
 import { employeeService } from '@/lib/services/employeeService';
 import { appointmentService } from '@/lib/services/appointmentService';
+import { projectService } from '@/lib/services/projectService';
 import type { Appointment } from '@/lib/types/Appointment';
+import type { Project } from '@/lib/services/projectService';
 
 interface DashboardStats {
 	assignedServices: number;
@@ -24,6 +26,10 @@ interface DashboardData {
 		completed: number;
 		total: number;
 	};
+	projectsStatusData: Array<{
+		status: string;
+		value: number;
+	}>;
 }
 
 const getStatusBadgeStyle = (status: string) => {
@@ -58,6 +64,7 @@ export default function EmployeeDashboard() {
 			completed: 0,
 			total: 0,
 		},
+		projectsStatusData: [],
 	});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -72,10 +79,11 @@ export default function EmployeeDashboard() {
 			setLoading(true);
 			setError(null);
 
-			// Fetch task summary and appointments in parallel
-			const [taskSummary, appointments] = await Promise.all([
+			// Fetch task summary, appointments, and projects in parallel
+			const [taskSummary, appointments, projects] = await Promise.all([
 				employeeService.getEmployeeTaskSummary(),
 				appointmentService.getEmployeeUpcomingAppointments(),
+				projectService.getEmployeeProjects().catch(() => [] as Project[]), // Return empty array on error
 			]);
 
 			// Process task summary
@@ -92,10 +100,32 @@ export default function EmployeeDashboard() {
 				total: stats.total || stats.assignedServices,
 			};
 
+			// Calculate projects by status
+			const statusCounts: Record<string, number> = {};
+			projects.forEach((project) => {
+				const status = project.status || 'unknown';
+				statusCounts[status] = (statusCounts[status] || 0) + 1;
+			});
+
+			const totalProjects = projects.length || 1; // Avoid division by zero
+			const projectsStatusData = Object.entries(statusCounts).map(([status, count]) => ({
+				status: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' '),
+				value: Math.round((count / totalProjects) * 100),
+			}));
+
+			// If no projects, show empty state
+			if (projectsStatusData.length === 0) {
+				projectsStatusData.push({
+					status: 'No Projects',
+					value: 0,
+				});
+			}
+
 			setDashboardData({
 				stats,
 				appointments: appointments.slice(0, 3), // Show only first 3 appointments
 				dailyProgress,
+				projectsStatusData,
 			});
 		} catch (err) {
 			console.error('Failed to load dashboard data:', err);
@@ -141,7 +171,7 @@ export default function EmployeeDashboard() {
 		);
 	}
 
-	const { stats, appointments, dailyProgress } = dashboardData;
+	const { stats, appointments, dailyProgress, projectsStatusData } = dashboardData;
 
 	// Calculate projects status data from stats
 	const projectsStatusData = [
