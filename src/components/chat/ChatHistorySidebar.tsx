@@ -134,9 +134,9 @@ export const ChatHistorySidebar: React.FC<ChatHistorySidebarProps> = ({
           <Button
             onClick={handleNewChat}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            title="New Chat"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            New Chat
+            <Plus className="w-5 h-5" />
           </Button>
         </div>
 
