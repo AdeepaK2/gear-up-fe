@@ -110,14 +110,16 @@ export default function CustomerProjectUpdatesPage() {
 		);
 	}
 
-	// Calculate overall progress if available
+	// Calculate overall progress if available - prefer overallCompletionPercentage over simple completed/total
 	const latestProgressUpdate = updates
-		.filter(u => u.completedTasks !== null && u.totalTasks !== null)
+		.filter(u => u.overallCompletionPercentage !== null && u.overallCompletionPercentage !== undefined)
 		.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
-	const progressPercentage = latestProgressUpdate
-		? Math.round((latestProgressUpdate.completedTasks! / latestProgressUpdate.totalTasks!) * 100)
-		: 0;
+	const progressPercentage = latestProgressUpdate?.overallCompletionPercentage || 0;
+	
+	// Get completed tasks count (tasks at 100%)
+	const completedTasksCount = latestProgressUpdate?.taskCompletions?.filter(t => t.isCompleted).length || 0;
+	const totalTasksCount = latestProgressUpdate?.taskCompletions?.length || latestProgressUpdate?.totalTasks || 0;
 
 	// Calculate total additional costs
 	const totalAdditionalCost = updates
@@ -167,7 +169,7 @@ export default function CustomerProjectUpdatesPage() {
 										<p className="text-sm text-gray-500 mb-2">Overall Progress</p>
 										<Progress value={progressPercentage} className="h-3" />
 										<p className="text-sm font-medium mt-1">
-											{latestProgressUpdate.completedTasks}/{latestProgressUpdate.totalTasks} tasks ({progressPercentage}%)
+											{completedTasksCount}/{totalTasksCount} tasks completed • {progressPercentage}% average
 										</p>
 									</div>
 									{totalAdditionalCost > 0 && (
@@ -243,9 +245,50 @@ export default function CustomerProjectUpdatesPage() {
 										<div className="space-y-3 bg-gray-50 p-4 rounded-lg">
 											<p className="text-gray-700 whitespace-pre-wrap">{update.message}</p>
 
-											{/* Progress Info */}
+											{/* Task Completions - Service Level Progress */}
+											{update.taskCompletions && update.taskCompletions.length > 0 && (
+												<div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+													<div className="flex items-center justify-between mb-2">
+														<h4 className="font-semibold text-sm text-gray-900">Service Completion Details</h4>
+														{update.overallCompletionPercentage !== null && update.overallCompletionPercentage !== undefined && (
+															<span className="text-sm font-bold text-primary">
+																Overall: {update.overallCompletionPercentage}%
+															</span>
+														)}
+													</div>
+													<div className="space-y-2">
+														{update.taskCompletions.map((task, idx) => (
+															<div key={idx} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
+																<div className="flex items-center gap-2">
+																	{task.isCompleted ? (
+																		<CheckCircle className="h-4 w-4 text-green-600" />
+																	) : (
+																		<div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+																	)}
+																	<span className={task.isCompleted ? 'text-gray-900 font-medium' : 'text-gray-600'}>
+																		{task.taskName}
+																	</span>
+																</div>
+																<div className="flex items-center gap-2">
+																	<div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+																		<div 
+																			className={`h-full ${task.isCompleted ? 'bg-green-500' : 'bg-blue-500'}`}
+																			style={{ width: `${task.completionPercentage}%` }}
+																		/>
+																	</div>
+																	<span className="font-semibold text-xs min-w-[35px] text-right">
+																		{task.completionPercentage}%
+																	</span>
+																</div>
+															</div>
+														))}
+													</div>
+												</div>
+											)}
+
+											{/* Progress Info - Legacy fallback */}
 											{update.completedTasks !== null && update.completedTasks !== undefined && 
-											 update.totalTasks !== null && update.totalTasks !== undefined && (
+											 update.totalTasks !== null && update.totalTasks !== undefined && update.totalTasks > 0 && (
 												<div className="flex items-center gap-2 text-sm bg-white p-3 rounded border border-gray-200">
 													<CheckCircle className="h-4 w-4 text-green-600" />
 													<span className="font-medium">

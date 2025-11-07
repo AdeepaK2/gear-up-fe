@@ -9,19 +9,27 @@ interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 
   max?: number;
   min?: number;
   step?: number;
+  id?: string;
 }
 
 const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
-  ({ className, value = [0], onValueChange, max = 100, min = 0, step = 1, ...props }, ref) => {
+  ({ className, value = [0], onValueChange, max = 100, min = 0, step = 1, id, ...props }, ref) => {
     const currentValue = value[0] || 0;
+    
+    const handleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = parseInt(e.target.value);
+      console.log(`🎛️ Slider ${id} changed to:`, newValue);
+      onValueChange?.([newValue]);
+    }, [id, onValueChange]);
     
     return (
       <div className={cn("relative flex w-full touch-none select-none items-center", className)}>
         <input
           ref={ref}
+          id={id}
           type="range"
           value={currentValue}
-          onChange={(e) => onValueChange?.([parseInt(e.target.value)])}
+          onChange={handleChange}
           min={min}
           max={max}
           step={step}

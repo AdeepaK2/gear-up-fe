@@ -149,18 +149,22 @@ export default function EmployeeProjects() {
 		setLoadingTasks(true);
 		try {
 			const tasks = await projectService.getProjectTasks(project.id);
+			console.log('📋 Loaded tasks:', tasks);
 			setProjectTasks(tasks);
 			
 			// Initialize task completions
 			const initialCompletions: Record<number, TaskCompletion> = {};
-			tasks.forEach(task => {
-				initialCompletions[task.id] = {
-					taskId: task.id,
+			tasks.forEach((task, index) => {
+				const taskId = task.id ?? index;
+				console.log(`🔧 Initializing task ${taskId}: ${task.name}`);
+				initialCompletions[taskId] = {
+					taskId: taskId,
 					taskName: task.name,
 					isCompleted: task.status === 'COMPLETED',
 					completionPercentage: task.status === 'COMPLETED' ? 100 : 0,
 				};
 			});
+			console.log('✅ Initial completions:', initialCompletions);
 			setTaskCompletions(initialCompletions);
 		} catch (err) {
 			console.error('Failed to load tasks:', err);
@@ -229,14 +233,20 @@ export default function EmployeeProjects() {
 	};
 
 	const handleTaskPercentageChange = (taskId: number, percentage: number) => {
-		setTaskCompletions(prev => ({
-			...prev,
-			[taskId]: {
-				...prev[taskId],
-				completionPercentage: percentage,
-				isCompleted: percentage === 100,
-			},
-		}));
+		console.log(`🎚️ Slider changed - TaskID: ${taskId}, New percentage: ${percentage}`);
+		setTaskCompletions(prev => {
+			console.log('📊 Previous state:', prev);
+			const newState = {
+				...prev,
+				[taskId]: {
+					...prev[taskId],
+					completionPercentage: percentage,
+					isCompleted: percentage === 100,
+				},
+			};
+			console.log('📊 New state:', newState);
+			return newState;
+		});
 	};
 
 	const calculateOverallProgress = () => {
@@ -471,16 +481,23 @@ export default function EmployeeProjects() {
 									</div>
 								</div>
 								<div className="space-y-4 max-h-[300px] overflow-y-auto">
-									{projectTasks.map((task) => {
-										const completion = taskCompletions[task.id];
-										if (!completion) return null;
+									{projectTasks.map((task, index) => {
+										console.log(`🔍 Task data:`, task);
+										const taskId = task.id ?? index;
+										const completion = taskCompletions[taskId];
+										if (!completion) {
+											console.warn(`⚠️ No completion found for taskId: ${taskId}`, task);
+											return null;
+										}
+										
+										console.log(`🔍 Rendering task ${taskId}: ${task.name}, completion: ${completion.completionPercentage}%`);
 										
 										return (
-											<div key={task.id} className="bg-white p-3 rounded-lg border space-y-2">
+											<div key={`task-${taskId}`} className="bg-white p-3 rounded-lg border space-y-2">
 												<div className="flex items-start gap-3">
 													<Checkbox
 														checked={completion.isCompleted}
-														onCheckedChange={() => handleTaskCompletionToggle(task.id)}
+														onCheckedChange={() => handleTaskCompletionToggle(taskId)}
 														className="mt-1"
 													/>
 													<div className="flex-1">
@@ -491,14 +508,15 @@ export default function EmployeeProjects() {
 														{completion.completionPercentage}%
 													</div>
 												</div>
-												<div className="ml-7 space-y-1">
-													<Slider
-														value={[completion.completionPercentage]}
-														onValueChange={(value: number[]) => handleTaskPercentageChange(task.id, value[0])}
-														max={100}
-														step={5}
-														className="w-full"
-													/>
+											<div className="ml-7 space-y-1">
+												<Slider
+													id={`task-slider-${taskId}`}
+													value={[completion.completionPercentage]}
+													onValueChange={(value: number[]) => handleTaskPercentageChange(taskId, value[0])}
+													max={100}
+													step={5}
+													className="w-full"
+												/>
 													<div className="flex justify-between text-xs text-gray-500">
 														<span>0%</span>
 														<span>50%</span>
