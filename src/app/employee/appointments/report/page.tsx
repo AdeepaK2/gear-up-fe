@@ -16,7 +16,7 @@ export default function AppointmentReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const appointmentId = Number(searchParams.get('id'));
+  const appointmentId = Number(searchParams.get("id"));
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
@@ -35,7 +35,9 @@ export default function AppointmentReportPage() {
     try {
       setLoading(true);
       // Load appointment details
-      const appointmentData = await appointmentService.getAppointmentById(appointmentId);
+      const appointmentData = await appointmentService.getAppointmentById(
+        appointmentId
+      );
       setAppointment(appointmentData);
 
       // Load available tasks/services
@@ -50,9 +52,9 @@ export default function AppointmentReportPage() {
   };
 
   const toggleTaskSelection = (taskId: number) => {
-    setSelectedTasks(prev =>
+    setSelectedTasks((prev) =>
       prev.includes(taskId)
-        ? prev.filter(id => id !== taskId)
+        ? prev.filter((id) => id !== taskId)
         : [...prev, taskId]
     );
   };
@@ -92,7 +94,10 @@ export default function AppointmentReportPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">Invalid appointment ID</p>
-          <Button onClick={() => router.push("/employee/appointments")} className="mt-4">
+          <Button
+            onClick={() => router.push("/employee/appointments")}
+            className="mt-4"
+          >
             Back to Appointments
           </Button>
         </div>
@@ -114,7 +119,10 @@ export default function AppointmentReportPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500">Appointment not found</p>
-          <Button onClick={() => router.push("/employee/appointments")} className="mt-4">
+          <Button
+            onClick={() => router.push("/employee/appointments")}
+            className="mt-4"
+          >
             Back to Appointments
           </Button>
         </div>
@@ -122,9 +130,17 @@ export default function AppointmentReportPage() {
     );
   }
 
-  const selectedTasksDetails = availableTasks.filter(task => selectedTasks.includes(task.taskId));
-  const totalCost = selectedTasksDetails.reduce((sum, task) => sum + task.estimatedCost, 0);
-  const totalHours = selectedTasksDetails.reduce((sum, task) => sum + task.estimatedHours, 0);
+  const selectedTasksDetails = availableTasks.filter((task) =>
+    selectedTasks.includes(task.taskId)
+  );
+  const totalCost = selectedTasksDetails.reduce(
+    (sum, task) => sum + task.estimatedCost,
+    0
+  );
+  const totalHours = selectedTasksDetails.reduce(
+    (sum, task) => sum + task.estimatedHours,
+    0
+  );
 
   return (
     <div className="min-h-screen p-6 space-y-6">
@@ -139,9 +155,12 @@ export default function AppointmentReportPage() {
           Back
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-primary">Submit Appointment Report</h1>
+          <h1 className="text-3xl font-bold text-primary">
+            Submit Appointment Report
+          </h1>
           <p className="text-gray-600 mt-1">
-            Appointment #{appointmentId} - {appointment.consultationTypeLabel || appointment.consultationType}
+            Appointment #{appointmentId} -{" "}
+            {appointment.consultationTypeLabel || appointment.consultationType}
           </p>
         </div>
       </div>
@@ -159,7 +178,9 @@ export default function AppointmentReportPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Date</p>
-                <p className="font-medium">{new Date(appointment.appointmentDate).toLocaleDateString()}</p>
+                <p className="font-medium">
+                  {new Date(appointment.appointmentDate).toLocaleDateString()}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Time</p>
@@ -169,14 +190,18 @@ export default function AppointmentReportPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Status</p>
-                <p className="font-medium text-blue-600">{appointment.status}</p>
+                <p className="font-medium text-blue-600">
+                  {appointment.status}
+                </p>
               </div>
             </div>
           </Card>
 
           {/* Services Selection Card */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Select Services Performed</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Select Services Performed
+            </h2>
             <p className="text-sm text-gray-600 mb-4">
               Choose all services that were performed during this appointment
             </p>
@@ -193,11 +218,13 @@ export default function AppointmentReportPage() {
                   onClick={() => toggleTaskSelection(task.taskId)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-1 flex-shrink-0 ${
-                      selectedTasks.includes(task.taskId)
-                        ? "bg-primary border-primary"
-                        : "border-gray-300"
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-1 flex-shrink-0 ${
+                        selectedTasks.includes(task.taskId)
+                          ? "bg-primary border-primary"
+                          : "border-gray-300"
+                      }`}
+                    >
                       {selectedTasks.includes(task.taskId) && (
                         <Check className="h-3 w-3 text-white" />
                       )}
@@ -205,23 +232,35 @@ export default function AppointmentReportPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-semibold text-gray-900">{task.name}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                          <h3 className="font-semibold text-gray-900">
+                            {task.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {task.description}
+                          </p>
                         </div>
                         <div className="text-right ml-4">
-                          <p className="font-semibold text-primary">${task.estimatedCost.toFixed(2)}</p>
-                          <p className="text-xs text-gray-500">{task.estimatedHours}h</p>
+                          <p className="font-semibold text-primary">
+                            LKR {task.estimatedCost.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {task.estimatedHours}h
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-2 mt-2">
                         <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
                           {task.category}
                         </span>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          task.priority === 'High' ? 'bg-red-100 text-red-700' :
-                          task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            task.priority === "High"
+                              ? "bg-red-100 text-red-700"
+                              : task.priority === "Medium"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
                           {task.priority}
                         </span>
                       </div>
@@ -256,7 +295,9 @@ export default function AppointmentReportPage() {
             <div className="space-y-4 mb-6">
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Selected Services</p>
-                <p className="text-2xl font-bold text-primary">{selectedTasks.length}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {selectedTasks.length}
+                </p>
               </div>
 
               <div className="pb-3 border-b">
@@ -266,18 +307,27 @@ export default function AppointmentReportPage() {
 
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Total Cost</p>
-                <p className="text-2xl font-bold text-green-600">${totalCost.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  LKR {totalCost.toFixed(2)}
+                </p>
               </div>
             </div>
 
             {selectedTasks.length > 0 && (
               <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Selected Services:</p>
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  Selected Services:
+                </p>
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
                   {selectedTasksDetails.map((task) => (
-                    <div key={task.taskId} className="flex items-start justify-between text-sm">
+                    <div
+                      key={task.taskId}
+                      className="flex items-start justify-between text-sm"
+                    >
                       <span className="text-gray-700 flex-1">{task.name}</span>
-                      <span className="text-primary font-medium ml-2">${task.estimatedCost.toFixed(2)}</span>
+                      <span className="text-primary font-medium ml-2">
+                        LKR {task.estimatedCost.toFixed(2)}
+                      </span>
                     </div>
                   ))}
                 </div>
