@@ -23,6 +23,7 @@ export interface QuickAction {
     | "request_service"
     | "update_profile"
     | "contact_support"
+    | "book_appointment"
     | "custom";
   customAction?: string;
   icon?: string;

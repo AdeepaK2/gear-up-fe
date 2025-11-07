@@ -1,19 +1,22 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Phone, Mail, ExternalLink } from "lucide-react";
+import { HelpFAQDialog } from "@/components/ui/help-faq-dialog";
 
 /**
  * SupportHelpCard component
  * Displays support and help options
  */
 export const SupportHelpCard = React.memo(() => {
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
+
   const handleContactSupport = useCallback(() => {
     window.open("tel:+1-555-SUPPORT", "_self");
   }, []);
 
   const handleHelpCenter = useCallback(() => {
-    window.open("/help", "_blank");
+    setShowHelpDialog(true);
   }, []);
 
   const handleSubmitFeedback = useCallback(() => {
@@ -47,11 +50,10 @@ export const SupportHelpCard = React.memo(() => {
             variant="outline"
             className="w-full justify-start border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white transition-all duration-200"
             onClick={handleHelpCenter}
-            aria-label="Open help center in new tab"
+            aria-label="Open help center"
           >
             <HelpCircle className="w-4 h-4" aria-hidden="true" />
             Help Center & FAQs
-            <ExternalLink className="w-3 h-3 ml-auto" aria-hidden="true" />
           </Button>
           <Button
             variant="outline"
@@ -65,6 +67,9 @@ export const SupportHelpCard = React.memo(() => {
           </Button>
         </div>
       </CardContent>
+
+      {/* Help & FAQ Dialog */}
+      <HelpFAQDialog open={showHelpDialog} onOpenChange={setShowHelpDialog} />
     </Card>
   );
 });
