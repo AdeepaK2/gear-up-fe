@@ -44,11 +44,16 @@ export default function CustomerReportsPage() {
     try {
       setLoading(true);
       const appointments = await appointmentService.getAllAppointmentsForCurrentCustomer();
+      
+      // Get all projects to check which appointments have projects
+      const allProjects = await projectService.getAllProjectsForCurrentCustomer();
 
-      // Filter only COMPLETED appointments
-      const completed = appointments.filter(
-        apt => apt.status?.toUpperCase() === 'COMPLETED'
-      );
+      // Filter only COMPLETED appointments that don't have projects created yet
+      const completed = appointments.filter(apt => {
+        const isCompleted = apt.status?.toUpperCase() === 'COMPLETED';
+        const hasProject = allProjects.some(proj => proj.appointmentId === apt.id);
+        return isCompleted && !hasProject;
+      });
 
       setCompletedAppointments(completed);
     } catch (err) {
@@ -471,6 +476,17 @@ export default function CustomerReportsPage() {
                 {/* Service Report Details */}
                 {isExpanded && appointment.tasks && appointment.tasks.length > 0 && (
                   <div className="p-6">
+                    {/* Employee Notes/Report */}
+                    {appointment.notes && (
+                      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Technician's Report
+                        </h4>
+                        <p className="text-gray-800 text-sm whitespace-pre-wrap">{appointment.notes}</p>
+                      </div>
+                    )}
+
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Services Performed
                     </h3>
