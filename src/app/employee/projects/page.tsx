@@ -1,48 +1,100 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Edit, ChevronDown, Loader2, RefreshCw } from "lucide-react";
-import { projectService, type Project } from '@/lib/services/projectService';
+import React, { useState, useEffect, useMemo } from "react";
+import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { projectService, type Project, type Task, type TaskCompletion } from '@/lib/services/projectService';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/contexts/ToastContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 
-const statusOptions = [
-	"pending",
-	"in_progress", 
-	"completed",
-	"cancelled",
-];
+type StatusFilter = "all" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 const getStatusBadgeStyle = (status: string) => {
-	switch (status.toLowerCase()) {
-		case "new":
-			return "bg-yellow-50 text-yellow-800 border-yellow-200";
-		case "in_progress":
-		case "in progress":
-			return "bg-blue-50 text-blue-800 border-blue-200";
-		case "on hold":
-			return "bg-orange-100 text-orange-800 border-orange-200";
-		case "completed":
-			return "bg-green-50 text-green-800 border-green-200";
-		case "cancelled":
-			return "bg-red-50 text-red-800 border-red-200";
+	const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+	switch (normalizedStatus) {
+		case "CREATED":
+		case "NEW":
+			return "bg-yellow-50 text-yellow-800 border-yellow-300";
+		case "RECOMMENDED":
+		case "CONFIRMED":
+			return "bg-blue-50 text-blue-800 border-blue-300";
+		case "IN_PROGRESS":
+		case "IN PROGRESS":
+			return "bg-blue-100 text-blue-900 border-blue-400 font-semibold";
+		case "ON_HOLD":
+		case "ON HOLD":
+			return "bg-orange-100 text-orange-800 border-orange-300";
+		case "COMPLETED":
+			return "bg-green-100 text-green-900 border-green-400 font-semibold";
+		case "CANCELLED":
+		case "REJECTED":
+			return "bg-red-100 text-red-900 border-red-400 font-semibold";
 		default:
-			return "bg-gray-50 text-gray-800 border-gray-200";
+			return "bg-gray-50 text-gray-800 border-gray-300";
 	}
 };
 
-const statusStyles: Record<string, string> = {
-	New: "bg-yellow-50 text-yellow-800 border-yellow-200",
-	In_Progress: "bg-blue-50 text-blue-800 border-blue-200",
-	"On Hold": "bg-orange-100 text-orange-800 border-orange-200",
-	Completed: "bg-green-50 text-green-800 border-green-200",
-	Cancelled: "bg-red-50 text-red-800 border-red-200",
+const getStatusDisplayName = (status: string) => {
+	const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+	switch (normalizedStatus) {
+		case "CREATED":
+			return "Created";
+		case "RECOMMENDED":
+			return "Recommended";
+		case "CONFIRMED":
+			return "Confirmed";
+		case "IN_PROGRESS":
+		case "IN PROGRESS":
+			return "In Progress";
+		case "ON_HOLD":
+		case "ON HOLD":
+			return "On Hold";
+		case "COMPLETED":
+			return "Completed";
+		case "CANCELLED":
+		case "REJECTED":
+			return "Cancelled";
+		default:
+			return status.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+	}
 };
 
 export default function EmployeeProjects() {
+	const router = useRouter();
+	const { showToast } = useToast();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [editingProject, setEditingProject] = useState<number | null>(null);
-	const [newStatus, setNewStatus] = useState<string>('');
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+	
+	// Update dialog state
+	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+	const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+	const [taskCompletions, setTaskCompletions] = useState<Record<number, TaskCompletion>>({});
+	const [loadingTasks, setLoadingTasks] = useState(false);
+	const [updateFormData, setUpdateFormData] = useState({
+		message: '',
+		completedTasks: '',
+		totalTasks: '',
+		additionalCost: '',
+		additionalCostReason: '',
+		estimatedCompletionDate: '',
+		updateType: 'PROGRESS' as 'PROGRESS' | 'COST_CHANGE' | 'DELAY' | 'COMPLETION' | 'GENERAL',
+	});
+	const [submittingUpdate, setSubmittingUpdate] = useState(false);
+
+	// Completion dialog state
+	const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+	const [completionMessage, setCompletionMessage] = useState('');
+	const [projectToComplete, setProjectToComplete] = useState<Project | null>(null);
+	const [submittingCompletion, setSubmittingCompletion] = useState(false);
 
 	// Load projects on component mount
 	useEffect(() => {
@@ -63,30 +115,220 @@ export default function EmployeeProjects() {
 		}
 	};
 
-	const handleStatusUpdate = async (projectId: number, status: string) => {
+	const handleMarkAsCompleted = async (project: Project) => {
+		setProjectToComplete(project);
+		setCompletionMessage('');
+		setShowCompletionDialog(true);
+	};
+
+	const handleConfirmCompletion = async () => {
+		if (!projectToComplete || !completionMessage.trim()) {
+			showToast('Please provide a completion message for the customer', 'error');
+			return;
+		}
+
+		setSubmittingCompletion(true);
 		try {
-			const updatedProject = await projectService.updateProjectStatus(projectId, status);
-			setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p));
-			setEditingProject(null);
+			// First, post a completion update with the message
+			await projectService.createProjectUpdate(projectToComplete.id, {
+				message: completionMessage,
+				updateType: 'COMPLETION',
+				estimatedCompletionDate: new Date().toISOString().split('T')[0],
+				taskCompletions: [],
+				completedTasks: 0,
+				totalTasks: 0,
+				overallCompletionPercentage: 100,
+			});
+
+			// Then update the project status to COMPLETED
+			const updatedProject = await projectService.updateProjectStatus(projectToComplete.id, "COMPLETED");
+			setProjects(prev => prev.map(p => p.id === projectToComplete.id ? updatedProject : p));
+			
+			showToast('Project marked as completed and customer notified', 'success');
+			setShowCompletionDialog(false);
+			setProjectToComplete(null);
+			setCompletionMessage('');
 		} catch (err) {
-			console.error('Failed to update project status:', err);
-			setError(err instanceof Error ? err.message : 'Failed to update status');
+			console.error('Failed to complete project:', err);
+			showToast(err instanceof Error ? err.message : 'Failed to complete project', 'error');
+		} finally {
+			setSubmittingCompletion(false);
 		}
 	};
 
-	const startEditing = (projectId: number, currentStatus: string) => {
-		setEditingProject(projectId);
-		setNewStatus(currentStatus);
+	const isInProgress = (status: string): boolean => {
+		const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+		return normalizedStatus === "IN_PROGRESS";
 	};
 
-	const cancelEditing = () => {
-		setEditingProject(null);
-		setNewStatus('');
+	const isCompleted = (status: string): boolean => {
+		const normalizedStatus = status.toUpperCase().replace(/\s+/g, "_");
+		return normalizedStatus === "COMPLETED";
 	};
+
+	const handleSendReport = (projectId: number) => {
+		router.push(`/employee/projects/${projectId}/report`);
+	};
+
+	const handlePostUpdate = async (project: Project) => {
+		setSelectedProject(project);
+		setUpdateFormData({
+			message: '',
+			completedTasks: '',
+			totalTasks: '',
+			additionalCost: '',
+			additionalCostReason: '',
+			estimatedCompletionDate: '',
+			updateType: 'PROGRESS',
+		});
+		
+		// Load tasks for the project
+		setLoadingTasks(true);
+		try {
+			const tasks = await projectService.getProjectTasks(project.id);
+			console.log('📋 Loaded tasks:', tasks);
+			setProjectTasks(tasks);
+			
+			// Initialize task completions
+			const initialCompletions: Record<number, TaskCompletion> = {};
+			tasks.forEach((task, index) => {
+				const taskId = task.id ?? index;
+				console.log(`🔧 Initializing task ${taskId}: ${task.name}`);
+				initialCompletions[taskId] = {
+					taskId: taskId,
+					taskName: task.name,
+					isCompleted: task.status === 'COMPLETED',
+					completionPercentage: task.status === 'COMPLETED' ? 100 : 0,
+				};
+			});
+			console.log('✅ Initial completions:', initialCompletions);
+			setTaskCompletions(initialCompletions);
+		} catch (err) {
+			console.error('Failed to load tasks:', err);
+			showToast('Failed to load project tasks', 'error');
+		} finally {
+			setLoadingTasks(false);
+		}
+		
+		setShowUpdateDialog(true);
+	};
+
+	const handleViewUpdates = (projectId: number) => {
+		router.push(`/employee/projects/${projectId}/updates`);
+	};
+
+	const handleSubmitUpdate = async () => {
+		if (!selectedProject || !updateFormData.message.trim()) {
+			showToast('Please provide a message for the update', 'error');
+			return;
+		}
+
+		setSubmittingUpdate(true);
+		try {
+			// Calculate overall completion percentage
+			const completions = Object.values(taskCompletions);
+			const overallPercentage = completions.length > 0
+				? Math.round(completions.reduce((sum, t) => sum + t.completionPercentage, 0) / completions.length)
+				: 0;
+
+			const completedCount = completions.filter(t => t.isCompleted).length;
+
+			await projectService.createProjectUpdate(selectedProject.id, {
+				message: updateFormData.message,
+				completedTasks: completedCount,
+				totalTasks: completions.length,
+				additionalCost: updateFormData.additionalCost ? parseFloat(updateFormData.additionalCost) : undefined,
+				additionalCostReason: updateFormData.additionalCostReason || undefined,
+				estimatedCompletionDate: updateFormData.estimatedCompletionDate || undefined,
+				updateType: updateFormData.updateType,
+				taskCompletions: completions,
+				overallCompletionPercentage: overallPercentage,
+			});
+
+			showToast('Project update posted successfully', 'success');
+			setShowUpdateDialog(false);
+			setSelectedProject(null);
+			setProjectTasks([]);
+			setTaskCompletions({});
+		} catch (err) {
+			console.error('Failed to post update:', err);
+			showToast(err instanceof Error ? err.message : 'Failed to post update', 'error');
+		} finally {
+			setSubmittingUpdate(false);
+		}
+	};
+
+	const handleTaskCompletionToggle = (taskId: number) => {
+		setTaskCompletions(prev => ({
+			...prev,
+			[taskId]: {
+				...prev[taskId],
+				isCompleted: !prev[taskId].isCompleted,
+				completionPercentage: !prev[taskId].isCompleted ? 100 : prev[taskId].completionPercentage,
+			},
+		}));
+	};
+
+	const handleTaskPercentageChange = (taskId: number, percentage: number) => {
+		console.log(`🎚️ Slider changed - TaskID: ${taskId}, New percentage: ${percentage}`);
+		setTaskCompletions(prev => {
+			console.log('📊 Previous state:', prev);
+			const newState = {
+				...prev,
+				[taskId]: {
+					...prev[taskId],
+					completionPercentage: percentage,
+					isCompleted: percentage === 100,
+				},
+			};
+			console.log('📊 New state:', newState);
+			return newState;
+		});
+	};
+
+	const calculateOverallProgress = () => {
+		const completions = Object.values(taskCompletions);
+		if (completions.length === 0) return 0;
+		const total = completions.reduce((sum, t) => sum + t.completionPercentage, 0);
+		return Math.round(total / completions.length);
+	};
+
+	const filteredProjects = useMemo(() => {
+		if (statusFilter === "all") {
+			return projects;
+		}
+		return projects.filter(project => {
+			const normalizedStatus = project.status.toUpperCase().replace(/\s+/g, "_");
+			return normalizedStatus === statusFilter;
+		});
+	}, [projects, statusFilter]);
+
+	const filterOptions: { value: StatusFilter; label: string; count: number }[] = [
+		{ value: "all", label: "All Projects", count: projects.length },
+		{ value: "IN_PROGRESS", label: "In Progress", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "IN_PROGRESS").length },
+		{ value: "COMPLETED", label: "Completed", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "COMPLETED").length },
+		{ value: "CANCELLED", label: "Cancelled", count: projects.filter(p => p.status.toUpperCase().replace(/\s+/g, "_") === "CANCELLED").length },
+	];
 
 	return (
 		<div className="min-h-screen space-y-8 p-6">
-			<h1 className="text-3xl font-bold mb-8 text-primary">Assigned Projects</h1>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-3xl font-bold text-primary">Assigned Projects</h1>
+				<div className="flex items-center gap-2">
+					<Filter className="w-5 h-5 text-gray-600" />
+					<select
+						value={statusFilter}
+						onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+						className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+					>
+						{filterOptions.map(option => (
+							<option key={option.value} value={option.value}>
+								{option.label} ({option.count})
+							</option>
+						))}
+					</select>
+				</div>
+			</div>
 			<div className="bg-white rounded-xl border overflow-x-auto">
 				<table className="min-w-full text-sm">
 					<thead>
@@ -95,24 +337,22 @@ export default function EmployeeProjects() {
 							<th className="px-4 py-3 text-left font-bold">Customer</th>
 							<th className="px-4 py-3 text-left font-bold">Vehicle</th>
 							<th className="px-4 py-3 text-left font-bold">Due Date</th>
-							<th className="px-4 py-3 text-left font-bold">
-								Estimated Time
-							</th>
+							<th className="px-4 py-3 text-left font-bold">Assigned Employees</th>
 							<th className="px-4 py-3 text-left font-bold">Status</th>
-							<th className="px-4 py-3 text-left font-bold">Edit</th>
+							<th className="px-4 py-3 text-left font-bold">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
 						{loading ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center">
+								<td colSpan={7} className="px-4 py-8 text-center">
 									<Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
 									Loading projects...
 								</td>
 							</tr>
 						) : error ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center text-red-600">
+								<td colSpan={7} className="px-4 py-8 text-center text-red-600">
 									Error: {error}
 									<Button 
 										onClick={loadProjects} 
@@ -123,74 +363,377 @@ export default function EmployeeProjects() {
 									</Button>
 								</td>
 							</tr>
-						) : projects.length === 0 ? (
+						) : filteredProjects.length === 0 ? (
 							<tr>
-								<td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-									No projects assigned
+								<td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+									{projects.length === 0 ? "No projects assigned" : `No ${statusFilter === "all" ? "" : filterOptions.find(o => o.value === statusFilter)?.label.toLowerCase() + " "}projects found`}
 								</td>
 							</tr>
 						) : (
-							projects.map((project) => (
+							filteredProjects.map((project) => (
 								<tr key={project.id} className="border-b last:border-0 hover:bg-blue-50 transition-colors duration-200 cursor-pointer">
-									<td className="px-4 py-3">{project.name}</td>
-									<td className="px-4 py-3">Customer #{project.customerId || 'N/A'}</td>
+									<td className="px-4 py-3">
+										<div className="flex items-center gap-2">
+											{project.name}
+											{project.isMainRepresentative && (
+												<span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-full">
+													<Crown className="w-3 h-3" />
+													Main Rep
+												</span>
+											)}
+										</div>
+									</td>
+									<td className="px-4 py-3">{project.customerName || `Customer #${project.customerId || 'N/A'}`}</td>
 									<td className="px-4 py-3">{project.vehicleName || 'N/A'}</td>
 									<td className="px-4 py-3">{project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'N/A'}</td>
-									<td className="px-4 py-3">N/A</td>
 									<td className="px-4 py-3">
-										{editingProject === project.id ? (
-											<div className="flex items-center gap-2">
-												<select
-													value={newStatus}
-													onChange={(e) => setNewStatus(e.target.value)}
-													className="px-2 py-1 border rounded text-xs"
-												>
-													{statusOptions.map(status => (
-														<option key={status} value={status}>
-															{status.replace('_', ' ').toUpperCase()}
-														</option>
-													))}
-												</select>
-												<Button
-													onClick={() => handleStatusUpdate(project.id, newStatus)}
-													className="px-2 py-1 text-xs bg-green-500 hover:bg-green-600"
-												>
-													Save
-												</Button>
-												<Button
-													onClick={cancelEditing}
-													className="px-2 py-1 text-xs bg-gray-500 hover:bg-gray-600"
-												>
-													Cancel
-												</Button>
+										{project.assignedEmployees && project.assignedEmployees.length > 0 ? (
+											<div className="flex flex-col gap-1">
+												{project.assignedEmployees.map((emp) => (
+													<div key={emp.employeeId} className="flex items-center gap-2 text-xs">
+														<Users className="w-3 h-3 text-gray-500" />
+														<span className={emp.employeeId === project.mainRepresentativeEmployeeId ? "font-semibold text-yellow-700" : ""}>
+															{emp.name}
+															{emp.employeeId === project.mainRepresentativeEmployeeId && (
+																<Crown className="w-3 h-3 inline ml-1 text-yellow-600" />
+															)}
+														</span>
+														<span className="text-gray-500">({emp.specialization})</span>
+													</div>
+												))}
 											</div>
 										) : (
-											<span
-												className={`inline-block rounded-full px-6 py-1 text-xs font-semibold border w-32 text-center ${
-													statusStyles[project.status] ||
-													"bg-gray-50 text-gray-800 border-gray-200"
-												}`}
-											>
-												{project.status.replace("_", " ").toUpperCase()}
-											</span>
+											<span className="text-gray-400">No employees assigned</span>
 										)}
 									</td>
 									<td className="px-4 py-3">
-										<button
-											type="button"
-											className="p-2 rounded-lg bg-white border border-blue-200 text-blue-900 hover:bg-blue-100 transition-colors duration-200"
-											aria-label="Edit"
-											onClick={() => startEditing(project.id, project.status)}
-									>
-										<Edit className="w-4 h-4" />
-									</button>
-								</td>
+										<span
+											className={`inline-block rounded-full px-4 py-1.5 text-xs font-semibold border text-center min-w-[100px] ${getStatusBadgeStyle(project.status)}`}
+										>
+											{getStatusDisplayName(project.status)}
+										</span>
+									</td>
+									<td className="px-4 py-3">
+										<div className="flex items-center gap-2">
+											{isInProgress(project.status) && (
+												<>
+													{project.isMainRepresentative && (
+														<Button
+															type="button"
+															onClick={() => handlePostUpdate(project)}
+															className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+														>
+															<MessageSquarePlus className="w-4 h-4" />
+															Post Update
+														</Button>
+													)}
+													<Button
+														type="button"
+														onClick={() => handleMarkAsCompleted(project)}
+														className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+													>
+														Mark as Completed
+													</Button>
+													<Button
+														type="button"
+														onClick={() => handleViewUpdates(project.id)}
+														className="px-3 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<MessageSquare className="w-4 h-4" />
+														View Updates
+													</Button>
+												</>
+											)}
+											{isCompleted(project.status) && (
+												<>
+													<Button
+														type="button"
+														onClick={() => handleSendReport(project.id)}
+														className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<FileText className="w-4 h-4" />
+														Send Report
+													</Button>
+													<Button
+														type="button"
+														onClick={() => handleViewUpdates(project.id)}
+														className="px-3 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<MessageSquare className="w-4 h-4" />
+														View Updates
+													</Button>
+												</>
+											)}
+										</div>
+									</td>
 							</tr>
 						))
 						)}
 					</tbody>
 				</table>
 			</div>
+
+			{/* Post Update Dialog */}
+			<Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold">Post Project Update</DialogTitle>
+						<DialogDescription>
+							Send an update to the customer about project progress, costs, or any changes.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="updateType">Update Type *</Label>
+							<Select
+								value={updateFormData.updateType}
+								onValueChange={(value: any) => setUpdateFormData({ ...updateFormData, updateType: value })}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select update type" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="PROGRESS">Progress Update</SelectItem>
+									<SelectItem value="COST_CHANGE">Cost Change</SelectItem>
+									<SelectItem value="DELAY">Delay Notice</SelectItem>
+									<SelectItem value="COMPLETION">Completion Notice</SelectItem>
+									<SelectItem value="GENERAL">General Update</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* Services/Tasks Section */}
+						{loadingTasks ? (
+							<div className="flex items-center justify-center py-8">
+								<Loader2 className="h-6 w-6 animate-spin text-primary" />
+								<span className="ml-2 text-gray-600">Loading services...</span>
+							</div>
+						) : projectTasks.length > 0 && (
+							<div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+								<div className="flex items-center justify-between mb-3">
+									<Label className="text-base font-semibold">Services/Tasks Progress</Label>
+									<div className="text-sm font-medium text-primary">
+										Overall: {calculateOverallProgress()}%
+									</div>
+								</div>
+								<div className="space-y-4 max-h-[300px] overflow-y-auto">
+									{projectTasks.map((task, index) => {
+										console.log(`🔍 Task data:`, task);
+										const taskId = task.id ?? index;
+										const completion = taskCompletions[taskId];
+										if (!completion) {
+											console.warn(`⚠️ No completion found for taskId: ${taskId}`, task);
+											return null;
+										}
+										
+										console.log(`🔍 Rendering task ${taskId}: ${task.name}, completion: ${completion.completionPercentage}%`);
+										
+										return (
+											<div key={`task-${taskId}`} className="bg-white p-3 rounded-lg border space-y-2">
+												<div className="flex items-start gap-3">
+													<Checkbox
+														checked={completion.isCompleted}
+														onCheckedChange={() => handleTaskCompletionToggle(taskId)}
+														className="mt-1"
+													/>
+													<div className="flex-1">
+														<div className="font-medium text-sm">{task.name}</div>
+														<div className="text-xs text-gray-500 line-clamp-1">{task.description}</div>
+													</div>
+													<div className="text-sm font-semibold text-primary">
+														{completion.completionPercentage}%
+													</div>
+												</div>
+											<div className="ml-7 space-y-1">
+												<Slider
+													id={`task-slider-${taskId}`}
+													value={[completion.completionPercentage]}
+													onValueChange={(value: number[]) => handleTaskPercentageChange(taskId, value[0])}
+													max={100}
+													step={5}
+													className="w-full"
+												/>
+													<div className="flex justify-between text-xs text-gray-500">
+														<span>0%</span>
+														<span>50%</span>
+														<span>100%</span>
+													</div>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+								<div className="pt-2 border-t">
+									<div className="text-sm text-gray-600">
+										<CheckCircle2 className="inline h-4 w-4 mr-1 text-green-600" />
+										{Object.values(taskCompletions).filter(t => t.isCompleted).length} of {projectTasks.length} completed
+									</div>
+								</div>
+							</div>
+						)}
+
+						<div className="space-y-2">
+							<Label htmlFor="message">Message *</Label>
+							<Textarea
+								id="message"
+								placeholder="Describe the update for the customer..."
+								value={updateFormData.message}
+								onChange={(e) => setUpdateFormData({ ...updateFormData, message: e.target.value })}
+								rows={5}
+								className="resize-none"
+								required
+							/>
+							<p className="text-xs text-gray-500">
+								{updateFormData.message.length}/2000 characters
+							</p>
+						</div>
+
+						{updateFormData.updateType === 'COST_CHANGE' && (
+							<>
+								<div className="space-y-2">
+									<Label htmlFor="additionalCost">Additional Cost (LKR)</Label>
+									<Input
+										id="additionalCost"
+										type="number"
+										step="0.01"
+										placeholder="e.g., 5000.00"
+										value={updateFormData.additionalCost}
+										onChange={(e) => setUpdateFormData({ ...updateFormData, additionalCost: e.target.value })}
+									/>
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor="additionalCostReason">Reason for Additional Cost</Label>
+									<Textarea
+										id="additionalCostReason"
+										placeholder="Explain why additional costs are needed..."
+										value={updateFormData.additionalCostReason}
+										onChange={(e) => setUpdateFormData({ ...updateFormData, additionalCostReason: e.target.value })}
+										rows={3}
+										className="resize-none"
+									/>
+								</div>
+							</>
+						)}
+
+						{(updateFormData.updateType === 'DELAY' || updateFormData.updateType === 'COMPLETION') && (
+							<div className="space-y-2">
+								<Label htmlFor="estimatedCompletionDate">
+									{updateFormData.updateType === 'DELAY' ? 'New Estimated Completion Date' : 'Completion Date'}
+								</Label>
+								<Input
+									id="estimatedCompletionDate"
+									type="date"
+									value={updateFormData.estimatedCompletionDate}
+									onChange={(e) => setUpdateFormData({ ...updateFormData, estimatedCompletionDate: e.target.value })}
+								/>
+							</div>
+						)}
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowUpdateDialog(false)}
+							disabled={submittingUpdate}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleSubmitUpdate}
+							disabled={submittingUpdate || !updateFormData.message.trim()}
+							className="bg-primary hover:bg-primary/90"
+						>
+							{submittingUpdate ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Posting...
+								</>
+							) : (
+								'Post Update'
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Mark as Completed Dialog */}
+			<Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+				<DialogContent className="max-w-lg">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold flex items-center gap-2">
+							<CheckCircle2 className="h-6 w-6 text-green-600" />
+							Complete Project
+						</DialogTitle>
+						<DialogDescription>
+							Send a completion message to the customer and mark this project as completed.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4 py-4">
+						{projectToComplete && (
+							<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+								<p className="text-sm font-medium text-blue-900">
+									Project: {projectToComplete.name}
+								</p>
+								<p className="text-xs text-blue-700 mt-1">
+									Customer: {projectToComplete.customerName || `Customer #${projectToComplete.customerId}`}
+								</p>
+							</div>
+						)}
+
+						<div className="space-y-2">
+							<Label htmlFor="completionMessage">Completion Message *</Label>
+							<Textarea
+								id="completionMessage"
+								placeholder="Inform the customer about the project completion, final details, or any important notes..."
+								value={completionMessage}
+								onChange={(e) => setCompletionMessage(e.target.value)}
+								rows={6}
+								className="resize-none"
+								required
+							/>
+							<p className="text-xs text-gray-500">
+								{completionMessage.length}/1000 characters
+							</p>
+						</div>
+
+						<div className="bg-green-50 border border-green-200 rounded-lg p-3">
+							<p className="text-xs text-green-800">
+								<strong>Note:</strong> This message will be sent to the customer as a completion update, and the project status will be changed to "Completed".
+							</p>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowCompletionDialog(false)}
+							disabled={submittingCompletion}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleConfirmCompletion}
+							disabled={submittingCompletion || !completionMessage.trim()}
+							className="bg-green-600 hover:bg-green-700"
+						>
+							{submittingCompletion ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Completing...
+								</>
+							) : (
+								<>
+									<CheckCircle2 className="mr-2 h-4 w-4" />
+									Mark as Completed
+								</>
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 		</div>
 	);

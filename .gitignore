@@ -41,4 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 # runtime config (overwritten by Docker/K8s at runtime)
-# public/config.js  # Keep this commented - we need the default file in repo
+public/config.js

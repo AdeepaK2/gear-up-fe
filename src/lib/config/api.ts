@@ -50,6 +50,8 @@ export const API_ENDPOINTS = {
   PROJECTS: {
     BASE: `${API_BASE_URL}/projects`,
     EMPLOYEE: `${API_BASE_URL}/projects/employee`,
+    MY_ASSIGNED: `${API_BASE_URL}/projects/my-assigned`,
+    REPORTS: `${API_BASE_URL}/projects/reports`,
   },
   TASKS: {
     BASE: `${API_BASE_URL}/tasks`,

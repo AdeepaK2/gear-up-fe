@@ -10,6 +10,7 @@ import {
   UserCog,
   CalendarCheck,
   AlertTriangle,
+  MessageSquare,
 } from 'lucide-react';
 import ProjectHeader from '@/components/customer/ProjectHeader';
 import ProjectInfoTile from '@/components/customer/ProjectInfoTile';
@@ -499,6 +500,13 @@ export default function ProjectsPage() {
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   View Details
+                </a>
+                <a
+                  href={`/customer/projects/${proj.id}/updates`}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  View Updates
                 </a>
               </div>
             </CardContent>

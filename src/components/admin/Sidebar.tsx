@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   UserCog,
@@ -14,13 +14,42 @@ import {
   FileText,
   LogOut,
 } from "lucide-react";
+import { authService } from "@/lib/services/authService";
+import { useToast } from "@/contexts/ToastContext";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export default function Sidebar() {
   const rawPathname = usePathname() || "/admin";
+  const router = useRouter();
+  const toast = useToast();
+  
   // Remove trailing slash to normalize the pathname
   const pathname = rawPathname.endsWith("/")
     ? rawPathname.slice(0, -1)
     : rawPathname;
+
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = React.useState(false);
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    try {
+      setIsLoggingOut(true);
+      await authService.logout();
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Logout failed, but redirecting to login");
+      // Still redirect to login even if logout API fails
+      router.push("/login");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const navItems = [
     { href: "/admin", icon: <Home className="h-4 w-4" />, text: "Dashboard" },
@@ -48,11 +77,6 @@ export default function Sidebar() {
       href: "/admin/appointments",
       icon: <CalendarIcon className="h-4 w-4" />,
       text: "Appointments",
-    },
-    {
-      href: "/admin/modification-requests",
-      icon: <FileText className="h-4 w-4" />,
-      text: "Modify Requests",
     },
   ];
 
@@ -103,14 +127,26 @@ export default function Sidebar() {
         })}
       </nav>
       <div className="mt-auto pt-8">
-        <Link
-          href="/logout"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-red-400 text-white hover:bg-red-500 transition-colors duration-200"
+        <button
+          onClick={handleLogoutClick}
+          disabled={isLoggingOut}
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 w-full bg-red-600 text-white hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <LogOut className="h-4 w-4 text-white" />
-          <span>Logout</span>
-        </Link>
+          <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+        </button>
       </div>
+
+      <ConfirmationDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Confirm Logout"
+        description="Are you sure you want to logout? You will need to login again to access your account."
+        confirmText="Logout"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleLogoutConfirm}
+      />
     </aside>
   );
 }
