@@ -1,7 +1,61 @@
-import React, { useRef, useState, useCallback, KeyboardEvent } from "react";
-import { Send } from "lucide-react";
+import React, { useRef, useState, useCallback, KeyboardEvent, useEffect } from "react";
+import { Send, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Web Speech API types
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+declare var SpeechRecognition: {
+  prototype: SpeechRecognition;
+  new(): SpeechRecognition;
+};
 
 interface MessageInputProps {
   value: string;
@@ -26,6 +80,84 @@ export const MessageInput = React.memo<MessageInputProps>(
   }) => {
     const textInputRef = useRef<HTMLInputElement>(null);
     const [sendStatus, setSendStatus] = useState<string>("");
+    const [isRecording, setIsRecording] = useState(false);
+    const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+    const [isSupported, setIsSupported] = useState(false);
+
+    // Initialize Speech Recognition
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          const recognitionInstance = new SpeechRecognition();
+          recognitionInstance.continuous = true;
+          recognitionInstance.interimResults = true;
+          recognitionInstance.lang = 'en-US';
+
+          recognitionInstance.onstart = () => {
+            setIsRecording(true);
+          };
+
+          recognitionInstance.onend = () => {
+            setIsRecording(false);
+          };
+
+          recognitionInstance.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsRecording(false);
+          };
+
+          recognitionInstance.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                finalTranscript += transcript;
+              } else {
+                interimTranscript += transcript;
+              }
+            }
+
+            // Update the input value with final transcript
+            if (finalTranscript) {
+              onChange(value + finalTranscript);
+            }
+          };
+
+          setRecognition(recognitionInstance);
+          setIsSupported(true);
+        } else {
+          console.warn('Speech Recognition not supported in this browser');
+          setIsSupported(false);
+        }
+      }
+    }, [value, onChange]);
+
+    const startRecording = useCallback(() => {
+      if (recognition && !isRecording) {
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+        }
+      }
+    }, [recognition, isRecording]);
+
+    const stopRecording = useCallback(() => {
+      if (recognition && isRecording) {
+        recognition.stop();
+      }
+    }, [recognition, isRecording]);
+
+    const toggleRecording = useCallback(() => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }, [isRecording, startRecording, stopRecording]);
 
     const handleSend = useCallback(() => {
       if (!value.trim() || disabled) return;
@@ -65,11 +197,43 @@ export const MessageInput = React.memo<MessageInputProps>(
               placeholder={placeholder}
               onKeyPress={handleKeyPress}
               disabled={disabled}
-              className="w-full py-4 px-5 text-base border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 shadow-sm hover:shadow-md bg-white"
+              className={`w-full py-4 px-5 text-base border-2 rounded-2xl focus:ring-4 transition-all duration-200 shadow-sm hover:shadow-md bg-white ${
+                isRecording 
+                  ? 'border-red-500 focus:border-red-500 focus:ring-red-100' 
+                  : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+              }`}
               aria-label="Message input"
               autoFocus
             />
+            {isRecording && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-red-500 font-medium">Listening...</span>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Voice Button */}
+          {isSupported && (
+            <Button
+              onClick={toggleRecording}
+              disabled={disabled}
+              aria-label={isRecording ? "Stop recording" : "Start voice input"}
+              className={`px-4 py-4 h-auto rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none ${
+                isRecording
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-gray-600 hover:bg-gray-700 text-white'
+              }`}
+            >
+              {isRecording ? (
+                <MicOff className="w-5 h-5" aria-hidden="true" />
+              ) : (
+                <Mic className="w-5 h-5" aria-hidden="true" />
+              )}
+            </Button>
+          )}
 
           {/* Send Button */}
           <Button
@@ -85,7 +249,7 @@ export const MessageInput = React.memo<MessageInputProps>(
         {/* Helper Text */}
         <div className="flex justify-center items-center mt-3">
           <span className="text-xs text-gray-400">
-            Press Enter to send
+            Press Enter to send {isSupported && "• Click microphone for voice input"}
           </span>
 
           {/* Live region for send status (for screen readers) */}
