@@ -57,8 +57,17 @@ export interface ProjectUpdate {
   additionalCostReason?: string;
   estimatedCompletionDate?: string;
   updateType: 'PROGRESS' | 'COST_CHANGE' | 'DELAY' | 'COMPLETION' | 'GENERAL';
+  taskCompletions?: TaskCompletion[];
+  overallCompletionPercentage?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TaskCompletion {
+  taskId: number;
+  taskName: string;
+  isCompleted: boolean;
+  completionPercentage: number;
 }
 
 export interface ProjectResponse {
@@ -301,6 +310,8 @@ class ProjectService {
       additionalCostReason?: string;
       estimatedCompletionDate?: string;
       updateType: 'PROGRESS' | 'COST_CHANGE' | 'DELAY' | 'COMPLETION' | 'GENERAL';
+      taskCompletions?: TaskCompletion[];
+      overallCompletionPercentage?: number;
     }
   ): Promise<ProjectUpdate> {
     try {
@@ -348,6 +359,33 @@ class ProjectService {
       return apiResponse.data || [];
     } catch (error: any) {
       console.error('Error fetching project updates:', error);
+      return [];
+    }
+  }
+
+  // Get tasks for a project
+  async getProjectTasks(projectId: number): Promise<Task[]> {
+    try {
+      const response = await authService.authenticatedFetch(
+        `${API_ENDPOINTS.PROJECTS.BASE}/${projectId}/tasks`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to fetch project tasks:', response.status, errorData);
+        if (response.status === 400 || response.status === 404 || response.status === 500) {
+          return [];
+        }
+        throw new Error(errorData.message || 'Failed to fetch project tasks');
+      }
+
+      const apiResponse: ApiResponse<Task[]> = await response.json();
+      return apiResponse.data || [];
+    } catch (error: any) {
+      console.error('Error fetching project tasks:', error);
       return [];
     }
   }

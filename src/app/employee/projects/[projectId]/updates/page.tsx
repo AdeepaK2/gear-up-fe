@@ -37,7 +37,7 @@ const getUpdateTypeBadge = (type: string) => {
 export default function ProjectUpdatesPage() {
 	const params = useParams();
 	const router = useRouter();
-	const projectId = parseInt(params.id as string);
+	const projectId = parseInt(params.projectId as string);
 	
 	const [project, setProject] = useState<Project | null>(null);
 	const [updates, setUpdates] = useState<ProjectUpdate[]>([]);
@@ -45,6 +45,14 @@ export default function ProjectUpdatesPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		console.log('🔍 Loading updates for projectId:', projectId);
+		console.log('📋 Params:', params);
+		if (isNaN(projectId)) {
+			console.error('❌ Invalid projectId:', params.projectId);
+			setError('Invalid project ID');
+			setLoading(false);
+			return;
+		}
 		loadProjectAndUpdates();
 	}, [projectId]);
 
@@ -53,12 +61,20 @@ export default function ProjectUpdatesPage() {
 			setLoading(true);
 			setError(null);
 			
+			console.log('📡 Fetching project and updates for ID:', projectId);
+			
 			const [projectData, updatesData] = await Promise.all([
-				projectService.getEmployeeProjects().then(projects => 
-					projects.find(p => p.id === projectId)
-				),
-				projectService.getProjectUpdates(projectId),
+				projectService.getEmployeeProjects().then(projects => {
+					console.log('📦 All projects:', projects.length);
+					return projects.find(p => p.id === projectId);
+				}),
+				projectService.getProjectUpdates(projectId).then(updates => {
+					console.log('✅ Updates received:', updates.length, updates);
+					return updates;
+				}),
 			]);
+
+			console.log('🎯 Project found:', projectData?.name);
 
 			if (!projectData) {
 				throw new Error('Project not found');
@@ -66,8 +82,9 @@ export default function ProjectUpdatesPage() {
 
 			setProject(projectData);
 			setUpdates(updatesData);
+			console.log('✨ State updated - Project:', projectData.name, 'Updates:', updatesData.length);
 		} catch (err) {
-			console.error('Failed to load project updates:', err);
+			console.error('❌ Failed to load project updates:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load updates');
 		} finally {
 			setLoading(false);
@@ -199,7 +216,8 @@ export default function ProjectUpdatesPage() {
 											<p className="text-gray-700 whitespace-pre-wrap">{update.message}</p>
 
 											{/* Progress Info */}
-											{update.completedTasks !== null && update.totalTasks !== null && (
+											{update.completedTasks !== null && update.completedTasks !== undefined && 
+											 update.totalTasks !== null && update.totalTasks !== undefined && update.totalTasks > 0 && (
 												<div className="flex items-center gap-2 text-sm">
 													<CheckCircle className="h-4 w-4 text-green-600" />
 													<span className="font-medium">

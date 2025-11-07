@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare } from "lucide-react";
+import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { projectService, type Project } from '@/lib/services/projectService';
+import { projectService, type Project, type Task, type TaskCompletion } from '@/lib/services/projectService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/contexts/ToastContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 
 type StatusFilter = "all" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
@@ -74,6 +76,9 @@ export default function EmployeeProjects() {
 	// Update dialog state
 	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+	const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+	const [taskCompletions, setTaskCompletions] = useState<Record<number, TaskCompletion>>({});
+	const [loadingTasks, setLoadingTasks] = useState(false);
 	const [updateFormData, setUpdateFormData] = useState({
 		message: '',
 		completedTasks: '',
@@ -128,7 +133,7 @@ export default function EmployeeProjects() {
 		router.push(`/employee/projects/${projectId}/report`);
 	};
 
-	const handlePostUpdate = (project: Project) => {
+	const handlePostUpdate = async (project: Project) => {
 		setSelectedProject(project);
 		setUpdateFormData({
 			message: '',
@@ -139,6 +144,31 @@ export default function EmployeeProjects() {
 			estimatedCompletionDate: '',
 			updateType: 'PROGRESS',
 		});
+		
+		// Load tasks for the project
+		setLoadingTasks(true);
+		try {
+			const tasks = await projectService.getProjectTasks(project.id);
+			setProjectTasks(tasks);
+			
+			// Initialize task completions
+			const initialCompletions: Record<number, TaskCompletion> = {};
+			tasks.forEach(task => {
+				initialCompletions[task.id] = {
+					taskId: task.id,
+					taskName: task.name,
+					isCompleted: task.status === 'COMPLETED',
+					completionPercentage: task.status === 'COMPLETED' ? 100 : 0,
+				};
+			});
+			setTaskCompletions(initialCompletions);
+		} catch (err) {
+			console.error('Failed to load tasks:', err);
+			showToast('Failed to load project tasks', 'error');
+		} finally {
+			setLoadingTasks(false);
+		}
+		
 		setShowUpdateDialog(true);
 	};
 
@@ -154,25 +184,66 @@ export default function EmployeeProjects() {
 
 		setSubmittingUpdate(true);
 		try {
+			// Calculate overall completion percentage
+			const completions = Object.values(taskCompletions);
+			const overallPercentage = completions.length > 0
+				? Math.round(completions.reduce((sum, t) => sum + t.completionPercentage, 0) / completions.length)
+				: 0;
+
+			const completedCount = completions.filter(t => t.isCompleted).length;
+
 			await projectService.createProjectUpdate(selectedProject.id, {
 				message: updateFormData.message,
-				completedTasks: updateFormData.completedTasks ? parseInt(updateFormData.completedTasks) : undefined,
-				totalTasks: updateFormData.totalTasks ? parseInt(updateFormData.totalTasks) : undefined,
+				completedTasks: completedCount,
+				totalTasks: completions.length,
 				additionalCost: updateFormData.additionalCost ? parseFloat(updateFormData.additionalCost) : undefined,
 				additionalCostReason: updateFormData.additionalCostReason || undefined,
 				estimatedCompletionDate: updateFormData.estimatedCompletionDate || undefined,
 				updateType: updateFormData.updateType,
+				taskCompletions: completions,
+				overallCompletionPercentage: overallPercentage,
 			});
 
 			showToast('Project update posted successfully', 'success');
 			setShowUpdateDialog(false);
 			setSelectedProject(null);
+			setProjectTasks([]);
+			setTaskCompletions({});
 		} catch (err) {
 			console.error('Failed to post update:', err);
 			showToast(err instanceof Error ? err.message : 'Failed to post update', 'error');
 		} finally {
 			setSubmittingUpdate(false);
 		}
+	};
+
+	const handleTaskCompletionToggle = (taskId: number) => {
+		setTaskCompletions(prev => ({
+			...prev,
+			[taskId]: {
+				...prev[taskId],
+				isCompleted: !prev[taskId].isCompleted,
+				completionPercentage: !prev[taskId].isCompleted ? 100 : prev[taskId].completionPercentage,
+			},
+		}));
+	};
+
+	const handleTaskPercentageChange = (taskId: number, percentage: number) => {
+		setTaskCompletions(prev => ({
+			...prev,
+			[taskId]: {
+				...prev[taskId],
+				completionPercentage: percentage,
+				isCompleted: percentage === 100,
+			},
+		}));
+	};
+
+	const calculateOverallProgress = () => {
+		const completions = Object.values(taskCompletions);
+		if (completions.length === 0) return 0;
+		const total = completions.reduce((sum, t) => sum + t.completionPercentage, 0);
+		return Math.round(total / completions.length);
 	};
 
 	const filteredProjects = useMemo(() => {
@@ -385,6 +456,68 @@ export default function EmployeeProjects() {
 							</Select>
 						</div>
 
+						{/* Services/Tasks Section */}
+						{loadingTasks ? (
+							<div className="flex items-center justify-center py-8">
+								<Loader2 className="h-6 w-6 animate-spin text-primary" />
+								<span className="ml-2 text-gray-600">Loading services...</span>
+							</div>
+						) : projectTasks.length > 0 && (
+							<div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+								<div className="flex items-center justify-between mb-3">
+									<Label className="text-base font-semibold">Services/Tasks Progress</Label>
+									<div className="text-sm font-medium text-primary">
+										Overall: {calculateOverallProgress()}%
+									</div>
+								</div>
+								<div className="space-y-4 max-h-[300px] overflow-y-auto">
+									{projectTasks.map((task) => {
+										const completion = taskCompletions[task.id];
+										if (!completion) return null;
+										
+										return (
+											<div key={task.id} className="bg-white p-3 rounded-lg border space-y-2">
+												<div className="flex items-start gap-3">
+													<Checkbox
+														checked={completion.isCompleted}
+														onCheckedChange={() => handleTaskCompletionToggle(task.id)}
+														className="mt-1"
+													/>
+													<div className="flex-1">
+														<div className="font-medium text-sm">{task.name}</div>
+														<div className="text-xs text-gray-500 line-clamp-1">{task.description}</div>
+													</div>
+													<div className="text-sm font-semibold text-primary">
+														{completion.completionPercentage}%
+													</div>
+												</div>
+												<div className="ml-7 space-y-1">
+													<Slider
+														value={[completion.completionPercentage]}
+														onValueChange={(value: number[]) => handleTaskPercentageChange(task.id, value[0])}
+														max={100}
+														step={5}
+														className="w-full"
+													/>
+													<div className="flex justify-between text-xs text-gray-500">
+														<span>0%</span>
+														<span>50%</span>
+														<span>100%</span>
+													</div>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+								<div className="pt-2 border-t">
+									<div className="text-sm text-gray-600">
+										<CheckCircle2 className="inline h-4 w-4 mr-1 text-green-600" />
+										{Object.values(taskCompletions).filter(t => t.isCompleted).length} of {projectTasks.length} completed
+									</div>
+								</div>
+							</div>
+						)}
+
 						<div className="space-y-2">
 							<Label htmlFor="message">Message *</Label>
 							<Textarea
@@ -399,30 +532,6 @@ export default function EmployeeProjects() {
 							<p className="text-xs text-gray-500">
 								{updateFormData.message.length}/2000 characters
 							</p>
-						</div>
-
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="completedTasks">Completed Tasks</Label>
-								<Input
-									id="completedTasks"
-									type="number"
-									placeholder="e.g., 5"
-									value={updateFormData.completedTasks}
-									onChange={(e) => setUpdateFormData({ ...updateFormData, completedTasks: e.target.value })}
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="totalTasks">Total Tasks</Label>
-								<Input
-									id="totalTasks"
-									type="number"
-									placeholder="e.g., 10"
-									value={updateFormData.totalTasks}
-									onChange={(e) => setUpdateFormData({ ...updateFormData, totalTasks: e.target.value })}
-								/>
-							</div>
 						</div>
 
 						{updateFormData.updateType === 'COST_CHANGE' && (
