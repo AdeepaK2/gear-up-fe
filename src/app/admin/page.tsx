@@ -1,11 +1,10 @@
-"use client"; // Chart components require this
+"use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -34,41 +33,26 @@ import {
   Wrench,
   AlertCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { adminService } from "@/lib/services/adminService";
+import type { AdminDashboardResponse, AdminStats } from "@/lib/types/Admin";
 
-// Data for the components
-const statsData = [
-  { title: "Total Employees", value: "12", icon: Users },
-  { title: "Active Projects", value: "8", icon: FolderOpen },
-  { title: "Upcoming Appointments", value: "3", icon: Calendar },
-  { title: "Total Customers", value: "12", icon: UserCheck },
-  { title: "Total Services", value: "8", icon: Wrench },
-  { title: "Modification Requests", value: "3", icon: AlertCircle },
+const STAT_ITEMS: { key: keyof AdminStats; title: string; icon: LucideIcon }[] = [
+  { key: "totalEmployees", title: "Total Employees", icon: Users },
+  { key: "activeProjects", title: "Active Projects", icon: FolderOpen },
+  { key: "upcomingAppointments", title: "Upcoming Appointments", icon: Calendar },
+  { key: "totalCustomers", title: "Total Customers", icon: UserCheck },
+  { key: "totalServices", title: "Total Services", icon: Wrench },
 ];
 
-const projectsStatusData = [
-  { status: "Active", count: 8, percentage: 40, fill: "#163172" }, // primary color
-  { status: "Completed", count: 15, percentage: 60, fill: "#10b981" }, // emerald-500
-  { status: "Pending", count: 3, percentage: 15, fill: "#f59e0b" }, // amber-500
-  { status: "Cancelled", count: 2, percentage: 10, fill: "#ef4444" }, // red-500
-];
-
-const customersChartData = [
-  { month: "Sep", value: 45 },
-  { month: "Oct", value: 62 },
-  { month: "Nov", value: 38 },
-  { month: "Dec", value: 71 },
-  { month: "Jan", value: 55 },
-  { month: "Feb", value: 83 },
-];
-
-const projectsChartData = [
-  { month: "Sep", value: 12 },
-  { month: "Oct", value: 18 },
-  { month: "Nov", value: 15 },
-  { month: "Dec", value: 22 },
-  { month: "Jan", value: 19 },
-  { month: "Feb", value: 25 },
-];
+const PROJECT_STATUS_META: Record<string, { label: string; color: string }> = {
+  CREATED: { label: "Created", color: "#6366f1" },
+  RECOMMENDED: { label: "Recommended", color: "#8b5cf6" },
+  CONFIRMED: { label: "Confirmed", color: "#0ea5e9" },
+  IN_PROGRESS: { label: "In Progress", color: "#163172" },
+  COMPLETED: { label: "Completed", color: "#10b981" },
+  CANCELLED: { label: "Cancelled", color: "#ef4444" },
+};
 
 const chartConfig = {
   projects: { label: "Projects" },
@@ -78,10 +62,107 @@ const chartConfig = {
   cancelled: { label: "Cancelled", color: "#ef4444" },
 };
 
+const formatStatusLabel = (status: string) => {
+  const meta = PROJECT_STATUS_META[status];
+  if (meta) {
+    return meta.label;
+  }
+  return status
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export default function AdminDashboardPage() {
+  const [data, setData] = useState<AdminDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const dashboard = await adminService.getDashboard();
+        if (mounted) {
+          setData(dashboard);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : "Failed to load dashboard");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const statsData = useMemo(() => {
+    if (!data) {
+      return STAT_ITEMS.map((item) => ({
+        title: item.title,
+        value: "-",
+        icon: item.icon,
+      }));
+    }
+
+    return STAT_ITEMS.map((item) => ({
+      title: item.title,
+      value: data.stats[item.key].toString(),
+      icon: item.icon,
+    }));
+  }, [data]);
+
+  const projectsStatusData = useMemo(() => {
+    const source = data?.projectStatus ?? [];
+    return source.map((item) => {
+      const meta = PROJECT_STATUS_META[item.status] ?? { label: formatStatusLabel(item.status), color: "#94a3b8" };
+      return {
+        status: meta.label,
+        count: item.count,
+        percentage: item.percentage,
+        fill: meta.color,
+      };
+    });
+  }, [data]);
+
+  const customersChartData = useMemo(
+    () => (data?.customerRegistrations ?? []).map((entry) => ({ month: entry.month, value: entry.count })),
+    [data],
+  );
+
+  const projectsChartData = useMemo(
+    () => (data?.projectCompletions ?? []).map((entry) => ({ month: entry.month, value: entry.count })),
+    [data],
+  );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-lg text-primary">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-lg text-red-500">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 p-6">
-      {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-primary">
           Admin Dashboard
@@ -91,7 +172,6 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {statsData.map((stat) => {
           const IconComponent = stat.icon;
@@ -120,7 +200,6 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Projects by Status - Doughnut Chart */}
       <Card className="bg-white shadow-lg border-0">
         <CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
           <CardTitle className="text-2xl font-bold text-white">
@@ -162,7 +241,7 @@ export default function AdminDashboardPage() {
                       {item.status}
                     </div>
                     <div className="text-base text-gray-600">
-                      {item.percentage}% ({item.count} projects)
+                      {item.percentage.toFixed(0)}% ({item.count} projects)
                     </div>
                   </div>
                 </div>
@@ -172,7 +251,6 @@ export default function AdminDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Line Charts Section */}
       <div className="space-y-10">
         <Card className="bg-white shadow-lg border-0">
           <CardHeader className= "bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
