@@ -15,7 +15,7 @@ export const QuickActionsBar = React.memo<QuickActionsBarProps>(
   ({ actions, onActionClick }) => {
     return (
       <div className="px-6 py-2 border-b bg-gray-50" role="complementary">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 justify-center">
           {actions.map((action) => (
             <Button
               key={action.id}
