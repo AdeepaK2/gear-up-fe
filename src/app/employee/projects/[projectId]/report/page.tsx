@@ -42,11 +42,11 @@ export default function ProjectReportPage() {
 
       if (projectData.taskIds && projectData.taskIds.length > 0) {
         const allTasks = await taskService.getAllTasks();
-        const tasks = allTasks.filter((task) =>
-          projectData.taskIds.includes(task.taskId)
+        const tasks = allTasks.filter(task =>
+          projectData.taskIds?.includes(task.taskId)
         );
         setProjectTasks(tasks);
-        setSelectedTasks(tasks.map((task) => task.taskId));
+        setSelectedTasks(tasks.map(task => task.taskId));
       }
     } catch (err) {
       console.error("Failed to load data:", err);
