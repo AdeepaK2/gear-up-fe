@@ -12,6 +12,7 @@ import {
   User,
   MessageSquare,
   LogOut,
+  FileText,
 } from "lucide-react";
 import { authService } from "@/lib/services/authService";
 import type { User as UserType } from "@/lib/types/Auth";
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/customer/dashboard", label: "Dashboard", icon: Home },
   { href: "/customer/vehicles", label: "My Vehicles", icon: Car },
   { href: "/customer/appointments", label: "My Appointments", icon: Calendar },
+  { href: "/customer/reports", label: "Service Reports", icon: FileText },
   { href: "/customer/projects", label: "My Projects", icon: Folder },
   { href: "/customer/profile", label: "Profile", icon: User },
   { href: "/customer/chatbot", label: "Chatbot", icon: MessageSquare },

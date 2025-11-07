@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import DemoModeBanner from "../components/shared/DemoModeBanner";
 import { ToastProvider } from "../contexts/ToastContext";
 import ClientAuthProvider from "../components/providers/ClientAuthProvider";
 
@@ -33,12 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script src="/config.js" defer></script>
+      </head>
       <body
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClientAuthProvider>
           <ToastProvider>
-            <DemoModeBanner />
             {children}
           </ToastProvider>
         </ClientAuthProvider>

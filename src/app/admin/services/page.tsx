@@ -1,6 +1,7 @@
 "use client"; // This is a client component to manage the dialog state
 
 import React, { useState, useEffect } from "react";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import {
   Table,
   TableBody,
@@ -75,12 +76,12 @@ export default function ServicesPage() {
     setError("");
     try {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/tasks", {
+      const response = await fetch(`${API_ENDPOINTS.TASKS.BASE}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -118,7 +119,7 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/tasks", {
+  const response = await fetch(`${API_ENDPOINTS.TASKS.BASE}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,8 +128,8 @@ export default function ServicesPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          estimatedHours: parseInt(formData.estimatedHours),
-          estimatedCost: parseFloat(formData.estimatedCost) || 0,
+          estimatedHours: parseInt(formData.estimatedHours) || 0,
+          estimatedCost: parseFloat(formData.estimatedCost) || 0.0,
           category: formData.category,
           priority: formData.priority,
           notes: formData.notes || "No additional notes",
@@ -149,9 +150,9 @@ export default function ServicesPage() {
 
       toast.success("Service added successfully!");
       setIsDialogOpen(false);
-      setFormData({ 
-        name: "", 
-        description: "", 
+      setFormData({
+        name: "",
+        description: "",
         estimatedHours: "",
         estimatedCost: "",
         category: "General",
@@ -179,7 +180,7 @@ export default function ServicesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8080/api/v1/tasks/${serviceId}`,
+        `${API_ENDPOINTS.TASKS.BASE}/${serviceId}`,
         {
           method: "DELETE",
           headers: {
@@ -258,30 +259,30 @@ export default function ServicesPage() {
               Add New Service
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[520px] bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-2xl backdrop-blur-sm">
-            <form onSubmit={handleAddService}>
-              <div className="relative">
-                {/* Decorative accent */}
-                <div className="absolute -top-6 -left-6 w-20 h-20 bg-blue-200/30 rounded-full blur-xl"></div>
-                <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-blue-100/40 rounded-full blur-lg"></div>
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh] bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 shadow-2xl backdrop-blur-sm p-0">
+            <form onSubmit={handleAddService} className="flex flex-col max-h-[85vh]">
+              {/* Decorative accent */}
+              <div className="absolute -top-6 -left-6 w-20 h-20 bg-blue-200/30 rounded-full blur-xl pointer-events-none"></div>
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-blue-100/40 rounded-full blur-lg pointer-events-none"></div>
 
-                <DialogHeader className="space-y-4 pb-6 border-b border-blue-200/30">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-xl">
-                      <PlusCircle className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-2xl font-bold text-gray-900 tracking-tight">
-                        Add New Service
-                      </DialogTitle>
-                      <DialogDescription className="text-gray-600 mt-1 text-base">
-                        Create a new service offering for your customers
-                      </DialogDescription>
-                    </div>
+              <DialogHeader className="space-y-4 pb-4 border-b border-blue-200/30 px-6 pt-6 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    <PlusCircle className="h-6 w-6 text-primary" />
                   </div>
-                </DialogHeader>
+                  <div>
+                    <DialogTitle className="text-2xl font-bold text-gray-900 tracking-tight">
+                      Add New Service
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-600 mt-1 text-base">
+                      Create a new service for your catalog - employees will select services later
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
 
-                <div className="py-8 space-y-6">
+              <div className="overflow-y-auto flex-1 px-6 py-6">
+                <div className="space-y-5">
                   <div className="space-y-2">
                     <Label
                       htmlFor="name"
@@ -436,33 +437,33 @@ export default function ServicesPage() {
                     />
                   </div>
                 </div>
-
-                <DialogFooter className="border-t border-blue-200/30 pt-6 gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-12 px-8 bg-gradient-to-r from-red-50 to-red-100 border-red-200 text-red-700 hover:from-red-100 hover:to-red-200 hover:border-red-300 hover:text-red-900 transition-all duration-200 font-medium"
-                    onClick={() => setIsDialogOpen(false)}
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="h-12 px-8 bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      "Add Service"
-                    )}
-                  </Button>
-                </DialogFooter>
               </div>
+
+              <DialogFooter className="border-t border-blue-200/30 px-6 py-4 gap-3 flex-shrink-0 bg-gradient-to-br from-blue-50 to-blue-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 px-8 bg-gradient-to-r from-red-50 to-red-100 border-red-200 text-red-700 hover:from-red-100 hover:to-red-200 hover:border-red-300 hover:text-red-900 transition-all duration-200 font-medium"
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="h-12 px-8 bg-primary hover:bg-primary/90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add Service"
+                  )}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>

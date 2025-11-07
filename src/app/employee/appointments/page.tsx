@@ -1,10 +1,17 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Calendar } from '@/components/ui/calendar';
 import { CalendarEvent } from '@/components/ui/calendar-event';
-import { Search, HelpCircle, ChevronLeft, ChevronRight, Filter, Calendar as CalendarIcon } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, Calendar as CalendarIcon, Clock, User, FileText, AlertCircle } from "lucide-react";
 import { appointmentService } from '@/lib/services/appointmentService';
 import type { Appointment } from '@/lib/types/Appointment';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface CalendarEvent {
 	date: Date;
@@ -14,9 +21,7 @@ interface CalendarEvent {
 }
 
 export default function EmployeeAppointments() {
-	const [selectedDay, setSelectedDay] = useState<number | null>(7);
-	const [activeTab, setActiveTab] = useState<"pending" | "inprogress" | "completed">("pending");
-	const [miniDate, setMiniDate] = useState<Date | undefined>(new Date());
+	const [activeTab, setActiveTab] = useState<"confirmed" | "inprogress" | "completed">("confirmed");
 	const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
 	const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
@@ -24,6 +29,9 @@ export default function EmployeeAppointments() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [searchKeyword, setSearchKeyword] = useState('');
+	const [actionLoading, setActionLoading] = useState<number | null>(null);
+	const [viewDialogOpen, setViewDialogOpen] = useState(false);
+	const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
 	// Load appointments on component mount and when month changes
 	useEffect(() => {
@@ -49,7 +57,7 @@ export default function EmployeeAppointments() {
 			const year = calendarMonth.getFullYear();
 			const month = calendarMonth.getMonth() + 1; // JavaScript months are 0-indexed
 
-			const appointmentsData = await appointmentService.getAppointmentsByMonth(year, month);
+			const appointmentsData = await appointmentService.getEmployeeAppointments();
 			setAppointments(appointmentsData);
 		} catch (err) {
 			console.error('Failed to load appointments:', err);
@@ -63,18 +71,43 @@ export default function EmployeeAppointments() {
 		let filtered = appointments;
 
 		switch (activeTab) {
-			case 'pending':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'pending');
+			case 'confirmed':
+				filtered = appointments.filter(apt => apt.status.toUpperCase() === 'CONFIRMED');
 				break;
 			case 'inprogress':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'in_progress' || apt.status.toLowerCase() === 'confirmed');
+				filtered = appointments.filter(apt => apt.status.toUpperCase() === 'IN_PROGRESS');
 				break;
 			case 'completed':
-				filtered = appointments.filter(apt => apt.status.toLowerCase() === 'completed');
+				filtered = appointments.filter(apt => apt.status.toUpperCase() === 'COMPLETED');
 				break;
 		}
 
 		setFilteredAppointments(filtered);
+	};
+
+	const handleStartAppointment = async (appointmentId: number) => {
+		try {
+			setActionLoading(appointmentId);
+			await appointmentService.startAppointment(appointmentId);
+			// Reload appointments after starting
+			await loadAppointments();
+			alert('Appointment started successfully!');
+		} catch (err) {
+			console.error('Failed to start appointment:', err);
+			alert('Failed to start appointment. Please try again.');
+		} finally {
+			setActionLoading(null);
+		}
+	};
+
+	const handleCompleteAppointment = async (appointmentId: number) => {
+		// Navigate to report submission page with query param
+		window.location.href = `/employee/appointments/report?id=${appointmentId}`;
+	};
+
+	const handleViewDetails = (appointment: Appointment) => {
+		setSelectedAppointment(appointment);
+		setViewDialogOpen(true);
 	};
 
 	const convertAppointmentsToCalendarEvents = () => {
@@ -90,9 +123,8 @@ export default function EmployeeAppointments() {
 
 	const getStatusColor = (status: string): string => {
 		switch (status.toLowerCase()) {
-			case 'pending':
-				return '#fbbf24'; // yellow
 			case 'confirmed':
+				return '#fbbf24'; // yellow
 			case 'in_progress':
 				return '#3b82f6'; // blue
 			case 'completed':
@@ -104,74 +136,88 @@ export default function EmployeeAppointments() {
 		}
 	};
 
-	const handleDateSelect = async (date: Date | undefined) => {
-		if (date) {
-			setMiniDate(date);
-			try {
-				const dateString = date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
-				const dayAppointments = await appointmentService.getAppointmentsByDate(dateString);
-				setAppointments(dayAppointments);
-			} catch (err) {
-				console.error('Failed to load appointments for date:', err);
-			}
-		}
-	};
-
 	return (
 		<div className="min-h-screen space-y-8 p-6">
 			<h1 className="text-3xl font-bold text-primary mb-6">Appointments</h1>
 			<div className="flex gap-8">
 				{/* Left Sidebar - Fixed width on large screens, full width on mobile */}
 				<div className="flex flex-col gap-4 w-full lg:w-[320px] lg:flex-shrink-0">
-					{/* Filter and Month */}
-					<div className="flex gap-2">
-						<button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border font-medium text-sm">
-							<Filter className="w-4 h-4" /> Filter
-						</button>
-						<button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border font-medium text-sm">
-							<CalendarIcon className="w-4 h-4" /> Monthly
-						</button>
-					</div>
-					{/* Mini Calendar */}
-					<div className="bg-white rounded-xl p-4">
-						<Calendar
-							mode="single"
-							selected={miniDate}
-							onSelect={handleDateSelect}
-							month={miniDate}
-							onMonthChange={setMiniDate}
-							numberOfMonths={1}
-							fixedWeeks
-							className="rounded-md border-none shadow-none"
-						/>
-					</div>
 					{/* Appointment List */}
-					<div className="bg-white rounded-xl p-4 mt-2">
+					<div className="bg-white rounded-xl p-4">
 						<div className="font-semibold mb-2">My Appointment List</div>
 						{loading ? (
 							<div className="text-center py-4">Loading...</div>
 						) : error ? (
 							<div className="text-center py-4 text-red-500">Error: {error}</div>
 						) : (
-							<div className="flex flex-col gap-2">
+							<div className="flex flex-col gap-3">
 								{filteredAppointments.slice(0, 5).map((appointment) => (
-									<div key={appointment.id} className="flex items-center justify-between py-2 border-b last:border-0">
-										<div>
-											<div className="font-medium text-sm">Customer #{appointment.customerId}</div>
-											<div className="text-blue-600 text-xs">{appointment.consultationTypeLabel || appointment.consultationType}</div>
+									<div key={appointment.id} className="py-2 border-b last:border-0">
+										<div className="flex items-center justify-between mb-2">
+											<div className="flex-1">
+												<div className="font-medium text-sm">Customer #{appointment.customerId}</div>
+												<div className="text-blue-600 text-xs">{appointment.consultationTypeLabel || appointment.consultationType}</div>
+												<div className="text-xs text-gray-600 mt-1">
+													{appointment.startTime && appointment.endTime
+														? `${appointment.startTime} - ${appointment.endTime}`
+														: appointment.startTime || 'Time TBD'
+													}
+												</div>
+											</div>
+											<div className={`ml-2 w-3 h-3 rounded-full flex-shrink-0 ${
+												appointment.status.toUpperCase() === 'COMPLETED' ? 'bg-green-500' :
+												appointment.status.toUpperCase() === 'IN_PROGRESS' ? 'bg-blue-500' :
+												appointment.status.toUpperCase() === 'CONFIRMED' ? 'bg-blue-500' :
+												'bg-yellow-500'
+											}`}></div>
 										</div>
-										<div className="text-xs font-medium">
-											{appointment.startTime && appointment.endTime 
-												? `${appointment.startTime}-${appointment.endTime}`
-												: appointment.startTime || 'TBD'
-											}
-										</div>
-										<div className={`ml-2 w-3 h-3 rounded-full ${
-											appointment.status.toLowerCase() === 'completed' ? 'bg-green-500' :
-											appointment.status.toLowerCase() === 'in_progress' ? 'bg-blue-500' :
-											appointment.status.toLowerCase() === 'confirmed' ? 'bg-blue-500' :
-											'bg-yellow-500'
-										}`}></div>
+										{appointment.status.toUpperCase() === 'CONFIRMED' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleViewDetails(appointment)}
+													className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+												>
+													<Eye className="w-3 h-3" />
+													View
+												</button>
+												<button
+													onClick={() => handleStartAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													{actionLoading === appointment.id ? 'Starting...' : 'Start Work'}
+												</button>
+											</div>
+										)}
+										{appointment.status.toUpperCase() === 'IN_PROGRESS' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleViewDetails(appointment)}
+													className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+												>
+													<Eye className="w-3 h-3" />
+													View
+												</button>
+												<button
+													onClick={() => handleCompleteAppointment(appointment.id)}
+													disabled={actionLoading === appointment.id}
+													className="flex-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+												>
+													Submit Report
+												</button>
+											</div>
+										)}
+										{appointment.status.toUpperCase() === 'COMPLETED' && (
+											<div className="flex gap-2 mt-2">
+												<button
+													onClick={() => handleViewDetails(appointment)}
+													className="w-full px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+												>
+													<Eye className="w-3 h-3" />
+													View Details
+												</button>
+											</div>
+										)}
 									</div>
 								))}
 								{filteredAppointments.length === 0 && (
@@ -181,7 +227,7 @@ export default function EmployeeAppointments() {
 								)}
 							</div>
 						)}
-						<button 
+						<button
 							onClick={() => window.location.href = '/employee/appointments'}
 							className="w-full mt-4 py-2 rounded-full bg-primary hover:bg-secondary text-white font-semibold text-sm"
 						>
@@ -256,19 +302,19 @@ export default function EmployeeAppointments() {
 					{/* Status Tabs */}
 					<div className="flex gap-2 mb-2">
 						<button
-							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "pending" ? "bg-gray-200" : "bg-white"}`}
-							onClick={() => setActiveTab("pending")}
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "confirmed" ? "bg-blue-200" : "bg-white"}`}
+							onClick={() => setActiveTab("confirmed")}
 						>
-							Pending
+							Confirmed
 						</button>
 						<button
-							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "inprogress" ? "bg-gray-200" : "bg-white"}`}
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "inprogress" ? "bg-orange-200" : "bg-white"}`}
 							onClick={() => setActiveTab("inprogress")}
 						>
-							In progress
+							In Progress
 						</button>
 						<button
-							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "completed" ? "bg-gray-200" : "bg-white"}`}
+							className={`px-4 py-2 rounded-full font-medium text-sm ${activeTab === "completed" ? "bg-green-200" : "bg-white"}`}
 							onClick={() => setActiveTab("completed")}
 						>
 							Completed
@@ -284,6 +330,165 @@ export default function EmployeeAppointments() {
 					</div>
 				</div>
 			</div>
+
+			{/* View Details Dialog */}
+			<Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Appointment Details</DialogTitle>
+						<DialogDescription>
+							Complete information about this appointment
+						</DialogDescription>
+					</DialogHeader>
+
+					{selectedAppointment && (
+						<div className="space-y-4">
+							{/* Customer & Vehicle Info */}
+							<div className="bg-blue-50 p-4 rounded-lg">
+								<h3 className="font-semibold text-lg text-gray-900 mb-3">
+									Customer & Vehicle Information
+								</h3>
+								<div className="grid grid-cols-2 gap-3">
+									<div>
+										<p className="text-sm text-gray-600">Customer ID</p>
+										<p className="font-medium">#{selectedAppointment.customerId}</p>
+									</div>
+									<div>
+										<p className="text-sm text-gray-600">Vehicle</p>
+										<p className="font-medium">{selectedAppointment.vehicleName || 'N/A'}</p>
+									</div>
+									<div className="col-span-2">
+										<p className="text-sm text-gray-600">Vehicle Details</p>
+										<p className="font-medium">{selectedAppointment.vehicleDetails || 'N/A'}</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Appointment Info */}
+							<div className="bg-purple-50 p-4 rounded-lg">
+								<h3 className="font-semibold text-lg text-gray-900 mb-3">
+									Appointment Information
+								</h3>
+								<div className="space-y-3">
+									<div>
+										<p className="text-sm text-gray-600 mb-1">Consultation Type</p>
+										<Badge variant="outline" className="text-sm">
+											{selectedAppointment.consultationTypeLabel || selectedAppointment.consultationType}
+										</Badge>
+									</div>
+									<div className="grid grid-cols-2 gap-3">
+										<div>
+											<p className="text-sm text-gray-600 flex items-center gap-1">
+												<CalendarIcon className="w-4 h-4" /> Date
+											</p>
+											<p className="font-medium">
+												{new Date(selectedAppointment.appointmentDate).toLocaleDateString('en-US', {
+													weekday: 'long',
+													year: 'numeric',
+													month: 'long',
+													day: 'numeric'
+												})}
+											</p>
+										</div>
+										<div>
+											<p className="text-sm text-gray-600 flex items-center gap-1">
+												<Clock className="w-4 h-4" /> Time
+											</p>
+											<p className="font-medium">
+												{selectedAppointment.startTime && selectedAppointment.endTime
+													? `${selectedAppointment.startTime} - ${selectedAppointment.endTime}`
+													: 'Time TBD'}
+											</p>
+										</div>
+									</div>
+									<div>
+										<p className="text-sm text-gray-600">Status</p>
+										<Badge
+											className={`mt-1 ${
+												selectedAppointment.status.toUpperCase() === 'COMPLETED'
+													? 'bg-green-500'
+													: selectedAppointment.status.toUpperCase() === 'IN_PROGRESS'
+													? 'bg-blue-500'
+													: selectedAppointment.status.toUpperCase() === 'CONFIRMED'
+													? 'bg-yellow-500'
+													: 'bg-gray-500'
+											}`}
+										>
+											{selectedAppointment.status.toUpperCase() === 'IN_PROGRESS'
+												? 'In Progress'
+												: selectedAppointment.status.charAt(0) + selectedAppointment.status.slice(1).toLowerCase()}
+										</Badge>
+									</div>
+								</div>
+							</div>
+
+							{/* Customer Issue & Notes */}
+							{(selectedAppointment.customerIssue || selectedAppointment.notes) && (
+								<div className="bg-gray-50 p-4 rounded-lg">
+									<h3 className="font-semibold text-lg text-gray-900 mb-3">
+										Additional Information
+									</h3>
+									<div className="space-y-3">
+										{selectedAppointment.customerIssue && (
+											<div>
+												<p className="font-medium text-gray-900 flex items-center gap-1">
+													<AlertCircle className="w-4 h-4" /> Customer Issue:
+												</p>
+												<p className="text-gray-700 mt-1">
+													{selectedAppointment.customerIssue}
+												</p>
+											</div>
+										)}
+										{selectedAppointment.notes && (
+											<div>
+												<p className="font-medium text-gray-900 flex items-center gap-1">
+													<FileText className="w-4 h-4" /> Notes:
+												</p>
+												<p className="text-gray-700 mt-1">
+													{selectedAppointment.notes}
+												</p>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
+
+							{/* Action Buttons */}
+							<div className="flex gap-3 pt-4 border-t">
+								{selectedAppointment.status.toUpperCase() === 'CONFIRMED' && (
+									<button
+										onClick={() => {
+											setViewDialogOpen(false);
+											handleStartAppointment(selectedAppointment.id);
+										}}
+										disabled={actionLoading === selectedAppointment.id}
+										className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium disabled:opacity-50"
+									>
+										{actionLoading === selectedAppointment.id ? 'Starting...' : 'Start Work'}
+									</button>
+								)}
+								{selectedAppointment.status.toUpperCase() === 'IN_PROGRESS' && (
+									<button
+										onClick={() => {
+											setViewDialogOpen(false);
+											handleCompleteAppointment(selectedAppointment.id);
+										}}
+										className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium"
+									>
+										Submit Report
+									</button>
+								)}
+								<button
+									onClick={() => setViewDialogOpen(false)}
+									className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium"
+								>
+									Close
+								</button>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

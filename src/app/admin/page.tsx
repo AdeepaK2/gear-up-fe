@@ -122,11 +122,11 @@ export default function AdminDashboardPage() {
 
       {/* Projects by Status - Doughnut Chart */}
       <Card className="bg-white shadow-lg border-0">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-2xl font-bold text-gray-900">
+        <CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+          <CardTitle className="text-2xl font-bold text-white">
             Projects by Status
           </CardTitle>
-          <CardDescription className="text-gray-600 text-base">
+          <CardDescription className="text-white  text-base">
             Overview of current project statuses and distribution
           </CardDescription>
         </CardHeader>
@@ -175,11 +175,11 @@ export default function AdminDashboardPage() {
       {/* Line Charts Section */}
       <div className="space-y-10">
         <Card className="bg-white shadow-lg border-0">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardHeader className= "bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+            <CardTitle className="text-2xl font-bold text-white">
               Registered Customers
             </CardTitle>
-            <CardDescription className="text-gray-600 text-base">
+            <CardDescription className="text-white text-base">
               Monthly registered customers in this year
             </CardDescription>
           </CardHeader>
@@ -211,11 +211,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         <Card className="bg-white shadow-lg border-0">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+            <CardTitle className="text-2xl font-bold text-white">
               Completed Projects
             </CardTitle>
-            <CardDescription className="text-gray-600 text-base">
+            <CardDescription className="text-white text-base">
               Monthly completed projects in this year
             </CardDescription>
           </CardHeader>

@@ -8,7 +8,9 @@ import { User, Edit, Calendar, Wrench, CheckCircle, Clock, X } from 'lucide-reac
 import Link from 'next/link';
 import { employeeService } from '@/lib/services/employeeService';
 import { appointmentService } from '@/lib/services/appointmentService';
+import { projectService } from '@/lib/services/projectService';
 import type { Appointment } from '@/lib/types/Appointment';
+import type { Project } from '@/lib/services/projectService';
 
 interface DashboardStats {
 	assignedServices: number;
@@ -24,6 +26,10 @@ interface DashboardData {
 		completed: number;
 		total: number;
 	};
+	projectsStatusData: Array<{
+		status: string;
+		value: number;
+	}>;
 }
 
 const getStatusBadgeStyle = (status: string) => {
@@ -58,6 +64,7 @@ export default function EmployeeDashboard() {
 			completed: 0,
 			total: 0,
 		},
+		projectsStatusData: [],
 	});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -72,10 +79,11 @@ export default function EmployeeDashboard() {
 			setLoading(true);
 			setError(null);
 
-			// Fetch task summary and appointments in parallel
-			const [taskSummary, appointments] = await Promise.all([
+			// Fetch task summary, appointments, and projects in parallel
+			const [taskSummary, appointments, projects] = await Promise.all([
 				employeeService.getEmployeeTaskSummary(),
 				appointmentService.getEmployeeUpcomingAppointments(),
+				projectService.getEmployeeProjects().catch(() => [] as Project[]), // Return empty array on error
 			]);
 
 			// Process task summary
@@ -92,10 +100,32 @@ export default function EmployeeDashboard() {
 				total: stats.total || stats.assignedServices,
 			};
 
+			// Calculate projects by status
+			const statusCounts: Record<string, number> = {};
+			projects.forEach((project) => {
+				const status = project.status || 'unknown';
+				statusCounts[status] = (statusCounts[status] || 0) + 1;
+			});
+
+			const totalProjects = projects.length || 1; // Avoid division by zero
+			const projectsStatusData = Object.entries(statusCounts).map(([status, count]) => ({
+				status: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' '),
+				value: Math.round((count / totalProjects) * 100),
+			}));
+
+			// If no projects, show empty state
+			if (projectsStatusData.length === 0) {
+				projectsStatusData.push({
+					status: 'No Projects',
+					value: 0,
+				});
+			}
+
 			setDashboardData({
 				stats,
 				appointments: appointments.slice(0, 3), // Show only first 3 appointments
 				dailyProgress,
+				projectsStatusData,
 			});
 		} catch (err) {
 			console.error('Failed to load dashboard data:', err);
@@ -141,7 +171,10 @@ export default function EmployeeDashboard() {
 		);
 	}
 
-	const { stats, appointments, dailyProgress } = dashboardData;
+	const { stats, appointments, dailyProgress, projectsStatusData } = dashboardData;
+
+	// projectsStatusData is already calculated in the useEffect above from actual project data
+	// No need to recalculate here
 
 	return (
 		<div className="space-y-8 p-6">
@@ -233,8 +266,8 @@ export default function EmployeeDashboard() {
 
 			{/* Upcoming Appointments */}
 			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader className="">
-					<CardTitle className="text-2xl font-bold text-gray-900">Upcoming Appointments</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Upcoming Appointments</CardTitle>
 				</CardHeader>
 				<CardContent className="overflow-x-auto px-4 pb-6">
 					<table className="min-w-full text-sm">
@@ -266,10 +299,29 @@ export default function EmployeeDashboard() {
 				</CardContent>
 			</Card>
 
+			{/* Projects by Status */}
+			<Card className="mb-8 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Projects by Status</CardTitle>
+				</CardHeader>
+				<CardContent className="">
+					<div className="space-y-4">
+						{projectsStatusData.map((item) => (
+							<div key={item.status}>
+								<div className="flex justify-between mb-1">
+									<span className="text-sm font-medium">{item.status}</span>
+								</div>
+								<Progress value={item.value} className="h-2 bg-gray-200 [&>div]:bg-primary" />
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+
 			{/* Quick Actions */}
 			<Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-				<CardHeader>
-					<CardTitle className="text-2xl font-bold text-gray-900">Quick Actions</CardTitle>
+				<CardHeader className="bg-[#2c3e82] border-b border-gray-100 py-4 px-6">
+					<CardTitle className="text-2xl font-bold text-white">Quick Actions</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">

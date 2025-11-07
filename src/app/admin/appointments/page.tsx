@@ -1,9 +1,9 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Table,
   TableBody,
@@ -11,14 +11,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +26,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Check,
   X,
@@ -37,24 +39,31 @@ import {
   Car,
   Filter,
   UserPlus,
-} from "lucide-react";
-import { appointmentService } from "@/lib/services/appointmentService";
-import { employeeService, type Employee } from "@/lib/services/employeeService";
-import type { Appointment } from "@/lib/types/Appointment";
-import { useToast } from "@/contexts/ToastContext";
+  Eye,
+} from 'lucide-react';
+import { appointmentService } from '@/lib/services/appointmentService';
+import { employeeService, type Employee } from '@/lib/services/employeeService';
+import { customerService, type Customer } from '@/lib/services/customerService';
+import type { Appointment } from '@/lib/types/Appointment';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function AppointmentsPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [displayMonth, setDisplayMonth] = React.useState<Date>(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [rejectionReason, setRejectionReason] = useState<string>('');
   const { showToast } = useToast();
 
-  // Fetch appointments and employees on mount
+  // Fetch appointments, employees, and customers on mount
   useEffect(() => {
     fetchData();
   }, []);
@@ -62,14 +71,16 @@ export default function AppointmentsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [appointmentsData, employeesData] = await Promise.all([
-        appointmentService.searchAppointments(''), // Empty string fetches all
+      const [appointmentsData, employeesData, customersData] = await Promise.all([
+        appointmentService.getAllAppointments(),
         employeeService.getAllEmployees(),
+        customerService.getAllCustomers(),
       ]);
       setAppointments(appointmentsData);
       setEmployees(employeesData);
+      setCustomers(customersData);
     } catch (error: any) {
-      showToast("Failed to load data: " + error.message, "error");
+      showToast('Failed to load data: ' + error.message, 'error');
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
@@ -78,22 +89,23 @@ export default function AppointmentsPage() {
 
   const getStatusCounts = () => {
     return {
-      pending: appointments.filter((a) => a.status === "PENDING").length,
-      inProgress: appointments.filter((a) => a.status === "IN_PROGRESS").length,
-      completed: appointments.filter((a) => a.status === "COMPLETED").length,
-      cancelled: appointments.filter((a) => a.status === "CANCELLED").length,
+      pending: appointments.filter((a) => a.status === 'PENDING').length,
+      confirmed: appointments.filter((a) => a.status === 'CONFIRMED').length,
+      inProgress: appointments.filter((a) => a.status === 'IN_PROGRESS').length,
+      completed: appointments.filter((a) => a.status === 'COMPLETED').length,
+      cancelled: appointments.filter((a) => a.status === 'CANCELED').length,
     };
   };
 
   const handleAssignEmployee = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
-    setSelectedEmployeeId(appointment.employeeId?.toString() || "");
+    setSelectedEmployeeId(appointment.employeeId?.toString() || '');
     setAssignDialogOpen(true);
   };
 
   const confirmAssignEmployee = async () => {
     if (!selectedAppointment || !selectedEmployeeId) {
-      showToast("Please select an employee", "error");
+      showToast('Please select an employee', 'error');
       return;
     }
 
@@ -102,45 +114,75 @@ export default function AppointmentsPage() {
         selectedAppointment.id,
         parseInt(selectedEmployeeId)
       );
-      showToast("Employee assigned successfully", "success");
+      showToast('Employee assigned successfully', 'success');
       setAssignDialogOpen(false);
       setSelectedAppointment(null);
-      setSelectedEmployeeId("");
+      setSelectedEmployeeId('');
       fetchData(); // Refresh data
     } catch (error: any) {
-      showToast("Failed to assign employee: " + error.message, "error");
+      showToast('Failed to assign employee: ' + error.message, 'error');
       console.error('Error assigning employee:', error);
     }
   };
 
   const handleApprove = async (id: number) => {
     try {
-      await appointmentService.updateAppointment(id, { status: "CONFIRMED" });
-      showToast("Appointment approved successfully", "success");
+      await appointmentService.updateAppointment(id, { status: 'CONFIRMED' });
+      showToast('Appointment approved successfully', 'success');
       fetchData();
     } catch (error: any) {
-      showToast("Failed to approve appointment: " + error.message, "error");
+      showToast('Failed to approve appointment: ' + error.message, 'error');
       console.error('Error approving appointment:', error);
     }
   };
 
   const handleReject = async (id: number) => {
     try {
-      await appointmentService.updateAppointment(id, { status: "CANCELLED" });
-      showToast("Appointment rejected successfully", "success");
+      const appointment = appointments.find(a => a.id === id);
+      if (!appointment) return;
+      
+      setSelectedAppointment(appointment);
+      setRejectionReason('');
+      setRejectDialogOpen(true);
+    } catch (error: any) {
+      showToast('Failed to open rejection dialog: ' + error.message, 'error');
+      console.error('Error opening rejection dialog:', error);
+    }
+  };
+
+  const confirmReject = async () => {
+    if (!selectedAppointment) return;
+    
+    if (!rejectionReason.trim()) {
+      showToast('Please provide a reason for rejection', 'error');
+      return;
+    }
+
+    try {
+      await appointmentService.updateAppointment(selectedAppointment.id, { 
+        status: 'CANCELED',
+        notes: `REJECTED: ${rejectionReason}`
+      });
+      showToast('Appointment rejected successfully', 'success');
+      setRejectDialogOpen(false);
+      setSelectedAppointment(null);
+      setRejectionReason('');
       fetchData();
     } catch (error: any) {
-      showToast("Failed to reject appointment: " + error.message, "error");
+      showToast('Failed to reject appointment: ' + error.message, 'error');
       console.error('Error rejecting appointment:', error);
     }
+  };
+
+  const handleViewDetails = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setViewDialogOpen(true);
   };
 
   const statusCounts = getStatusCounts();
 
   // Get dates that have appointments for calendar
-  const appointmentDates = appointments.map(
-    (a) => new Date(a.appointmentDate)
-  );
+  const appointmentDates = appointments.map((a) => new Date(a.appointmentDate));
 
   if (loading) {
     return (
@@ -313,33 +355,33 @@ export default function AppointmentsPage() {
                   className="rounded-lg border-0 bg-gray-50 p-6 w-full"
                   classNames={{
                     months:
-                      "flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start",
-                    month: "space-y-4 flex-1 min-w-0",
-                    caption: "flex justify-center items-center mb-6 relative",
+                      'flex flex-col lg:flex-row space-y-4 lg:space-x-8 lg:space-y-0 w-full justify-between items-start',
+                    month: 'space-y-4 flex-1 min-w-0',
+                    caption: 'flex justify-center items-center mb-6 relative',
                     caption_label:
-                      "text-lg font-semibold text-gray-700 text-center",
-                    nav: "hidden", // Hide default navigation since we have global navigation
-                    nav_button: "hidden",
-                    nav_button_previous: "hidden",
-                    nav_button_next: "hidden",
-                    table: "w-full border-collapse",
-                    head_row: "flex w-full mb-3",
+                      'text-lg font-semibold text-gray-700 text-center',
+                    nav: 'hidden', // Hide default navigation since we have global navigation
+                    nav_button: 'hidden',
+                    nav_button_previous: 'hidden',
+                    nav_button_next: 'hidden',
+                    table: 'w-full border-collapse',
+                    head_row: 'flex w-full mb-3',
                     head_cell:
-                      "text-gray-500 w-full font-medium text-sm text-center py-2 mx-1",
-                    row: "flex w-full mt-2",
-                    cell: "h-12 w-full text-center text-sm p-0 relative mx-1",
-                    day: "h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default",
-                    day_today: "bg-gray-200 text-gray-900 font-semibold",
-                    day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-300 opacity-50",
-                    day_hidden: "invisible",
+                      'text-gray-500 w-full font-medium text-sm text-center py-2 mx-1',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-12 w-full text-center text-sm p-0 relative mx-1',
+                    day: 'h-12 w-full p-0 font-normal hover:bg-gray-100 transition-colors cursor-default',
+                    day_today: 'bg-gray-200 text-gray-900 font-semibold',
+                    day_outside: 'text-gray-300 opacity-50',
+                    day_disabled: 'text-gray-300 opacity-50',
+                    day_hidden: 'invisible',
                   }}
                   modifiers={{
                     appointment: appointmentDates,
                   }}
                   modifiersClassNames={{
                     appointment:
-                      "bg-primary text-white font-semibold hover:bg-primary",
+                      'bg-primary text-white font-semibold hover:bg-primary',
                   }}
                 />
               </div>
@@ -387,35 +429,53 @@ export default function AppointmentsPage() {
 
           <TabsContent value="pending-approval" className="mt-6">
             <PendingApprovalTable
-              data={appointments.filter((a) => a.status === "PENDING")}
+              data={appointments.filter((a) => a.status === 'PENDING')}
               onApprove={handleApprove}
               onReject={handleReject}
               onAssignEmployee={handleAssignEmployee}
+              onViewDetails={handleViewDetails}
               employees={employees}
+              customers={customers}
+            />
+          </TabsContent>
+          <TabsContent value="pending-approval" className="mt-6">
+            <TableWrapper
+              data={appointments.filter((a) => a.status === 'CONFIRMED')}
+              status="Confirmed"
+              onAssignEmployee={handleAssignEmployee}
+              onViewDetails={handleViewDetails}
+              employees={employees}
+              customers={customers}
             />
           </TabsContent>
           <TabsContent value="in-progress" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "IN_PROGRESS")}
+              data={appointments.filter((a) => a.status === 'IN_PROGRESS')}
               status="In Progress"
               onAssignEmployee={handleAssignEmployee}
+              onViewDetails={handleViewDetails}
               employees={employees}
+              customers={customers}
             />
           </TabsContent>
           <TabsContent value="completed" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "COMPLETED")}
+              data={appointments.filter((a) => a.status === 'COMPLETED')}
               status="Completed"
               onAssignEmployee={handleAssignEmployee}
+              onViewDetails={handleViewDetails}
               employees={employees}
+              customers={customers}
             />
           </TabsContent>
           <TabsContent value="cancelled" className="mt-6">
             <TableWrapper
-              data={appointments.filter((a) => a.status === "CANCELLED")}
+              data={appointments.filter((a) => a.status === 'CANCELED')}
               status="Cancelled"
               onAssignEmployee={handleAssignEmployee}
+              onViewDetails={handleViewDetails}
               employees={employees}
+              customers={customers}
             />
           </TabsContent>
         </Tabs>
@@ -427,20 +487,27 @@ export default function AppointmentsPage() {
           <DialogHeader>
             <DialogTitle>Assign Employee to Appointment</DialogTitle>
             <DialogDescription>
-              Select an employee to assign to this appointment. This will change the appointment status to CONFIRMED.
+              Select an employee to assign to this appointment. This will change
+              the appointment status to CONFIRMED.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <label className="block text-sm font-medium mb-2">
               Select Employee
             </label>
-            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+            <Select
+              value={selectedEmployeeId}
+              onValueChange={setSelectedEmployeeId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose an employee" />
               </SelectTrigger>
               <SelectContent>
                 {employees.map((emp) => (
-                  <SelectItem key={emp.employeeId} value={emp.employeeId.toString()}>
+                  <SelectItem
+                    key={emp.employeeId}
+                    value={emp.employeeId.toString()}
+                  >
                     {emp.name} - {emp.specialization}
                   </SelectItem>
                 ))}
@@ -448,12 +515,113 @@ export default function AppointmentsPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setAssignDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={confirmAssignEmployee}>
-              Assign Employee
+            <Button onClick={confirmAssignEmployee}>Assign Employee</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Appointment</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this appointment. The customer will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="rejection-reason">Reason for Rejection *</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="Enter reason for rejection..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="mt-2 min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectDialogOpen(false);
+                setRejectionReason('');
+              }}
+            >
+              Cancel
             </Button>
+            <Button 
+              onClick={confirmReject}
+              variant="destructive"
+            >
+              Reject Appointment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Appointment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-gray-500">Customer</Label>
+                  <p className="font-medium">{customers.find(c => c.customerId === selectedAppointment.customerId)?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Employee</Label>
+                  <p className="font-medium">{employees.find(e => e.employeeId === selectedAppointment.employeeId)?.name || 'Unassigned'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Vehicle</Label>
+                  <p className="font-medium">{selectedAppointment.vehicleName || 'N/A'}</p>
+                  <p className="text-sm text-gray-500">{selectedAppointment.vehicleDetails}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Status</Label>
+                  <p className="font-medium">{selectedAppointment.status}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Date</Label>
+                  <p className="font-medium">{selectedAppointment.appointmentDate}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Time</Label>
+                  <p className="font-medium">{selectedAppointment.startTime?.substring(0, 5)} - {selectedAppointment.endTime?.substring(0, 5)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-gray-500">Consultation Type</Label>
+                  <p className="font-medium">{selectedAppointment.consultationTypeLabel}</p>
+                </div>
+                {selectedAppointment.customerIssue && (
+                  <div className="col-span-2">
+                    <Label className="text-gray-500">Customer Issue</Label>
+                    <p className="font-medium">{selectedAppointment.customerIssue}</p>
+                  </div>
+                )}
+                {selectedAppointment.notes && (
+                  <div className="col-span-2">
+                    <Label className="text-gray-500">Notes</Label>
+                    <p className="font-medium">{selectedAppointment.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -467,25 +635,33 @@ interface PendingApprovalTableProps {
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
   onAssignEmployee: (appointment: Appointment) => void;
+  onViewDetails: (appointment: Appointment) => void;
   employees: Employee[];
+  customers: Customer[];
 }
 
-function PendingApprovalTable({ 
-  data, 
-  onApprove, 
-  onReject, 
+function PendingApprovalTable({
+  data,
+  onApprove,
+  onReject,
   onAssignEmployee,
-  employees 
+  onViewDetails,
+  employees,
+  customers,
 }: PendingApprovalTableProps) {
-  
   const getEmployeeName = (employeeId: number | null) => {
-    if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.employeeId === employeeId);
-    return employee ? employee.name : "Unknown";
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
+  };
+
+  const getCustomerName = (customerId: number) => {
+    const customer = customers.find((c) => c.customerId === customerId);
+    return customer ? customer.name : `Customer #${customerId}`;
   };
 
   const formatTime = (time: string | null) => {
-    if (!time) return "N/A";
+    if (!time) return 'N/A';
     return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
@@ -516,28 +692,17 @@ function PendingApprovalTable({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">Customer</TableHead>
               <TableHead className="font-semibold text-gray-700">
-                ID
+                Vehicle
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Customer ID
+                Date & Time
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Vehicle ID
+                Type
               </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Employee
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Date
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Time
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Notes
-              </TableHead>
-              <TableHead className="text-center font-semibold text-gray-700">
+              <TableHead className="text-center font-semibold text-gray-700 w-[200px]">
                 Actions
               </TableHead>
             </TableRow>
@@ -549,62 +714,72 @@ function PendingApprovalTable({
                   key={appointment.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell className="font-medium py-6 text-gray-900">
-                    {appointment.id}
-                  </TableCell>
-                  <TableCell className="py-6">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      {appointment.customerId}
+                  <TableCell className="py-4">
+                    <div className="flex items-start gap-2">
+                      <User className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-900">{getCustomerName(appointment.customerId)}</p>
+                        <p className="text-xs text-gray-500">ID: {appointment.customerId}</p>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-6 text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-gray-500" />
-                      {appointment.vehicleId}
+                  <TableCell className="py-4">
+                    <div className="flex items-start gap-2">
+                      <Car className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{appointment.vehicleName || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{appointment.vehicleDetails}</p>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-6 text-gray-700">
-                    {getEmployeeName(appointment.employeeId)}
-                  </TableCell>
-                  <TableCell className="py-6 text-gray-700">
-                    {appointment.appointmentDate}
-                  </TableCell>
-                  <TableCell className="py-6 text-gray-700">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-gray-500" />
-                      {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                  <TableCell className="py-4">
+                    <div className="space-y-1">
+                      <p className="font-medium text-gray-900">{appointment.appointmentDate}</p>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-6 text-gray-700 max-w-xs truncate">
-                    {appointment.notes || "N/A"}
+                  <TableCell className="py-4">
+                    <p className="text-sm text-gray-700">{appointment.consultationTypeLabel}</p>
                   </TableCell>
-                  <TableCell className="text-center py-6">
-                    <div className="flex gap-3 justify-center">
+                  <TableCell className="py-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onViewDetails(appointment)}
+                          className="h-8 px-2 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onApprove(appointment.id)}
+                          className="h-8 px-3 bg-green-100 text-green-700 hover:bg-green-200"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onReject(appointment.id)}
+                          className="h-8 px-3 bg-red-100 text-red-700 hover:bg-red-200"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onAssignEmployee(appointment)}
-                        className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
+                        className="h-8 px-2 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs"
                       >
-                        <UserPlus className="h-4 w-4 mr-2" />
+                        <UserPlus className="h-3 w-3 mr-1" />
                         Assign
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onApprove(appointment.id)}
-                        className="h-10 w-10 p-0 bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 border border-green-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <Check className="h-5 w-5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onReject(appointment.id)}
-                        className="h-10 w-10 p-0 bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border border-red-300 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <X className="h-5 w-5" />
                       </Button>
                     </div>
                   </TableCell>
@@ -613,7 +788,7 @@ function PendingApprovalTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={5}
                   className="text-center py-8 text-gray-500"
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -635,22 +810,28 @@ interface TableWrapperProps {
   data: Appointment[];
   status: string;
   onAssignEmployee: (appointment: Appointment) => void;
+  onViewDetails: (appointment: Appointment) => void;
   employees: Employee[];
+  customers: Customer[];
 }
 
 function TableWrapper({
   data,
   status,
   onAssignEmployee,
+  onViewDetails,
   employees,
+  customers,
 }: TableWrapperProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "In Progress":
+      case 'Confirmed':
         return <CalendarIcon className="h-5 w-5 text-primary" />;
-      case "Completed":
+      case 'In Progress':
+        return <CalendarIcon className="h-5 w-5 text-primary" />;
+      case 'Completed':
         return <Check className="h-5 w-5 text-green-600" />;
-      case "Cancelled":
+      case 'Cancelled':
         return <X className="h-5 w-5 text-red-600" />;
       default:
         return <CalendarIcon className="h-5 w-5 text-gray-600" />;
@@ -659,25 +840,32 @@ function TableWrapper({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "In Progress":
-        return "text-primary";
-      case "Completed":
-        return "text-green-600";
-      case "Cancelled":
-        return "text-red-600";
+      case 'Confirmed':
+        return 'text-primary';
+      case 'In Progress':
+        return 'text-primary';
+      case 'Completed':
+        return 'text-green-600';
+      case 'Cancelled':
+        return 'text-red-600';
       default:
-        return "text-gray-600";
+        return 'text-gray-600';
     }
   };
 
   const getEmployeeName = (employeeId: number | null) => {
-    if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.employeeId === employeeId);
-    return employee ? employee.name : "Unknown";
+    if (!employeeId) return 'Unassigned';
+    const employee = employees.find((e) => e.employeeId === employeeId);
+    return employee ? employee.name : 'Unknown';
+  };
+
+  const getCustomerName = (customerId: number) => {
+    const customer = customers.find((c) => c.customerId === customerId);
+    return customer ? customer.name : `Customer #${customerId}`;
   };
 
   const formatTime = (time: string | null) => {
-    if (!time) return "N/A";
+    if (!time) return 'N/A';
     return time.substring(0, 5); // Convert HH:MM:SS to HH:MM
   };
 
@@ -712,28 +900,17 @@ function TableWrapper({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-200">
+              <TableHead className="font-semibold text-gray-700">Customer</TableHead>
               <TableHead className="font-semibold text-gray-700">
-                ID
+                Vehicle
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Customer ID
+                Date & Time
               </TableHead>
               <TableHead className="font-semibold text-gray-700">
-                Vehicle ID
+                Type
               </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Employee
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Date
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Time
-              </TableHead>
-              <TableHead className="font-semibold text-gray-700">
-                Notes
-              </TableHead>
-              <TableHead className="text-center font-semibold text-gray-700">
+              <TableHead className="text-center font-semibold text-gray-700 w-[150px]">
                 Actions
               </TableHead>
             </TableRow>
@@ -745,53 +922,62 @@ function TableWrapper({
                   key={appointment.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell className="font-medium text-gray-900 py-6">
-                    {appointment.id}
-                  </TableCell>
-                  <TableCell className="py-6">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      {appointment.customerId}
+                  <TableCell className="py-4">
+                    <div className="flex items-start gap-2">
+                      <User className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-900">{getCustomerName(appointment.customerId)}</p>
+                        <p className="text-xs text-gray-500">ID: {appointment.customerId}</p>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-700 py-6">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-gray-500" />
-                      {appointment.vehicleId}
+                  <TableCell className="py-4">
+                    <div className="flex items-start gap-2">
+                      <Car className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{appointment.vehicleName || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{appointment.vehicleDetails}</p>
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-700 py-6">
-                    {getEmployeeName(appointment.employeeId)}
-                  </TableCell>
-                  <TableCell className="text-gray-700 py-6">
-                    {appointment.appointmentDate}
-                  </TableCell>
-                  <TableCell className="text-gray-700 py-6">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-gray-500" />
-                      {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                  <TableCell className="py-4">
+                    <div className="space-y-1">
+                      <p className="font-medium text-gray-900">{appointment.appointmentDate}</p>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-700 py-6 max-w-xs truncate">
-                    {appointment.notes || "N/A"}
+                  <TableCell className="py-4">
+                    <p className="text-sm text-gray-700">{appointment.consultationTypeLabel}</p>
                   </TableCell>
-                  <TableCell className="text-center py-6">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onAssignEmployee(appointment)}
-                      className="h-10 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 border border-blue-300"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      {appointment.employeeId ? "Reassign" : "Assign"}
-                    </Button>
+                  <TableCell className="py-4">
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewDetails(appointment)}
+                        className="h-8 px-2 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onAssignEmployee(appointment)}
+                        className="h-8 px-2 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs"
+                      >
+                        <UserPlus className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={5}
                   className="text-center py-8 text-gray-500"
                 >
                   <div className="flex flex-col items-center gap-2">

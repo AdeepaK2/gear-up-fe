@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  output: 'standalone', // Enable standalone mode for Docker
   trailingSlash: true,
-  distDir: 'out',
   images: {
     unoptimized: true
   },

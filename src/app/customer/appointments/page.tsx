@@ -17,14 +17,12 @@ import NotificationCenter, {
   type NotificationType,
 } from "@/components/customer/NotificationCenter";
 import {
-  getConsultationLabel,
-  type ConsultationType,
-} from "@/lib/utils/appointments";
-import {
   AppointmentData,
   AppointmentFormData,
   Vehicle,
   Appointment,
+  AppointmentStatus,
+  ConsultationType,
 } from "@/lib/types/Appointment";
 import { appointmentService } from "@/lib/services/appointmentService";
 import { vehicleService } from "@/lib/services/vehicleService";
@@ -57,14 +55,14 @@ const convertAppointmentToUIFormat = (
   return {
     id: String(appointment.id),
     vehicleId: String(appointment.vehicleId),
-    vehicleName: vehicleUI?.name || "Unknown Vehicle",
+    vehicleName: vehicleUI?.name || "",
     vehicleDetails: vehicleUI?.details || "",
-    consultationType: "general-checkup", // Default since backend doesn't have this field
+    consultationType: appointment.consultationType as ConsultationType,
     consultationTypeLabel: "General Service",
     appointmentDate: appointment.appointmentDate,
     startTime: appointment.startTime || "09:00",
     endTime: appointment.endTime || "10:00",
-    status: appointment.status as any,
+    status: appointment.status as AppointmentStatus,
     customerIssue: appointment.customerIssue || appointment.notes || "",
     notes: appointment.notes || "",
   };
@@ -107,7 +105,8 @@ export default function AppointmentsPage() {
         setVehicles(uiVehicles);
 
         // Fetch appointments
-        const appointmentsData = await appointmentService.getAllAppointments();
+        const appointmentsData =
+          await appointmentService.getAllAppointmentsForCurrentCustomer();
         const uiAppointments = appointmentsData.map((apt) =>
           convertAppointmentToUIFormat(apt, vehiclesData)
         );
@@ -159,7 +158,7 @@ export default function AppointmentsPage() {
           apt.id !== excludeId &&
           apt.vehicleId === vehicleId &&
           apt.appointmentDate === appointmentDate &&
-          apt.status !== "cancelled"
+          apt.status !== "CANCELED"
       );
     },
     [appointments]
@@ -203,7 +202,9 @@ export default function AppointmentsPage() {
           appointmentDate: data.appointmentDate,
           notes: data.notes || data.customerIssue,
           vehicleId: Number(data.vehicleId),
-          startTime: data.startTime ? `${data.startTime}:00` : undefined,
+          startTime: `${data.startTime}:00`,
+          endTime: `${data.endTime}:00`,
+          consultationType: data.consultationType,
         });
 
         // Convert backend response to UI format
@@ -224,18 +225,22 @@ export default function AppointmentsPage() {
         // Return focus to booking button after successful creation
         setTimeout(() => bookButtonRef.current?.focus(), 100);
       } catch (error: any) {
-        const errorMessage = error.message || "An error occurred while booking your appointment. Please try again.";
+        const errorMessage =
+          error.message ||
+          "An error occurred while booking your appointment. Please try again.";
         toast.error(errorMessage);
-        addNotification(
-          "error",
-          "Booking Failed",
-          errorMessage
-        );
+        addNotification("error", "Booking Failed", errorMessage);
       } finally {
         setIsLoading(false);
       }
     },
-    [findOverlappingAppointment, addNotification, vehicles, backendVehicles, toast]
+    [
+      findOverlappingAppointment,
+      addNotification,
+      vehicles,
+      backendVehicles,
+      toast,
+    ]
   );
 
   /**
@@ -300,18 +305,22 @@ export default function AppointmentsPage() {
         // Return focus to booking button after successful update
         setTimeout(() => bookButtonRef.current?.focus(), 100);
       } catch (error: any) {
-        const errorMessage = error.message || "An error occurred while updating your appointment. Please try again.";
+        const errorMessage =
+          error.message ||
+          "An error occurred while updating your appointment. Please try again.";
         toast.error(errorMessage);
-        addNotification(
-          "error",
-          "Update Failed",
-          errorMessage
-        );
+        addNotification("error", "Update Failed", errorMessage);
       } finally {
         setIsLoading(false);
       }
     },
-    [editingAppointment, findOverlappingAppointment, addNotification, backendVehicles, toast]
+    [
+      editingAppointment,
+      findOverlappingAppointment,
+      addNotification,
+      backendVehicles,
+      toast,
+    ]
   );
 
   /**
@@ -354,13 +363,11 @@ export default function AppointmentsPage() {
           "Your appointment has been successfully cancelled."
         );
       } catch (error: any) {
-        const errorMessage = error.message || "An error occurred while cancelling your appointment. Please try again.";
+        const errorMessage =
+          error.message ||
+          "An error occurred while cancelling your appointment. Please try again.";
         toast.error(errorMessage);
-        addNotification(
-          "error",
-          "Cancellation Failed",
-          errorMessage
-        );
+        addNotification("error", "Cancellation Failed", errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -474,7 +481,7 @@ export default function AppointmentsPage() {
         )}
 
         {/* Appointment List or Empty State */}
-        {sortedAppointments.length === 0 ? (
+        {sortedAppointments.length === 0 && !showForm ? (
           <section
             aria-labelledby="empty-heading"
             className="flex flex-col items-center justify-center py-16 px-4"

@@ -10,6 +10,7 @@ import {
   UserCog,
   CalendarCheck,
   AlertTriangle,
+  MessageSquare,
 } from 'lucide-react';
 import ProjectHeader from '@/components/customer/ProjectHeader';
 import ProjectInfoTile from '@/components/customer/ProjectInfoTile';
@@ -120,7 +121,9 @@ const mockProject: ProjectData = {
  */
 export default function ProjectsPage() {
   const [project, setProject] = useState<ProjectData>(mockProject);
-  const [isLoading, setIsLoading] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasProjects, setHasProjects] = useState(false);
   const [serviceProgress, setServiceProgress] = useState<
     Record<string, ServiceProgress>
   >({});
@@ -345,166 +348,171 @@ export default function ProjectsPage() {
     }
   }, [acceptedServices.length]);
 
-  return (
-    <div className="min-h-screen space-y-6">
-      {/* Page Header */}
-      <ProjectHeader />
+  /**
+   * Fetch projects from backend on component mount
+   */
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        const projectsData = await projectService.getAllProjectsForCurrentCustomer();
+        setProjects(projectsData);
+        setHasProjects(projectsData.length > 0);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        setHasProjects(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      {/* Project Details Card */}
-      <Card className="shadow-xl border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary to-primary/90 text-white p-8">
-          <CardTitle className="flex items-center gap-4">
-            <div
-              className="p-3 bg-white/20 rounded-xl backdrop-blur-sm"
-              aria-hidden="true"
-            >
-              <FileText className="h-8 w-8" />
-            </div>
+    fetchProjects();
+  }, []);
+
+  // Show loading state
+  if (isLoading && !hasProjects) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no projects
+  if (!hasProjects || projects.length === 0) {
+    return (
+      <div className="min-h-screen space-y-6 p-6">
+        <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold mb-1">Project Details</h2>
-              <div className="text-white/90 font-normal flex items-center gap-2">
-                <Calendar className="h-4 w-4" aria-hidden="true" />
-                Based on your consultation on{' '}
-                {new Date(project.consultationDate).toLocaleDateString()}
+              <h1 className="text-3xl font-bold">My Projects</h1>
+              <div className="text-white/90 font-normal mt-2">
+                No projects available yet
               </div>
             </div>
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="p-8">
-          {/* Project Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <ProjectInfoTile
-              Icon={Car}
-              label={project.vehicleName}
-              sublabel={project.vehicleDetails}
-            />
-
-            <ProjectInfoTile
-              Icon={UserCog}
-              label={project.employeeName}
-              sublabel="Your Technician"
-            />
-
-            <ProjectInfoTile
-              Icon={CalendarCheck}
-              label={new Date(project.consultationDate).toLocaleDateString()}
-              sublabel="Consultation Date"
-            />
-
-            <ProjectInfoTile
-              Icon={getStatusIcon(project.status) as any}
-              label=""
-              sublabel="Current Status"
-            >
-              <Badge
-                className={cn(
-                  'text-sm font-semibold px-3 py-1 mb-2',
-                  statusInfo.color,
-                  statusInfo.bgColor,
-                  'border-2'
-                )}
-                aria-label={`Project status: ${statusInfo.label}`}
-              >
-                {statusInfo.label}
-              </Badge>
-            </ProjectInfoTile>
           </div>
+        </div>
 
-          {/* Service Statistics */}
-          <ServiceStatsRow
-            totalServices={project.services.length}
-            selectedServices={acceptedServices.length}
-            totalCost={totalAcceptedCost}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Recommended Services */}
-      <RecommendedServicesSection
-        services={project.services}
-        projectStatus={project.status}
-        onSelect={acceptService}
-        isLoading={isLoading}
-      />
-
-      {/* Service Confirmation Review */}
-      {acceptedServices.length > 0 &&
-        project.status === 'waiting-confirmation' && (
-          <SelectionReviewCard
-            acceptedServices={acceptedServices}
-            totalCost={totalAcceptedCost}
-            onUnselect={rejectService}
-            onConfirm={confirmServices}
-            isLoading={isLoading}
-          />
-        )}
-
-      {/* Accepted Services with Progress */}
-      {acceptedServices.length > 0 &&
-        project.status !== 'waiting-confirmation' && (
-          <AcceptedServicesSection
-            acceptedServices={acceptedServices}
-            projectStatus={project.status}
-            serviceProgress={serviceProgress}
-            onCancel={cancelService}
-            isLoading={isLoading}
-          />
-        )}
-
-      {/* Additional Service Request */}
-      {project.status === 'waiting-confirmation' &&
-        acceptedServices.length > 0 && (
-          <AdditionalServiceRequest
-            onSubmit={submitAdditionalRequest}
-            isLoading={isLoading}
-            disabled={project.status !== 'waiting-confirmation'}
-          />
-        )}
-
-      {/* Project Actions - No Services Selected */}
-      {project.status === 'waiting-confirmation' &&
-        acceptedServices.length === 0 && (
-          <ProjectActionsCard
-            onCancelProject={cancelProject}
-            isLoading={isLoading}
-          />
-        )}
-
-      {/* Service Status Information */}
-      {(project.status === 'confirmed' || acceptedServices.length > 0) && (
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-blue-100 rounded-lg" aria-hidden="true">
-                <AlertTriangle className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  Service Progress Information
-                </h3>
-                <div className="text-blue-800 text-sm space-y-1">
-                  <p>
-                    • <strong>Not Started:</strong> You can still cancel these
-                    services without any charges
-                  </p>
-                  <p>
-                    • <strong>In Progress:</strong> Service work has begun -
-                    cancellation may incur charges
-                  </p>
-                  <p>
-                    • <strong>Completed:</strong> Service has been finished and
-                    quality checked
-                  </p>
-                </div>
-                <p className="text-blue-700 text-sm mt-3 font-medium">
-                  All prices are displayed in Sri Lankan Rupees (LKR)
-                </p>
-              </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">No Projects Found</h2>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              You don't have any projects yet. Create a project from your completed appointment reports.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <a
+                href="/customer/reports"
+                className="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <FileText className="mr-2 h-5 w-5" />
+                View Reports
+              </a>
+              <a
+                href="/customer/appointments"
+                className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                Book an Appointment
+              </a>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen space-y-6 p-6">
+      {/* Page Header */}
+      <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">My Projects</h1>
+            <div className="text-white/90 font-normal mt-2">
+              {projects.length} {projects.length === 1 ? 'project' : 'projects'} found
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Projects List */}
+      <div className="grid grid-cols-1 gap-6">
+        {projects.map((proj) => (
+          <Card key={proj.id} className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {proj.name || `Project #${proj.id}`}
+                  </h3>
+                  <p className="text-gray-600">{proj.description || 'No description provided'}</p>
+                </div>
+                <Badge
+                  className={cn(
+                    'text-sm font-semibold px-3 py-1',
+                    proj.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                    proj.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                    proj.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                    proj.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  )}
+                >
+                  {proj.status || 'PENDING'}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">Start Date</p>
+                    <p className="text-sm font-medium">
+                      {proj.startDate ? new Date(proj.startDate).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">End Date</p>
+                    <p className="text-sm font-medium">
+                      {proj.endDate ? new Date(proj.endDate).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Car className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-xs text-gray-500">Vehicle ID</p>
+                    <p className="text-sm font-medium">#{proj.vehicleId || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <a
+                  href={`/customer/projects/${proj.id}`}
+                  className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Details
+                </a>
+                <a
+                  href={`/customer/projects/${proj.id}/updates`}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  View Updates
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

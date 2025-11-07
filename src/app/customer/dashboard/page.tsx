@@ -12,6 +12,8 @@ import ChatWidget from '@/components/customer/dashboard/ChatWidget';
 import DashboardFooter from '@/components/customer/dashboard/DashboardFooter';
 import authService from '@/lib/services/authService';
 import { customerService } from '@/lib/services/customerService';
+import { dashboardService, type DashboardSummary } from '@/lib/services/dashboardService';
+import { vehicleService } from '@/lib/services/vehicleService';
 
 /**
  * Dashboard Data Interface
@@ -154,6 +156,10 @@ const mockData: DashboardData = {
 export default function DashboardPage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [customerName, setCustomerName] = useState('');
+  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   /**
    * Summary cards configuration
@@ -163,32 +169,34 @@ export default function DashboardPage() {
     () => [
       {
         title: 'Upcoming Appointments',
-        count: mockData.summary.upcomingAppointments.count,
-        subtitle: `Next: ${mockData.summary.upcomingAppointments.nextDate}`,
+        count: dashboardData?.upcomingAppointments || 0,
+        subtitle: dashboardData?.nextAppointmentDate
+          ? `Next: ${new Date(dashboardData.nextAppointmentDate).toLocaleDateString()}`
+          : 'No upcoming appointments',
         icon: Calendar,
         href: '/customer/appointments',
       },
       {
         title: 'Ongoing Projects',
-        count: mockData.summary.ongoingProjects.count,
-        subtitle: mockData.summary.ongoingProjects.status,
+        count: dashboardData?.ongoingProjects || 0,
+        subtitle: dashboardData?.ongoingProjects ? 'In Progress' : 'No ongoing projects',
         icon: Wrench,
         href: '/customer/projects',
       },
       {
         title: 'Completed Services',
-        count: mockData.summary.completedServices.count,
+        count: dashboardData?.completedServices || 0,
         subtitle: 'All time',
         icon: CheckCircle,
       },
       {
         title: 'Pending Requests',
-        count: mockData.summary.pendingRequests.count,
+        count: dashboardData?.pendingRequests || 0,
         subtitle: 'Awaiting response',
         icon: Clock,
       },
     ],
-    []
+    [dashboardData]
   );
 
   const handleToggleChat = () => {
@@ -196,16 +204,41 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const fetchCustomerName = async () => {
+    const fetchDashboardData = async () => {
       try {
+        setLoading(true);
+
+        // Fetch customer name
         const customer = await customerService.getCurrentCustomerProfile();
         setCustomerName(customer.name);
+
+        // Fetch dashboard summary
+        const summary = await dashboardService.getDashboardSummary();
+        setDashboardData(summary);
+
+        // Fetch vehicles
+        try {
+          const vehiclesData = await vehicleService.getMyVehicles();
+          setVehicles(vehiclesData);
+        } catch (err) {
+          console.warn('Failed to fetch vehicles:', err);
+        }
+
+        // Fetch recent activity
+        try {
+          const activity = await dashboardService.getRecentActivity();
+          setRecentActivity(activity);
+        } catch (err) {
+          console.warn('Failed to fetch recent activity:', err);
+        }
       } catch (error) {
-        console.error('Error fetching customer name:', error);
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchCustomerName();
+    fetchDashboardData();
   }, []);
   return (
     <div className="min-h-screen space-y-6">
@@ -238,15 +271,15 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Notifications and Quick Actions */}
           <div className="space-y-6">
-            <NotificationsList notifications={mockData.notifications} />
+            <NotificationsList notifications={[]} />
             <QuickActions />
           </div>
 
           {/* Middle Column - Recent Activity */}
-          <RecentActivity activities={mockData.recentActivity} />
+          <RecentActivity activities={recentActivity.length > 0 ? recentActivity : []} />
 
           {/* Right Column - Vehicle Snapshot */}
-          <VehiclesList vehicles={mockData.vehicles} />
+          <VehiclesList vehicles={vehicles.length > 0 ? vehicles : []} />
         </div>
       </section>
 
