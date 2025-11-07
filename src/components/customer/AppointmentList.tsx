@@ -55,7 +55,7 @@ const statusColors: Record<AppointmentStatus, string> = {
     "bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 border-orange-300 shadow-sm",
   COMPLETED:
     "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300 shadow-sm",
-  CANCELLED:
+  CANCELED:
     "bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border-red-300 shadow-sm",
 };
 
@@ -64,7 +64,7 @@ const statusLabels: Record<AppointmentStatus, string> = {
   CONFIRMED: "Confirmed",
   IN_PROGRESS: "In Progress",
   COMPLETED: "Completed",
-  CANCELLED: "Cancelled",
+  CANCELED: "Cancelled",
 };
 
 const consultationTypeLabels: Record<ConsultationType, string> = {
@@ -364,7 +364,7 @@ export default function AppointmentList({
                       ? "#3b82f6"
                       : appointment.status === "COMPLETED"
                       ? "#10b981"
-                      : appointment.status === "CANCELLED"
+                      : appointment.status === "CANCELED"
                       ? "#ef4444"
                       : "#f97316",
                 }}
@@ -529,6 +529,23 @@ export default function AppointmentList({
                         </p>
                       </div>
                     )}
+
+                    {appointment.status === "CANCELED" && appointment.notes && appointment.notes.startsWith("REJECTED:") && (
+                      <div className="mt-3 p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border-l-4 border-red-500">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-semibold text-red-900 mb-1">
+                              Appointment Rejected
+                            </p>
+                            <p className="text-sm text-red-700">
+                              <span className="font-medium">Reason:</span>{" "}
+                              {appointment.notes.replace("REJECTED: ", "")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -637,7 +654,21 @@ export default function AppointmentList({
                           </p>
                         </div>
                       )}
-                      {viewingAppointment.notes && (
+                      {viewingAppointment.status === "CANCELED" && viewingAppointment.notes && viewingAppointment.notes.startsWith("REJECTED:") ? (
+                        <div className="p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border-l-4 border-red-500">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-semibold text-red-900 mb-1">
+                                Rejection Reason
+                              </p>
+                              <p className="text-red-800">
+                                {viewingAppointment.notes.replace("REJECTED: ", "")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : viewingAppointment.notes && (
                         <div>
                           <p className="font-medium text-gray-900">Notes:</p>
                           <p className="text-gray-700 mt-1">

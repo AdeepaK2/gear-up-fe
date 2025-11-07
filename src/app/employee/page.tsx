@@ -173,21 +173,8 @@ export default function EmployeeDashboard() {
 
 	const { stats, appointments, dailyProgress, projectsStatusData } = dashboardData;
 
-	// Calculate projects status data from stats
-	const projectsStatusData = [
-		{
-			status: "Assigned",
-			value: stats.total ? (stats.assignedServices / stats.total) * 100 : 0
-		},
-		{
-			status: "In Progress",
-			value: stats.total ? (stats.inProgress / stats.total) * 100 : 0
-		},
-		{
-			status: "Completed Today",
-			value: stats.total ? (stats.completedToday / stats.total) * 100 : 0
-		}
-	];
+	// projectsStatusData is already calculated in the useEffect above from actual project data
+	// No need to recalculate here
 
 	return (
 		<div className="space-y-8 p-6">

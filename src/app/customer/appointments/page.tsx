@@ -158,7 +158,7 @@ export default function AppointmentsPage() {
           apt.id !== excludeId &&
           apt.vehicleId === vehicleId &&
           apt.appointmentDate === appointmentDate &&
-          apt.status !== "CANCELLED"
+          apt.status !== "CANCELED"
       );
     },
     [appointments]
