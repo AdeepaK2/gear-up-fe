@@ -65,7 +65,7 @@ class ChatbotService {
   private sessionId: string | null = null;
   private sessionsCache: { data: ChatSession[], timestamp: number } | null = null;
   private historyCache: Map<string, { data: ChatMessage[], timestamp: number }> = new Map();
-  private readonly CACHE_DURATION = 30000; // 30 seconds cache
+  private readonly CACHE_DURATION = 300000; // 5 minutes cache for better performance
 
   constructor() {
     this.baseUrl = API_ENDPOINTS.CHAT.BASE;

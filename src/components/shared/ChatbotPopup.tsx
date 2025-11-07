@@ -129,43 +129,46 @@ export default function ChatbotPopup() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-primary to-primary/90 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group z-50"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-500 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center group z-50 hover:scale-110 active:scale-95"
         aria-label="Open chat"
       >
-        <MessageCircle className="w-7 h-7 group-hover:scale-110 transition-transform" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse"></span>
+        <MessageCircle className="w-7 h-7 group-hover:rotate-12 transition-transform" />
+        <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded-full animate-pulse shadow-lg"></span>
       </button>
     );
   }
 
   return (
     <div
-      className={`fixed bottom-6 right-6 bg-white rounded-lg shadow-2xl transition-all duration-300 z-50 ${
+      className={`fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl transition-all duration-300 z-50 border border-blue-100 ${
         isMinimized ? "w-80 h-16" : "w-96 h-[600px]"
       }`}
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/90 text-white p-4 rounded-t-lg flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between shadow-lg">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-md">
             <MessageCircle className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">GearUp Assistant</h3>
-            <p className="text-xs text-white/80">Online • Here to help</p>
+            <h3 className="font-bold text-sm flex items-center gap-1.5">
+              GearUp Assistant
+              <span className="text-xs">✨</span>
+            </h3>
+            <p className="text-xs text-blue-100">Here to help you!</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="hover:bg-white/20 p-1 rounded transition-colors"
+            className="hover:bg-white/20 p-2 rounded-xl transition-all hover:scale-110"
             aria-label={isMinimized ? "Maximize" : "Minimize"}
           >
             {isMinimized ? (
-              <Maximize2 className="w-5 h-5" />
+              <Maximize2 className="w-4 h-4" />
             ) : (
-              <Minimize2 className="w-5 h-5" />
+              <Minimize2 className="w-4 h-4" />
             )}
           </button>
           <button
@@ -173,10 +176,10 @@ export default function ChatbotPopup() {
               setIsOpen(false);
               setIsMinimized(false);
             }}
-            className="hover:bg-white/20 p-1 rounded transition-colors"
+            className="hover:bg-white/20 p-2 rounded-xl transition-all hover:scale-110"
             aria-label="Close chat"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -184,7 +187,7 @@ export default function ChatbotPopup() {
       {!isMinimized && (
         <>
           {/* Messages */}
-          <div className="h-[440px] overflow-y-auto p-4 space-y-4 bg-gray-50">
+          <div className="h-[440px] overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-blue-50/30 to-white">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -193,10 +196,10 @@ export default function ChatbotPopup() {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
                     message.role === "user"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-800 border border-gray-200"
+                      ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white"
+                      : "bg-white text-gray-800 border border-blue-100"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -217,15 +220,15 @@ export default function ChatbotPopup() {
 
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-white rounded-lg px-4 py-3 border border-gray-200">
+                <div className="bg-white rounded-2xl px-4 py-3 border border-blue-100 shadow-sm">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
                     <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
                       style={{ animationDelay: "0.1s" }}
                     ></div>
                     <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
                       style={{ animationDelay: "0.2s" }}
                     ></div>
                   </div>
@@ -237,15 +240,15 @@ export default function ChatbotPopup() {
           </div>
 
           {/* Input Area */}
-          <div className="border-t p-4 bg-white rounded-b-lg">
+          <div className="border-t border-blue-100 p-4 bg-gradient-to-r from-white to-blue-50/30 rounded-b-lg">
             {!isAuthenticated ? (
               <div className="text-center py-2">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-gray-600 mb-3 font-medium">
                   🔒 Please log in to use the chatbot
                 </p>
                 <a
                   href="/login"
-                  className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                  className="inline-flex items-center justify-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all shadow-md hover:shadow-lg text-sm font-medium"
                 >
                   <LogIn className="w-4 h-4 mr-2" />
                   Log In
@@ -259,20 +262,20 @@ export default function ChatbotPopup() {
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Type your message..."
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-1"
+                    className="flex-1 border-2 border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl"
                     disabled={isTyping}
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isTyping}
                     size="icon"
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all"
                   >
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Powered by GearUp AI
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  Powered by GearUp AI ✨
                 </p>
               </>
             )}

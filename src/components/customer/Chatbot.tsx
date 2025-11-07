@@ -2,8 +2,9 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, MessageSquare, Plus, Trash2, Calendar, Search, X } from "lucide-react";
+import { Menu, MessageSquare, Plus, Trash2, Calendar, Search, X, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,8 @@ export default function Chatbot({
   customerContext,
   onActionClick,
 }: ChatbotProps) {
+  const router = useRouter();
+
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -39,8 +42,7 @@ export default function Chatbot({
   const [showFeedback, setShowFeedback] = useState(false);
   const [isEscalated, setIsEscalated] = useState(false);
   const [estimatedWaitTime, setEstimatedWaitTime] = useState<number | null>(null);
-  const [filePreview, setFilePreview] = useState<File | null>(null);
-  
+
   // ChatGPT-like sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -51,40 +53,47 @@ export default function Chatbot({
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [backendConnected, setBackendConnected] = useState(true);
 
-  // Initialize with welcome message
-  useEffect(() => {
-    startNewChat();
-    loadChatSessions();
-  }, [customerContext.name]);
-
   /**
    * Start a new chat session
    */
   const startNewChat = useCallback(() => {
+    // Don't show "Loading..." in the welcome message
+    const displayName = customerContext.name === "Loading..." ? "there" : customerContext.name;
+
     const welcomeMessage: Message = {
       id: "1",
-      content: `Hello ${customerContext.name}! I'm here to help you with your services, appointments, and any questions you might have. How can I assist you today?`,
+      content: `Hello ${displayName}! I'm here to help you with your services, appointments, and any questions you might have. How can I assist you today?`,
       sender: "bot",
       timestamp: new Date(),
       type: "text",
     };
-    
+
     setMessages([welcomeMessage]);
     setCurrentSessionId(null);
     chatbotService.clearSession();
   }, [customerContext.name]);
 
+  // Initialize with welcome message
+  useEffect(() => {
+    startNewChat();
+  }, [startNewChat]);
+
+  // Load chat sessions when component mounts
+  useEffect(() => {
+    loadChatSessions();
+  }, []);
+
   /**
    * Load chat sessions from backend
+   * Uses caching to reduce loading time on subsequent calls
    */
   const loadChatSessions = useCallback(async () => {
     if (loadingSessions) return;
-    
+
     setLoadingSessions(true);
     try {
-      console.log('Loading chat sessions...');
-      const sessions = await chatbotService.getChatSessions(20); // Reduced limit for faster loading
-      console.log('Loaded sessions:', sessions);
+      // getChatSessions uses internal caching with 5-minute duration
+      const sessions = await chatbotService.getChatSessions(20);
       setChatSessions(sessions);
       setBackendConnected(true);
     } catch (error) {
@@ -156,11 +165,6 @@ export default function Chatbot({
       startNewChat();
       setCurrentSessionId(newSession.sessionId);
       console.log('New chat started with session ID:', newSession.sessionId);
-      
-      // Also reload sessions from backend to ensure consistency
-      setTimeout(() => {
-        loadChatSessions();
-      }, 500);
     } catch (error) {
       console.error('Error creating new chat:', error);
       // Show error message to user
@@ -398,25 +402,18 @@ export default function Chatbot({
    * Calls the real RAG chatbot API through Spring Boot
    */
   const handleSendMessage = useCallback(async () => {
-    if (!inputValue.trim() && !filePreview) return;
+    if (!inputValue.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue.trim(),
       sender: "customer",
       timestamp: new Date(),
-      type: filePreview ? "file" : "text",
-      metadata: filePreview
-        ? {
-            fileName: filePreview.name,
-            fileUrl: URL.createObjectURL(filePreview),
-          }
-        : undefined,
+      type: "text",
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    setFilePreview(null);
     setIsTyping(true);
 
     try {
@@ -491,7 +488,7 @@ export default function Chatbot({
       setMessages((prev) => [...prev, botMessage]);
       setIsTyping(false);
     }
-  }, [inputValue, filePreview, messages, customerContext, generateBotResponse]);
+  }, [inputValue, messages, customerContext, generateBotResponse, currentSessionId, loadChatSessions]);
 
   /**
    * Handle quick action click
@@ -573,20 +570,6 @@ export default function Chatbot({
   }, []);
 
   /**
-   * Handle file selection
-   */
-  const handleFileSelect = useCallback((file: File) => {
-    setFilePreview(file);
-  }, []);
-
-  /**
-   * Handle file removal
-   */
-  const handleFileRemove = useCallback(() => {
-    setFilePreview(null);
-  }, []);
-
-  /**
    * Handle end chat and show feedback
    */
   const handleEndChat = useCallback(() => {
@@ -594,31 +577,34 @@ export default function Chatbot({
   }, []);
 
   return (
-    <div className="flex h-screen w-full bg-gray-50">
+    <div className="flex h-screen w-full bg-gradient-to-br from-blue-50/30 via-white to-blue-50/30">
       {/* Chat History Sidebar */}
       {sidebarOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-25 z-40 lg:hidden transition-opacity duration-300"
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden transition-opacity duration-300 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          
+
           {/* Sidebar */}
           <div className={`
-            fixed top-0 left-0 h-full w-80 bg-white border-r border-gray-200 shadow-lg z-50 transform transition-all duration-300 ease-in-out
+            fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-xl border-r border-blue-100 shadow-2xl z-50 transform transition-all duration-300 ease-in-out
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            lg:relative lg:translate-x-0 lg:shadow-none
+            lg:relative lg:translate-x-0 lg:shadow-xl
           `}>
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <div className="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-white">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Chat History</h2>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                  Chat History
+                </h2>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSidebarOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-blue-50 rounded-xl"
                   title="Hide chat history"
                 >
                   <X className="w-4 h-4" />
@@ -627,20 +613,20 @@ export default function Chatbot({
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-blue-50">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4" />
                 <Input
                   placeholder="Search chats..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 bg-white border-blue-200 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl"
                 />
               </div>
             </div>
 
             {/* Chat Sessions */}
-            <div className="flex-1 overflow-y-auto h-[calc(100vh-200px)] bg-white">
+            <div className="flex-1 overflow-y-auto h-[calc(100vh-200px)] bg-gradient-to-b from-white to-blue-50/20">
               {loadingSessions ? (
                 <div className="p-4 text-center text-gray-500">
                   Loading...
@@ -656,17 +642,17 @@ export default function Chatbot({
                       key={session.sessionId}
                       onClick={() => loadChatSession(session.sessionId)}
                       className={`
-                        group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors mb-1
-                        ${session.sessionId === currentSessionId 
-                          ? 'bg-blue-50 text-blue-900 border border-blue-200' 
-                          : 'hover:bg-gray-50 text-gray-700 border border-transparent'
+                        group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 mb-2 shadow-sm hover:shadow-md
+                        ${session.sessionId === currentSessionId
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border border-blue-600'
+                          : 'hover:bg-white text-gray-700 border border-blue-100 bg-blue-50/30'
                         }
                       `}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center mb-1">
                           <MessageSquare className={`w-4 h-4 mr-2 flex-shrink-0 ${
-                            session.sessionId === currentSessionId ? 'text-blue-600' : 'text-gray-400'
+                            session.sessionId === currentSessionId ? 'text-white' : 'text-blue-500'
                           }`} />
                           <h3 className="text-sm font-medium truncate">
                             {session.title}
@@ -682,7 +668,9 @@ export default function Chatbot({
                         variant="ghost"
                         size="sm"
                         onClick={(e) => confirmDelete(session.sessionId, e)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 p-1"
+                        className={`opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 p-1 rounded-lg transition-all ${
+                          session.sessionId === currentSessionId ? 'text-white/80' : 'text-gray-400'
+                        }`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -696,40 +684,59 @@ export default function Chatbot({
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
-        {/* Top Header with Menu Button */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shadow-sm">
+      <div className="flex-1 flex flex-col bg-white/80 backdrop-blur-sm">
+        {/* Top Header with Back Button, Menu Button, and New Chat */}
+        <div className="flex items-center justify-between p-4 border-b border-blue-100 bg-white/90 backdrop-blur-md shadow-sm">
+          {/* Left Side: Back Button, Menu Button, and Title */}
           <div className="flex items-center space-x-3">
+            {/* Back Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/customer")}
+              className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+              title="Back to dashboard"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+
+            {/* Vertical Divider */}
+            <div className="h-6 w-px bg-gray-300"></div>
+
+            {/* Menu Button (Sidebar Toggle) */}
             {!sidebarOpen && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setSidebarOpen(true)}
-                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                 title="Show chat history"
               >
                 <Menu className="w-5 h-5" />
               </Button>
             )}
+
+            {/* Session Title */}
             <div className="flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-              <h1 className="text-lg font-semibold text-gray-900">
-                {currentSessionId ? 'Chat Session' : 'New Chat'}
-              </h1>
+              
+
+              
               {!backendConnected && (
-                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                <span className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full font-medium shadow-sm">
                   Local Mode
                 </span>
               )}
             </div>
           </div>
-          
+
+          {/* Right Side: New Chat Button */}
           <Button
-            onClick={startNewChat}
+            onClick={handleNewChat}
             variant="outline"
             size="sm"
-            className="text-gray-600 hover:text-gray-900 border-gray-300 hover:bg-gray-50"
+            className="text-blue-600 hover:text-blue-700 border-blue-300 hover:bg-blue-50 rounded-xl font-medium shadow-sm hover:shadow-md transition-all flex items-center gap-2"
           >
+            <Plus className="w-4 h-4" />
             New Chat
           </Button>
         </div>
@@ -766,9 +773,6 @@ export default function Chatbot({
             value={inputValue}
             onChange={setInputValue}
             onSend={handleSendMessage}
-            onFileSelect={handleFileSelect}
-            onFileRemove={handleFileRemove}
-            selectedFile={filePreview}
           />
         </div>
       </div>
