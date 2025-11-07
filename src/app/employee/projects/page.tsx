@@ -90,6 +90,12 @@ export default function EmployeeProjects() {
 	});
 	const [submittingUpdate, setSubmittingUpdate] = useState(false);
 
+	// Completion dialog state
+	const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+	const [completionMessage, setCompletionMessage] = useState('');
+	const [projectToComplete, setProjectToComplete] = useState<Project | null>(null);
+	const [submittingCompletion, setSubmittingCompletion] = useState(false);
+
 	// Load projects on component mount
 	useEffect(() => {
 		loadProjects();
@@ -109,13 +115,44 @@ export default function EmployeeProjects() {
 		}
 	};
 
-	const handleMarkAsCompleted = async (projectId: number) => {
+	const handleMarkAsCompleted = async (project: Project) => {
+		setProjectToComplete(project);
+		setCompletionMessage('');
+		setShowCompletionDialog(true);
+	};
+
+	const handleConfirmCompletion = async () => {
+		if (!projectToComplete || !completionMessage.trim()) {
+			showToast('Please provide a completion message for the customer', 'error');
+			return;
+		}
+
+		setSubmittingCompletion(true);
 		try {
-			const updatedProject = await projectService.updateProjectStatus(projectId, "COMPLETED");
-			setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p));
+			// First, post a completion update with the message
+			await projectService.createProjectUpdate(projectToComplete.id, {
+				message: completionMessage,
+				updateType: 'COMPLETION',
+				estimatedCompletionDate: new Date().toISOString().split('T')[0],
+				taskCompletions: [],
+				completedTasks: 0,
+				totalTasks: 0,
+				overallCompletionPercentage: 100,
+			});
+
+			// Then update the project status to COMPLETED
+			const updatedProject = await projectService.updateProjectStatus(projectToComplete.id, "COMPLETED");
+			setProjects(prev => prev.map(p => p.id === projectToComplete.id ? updatedProject : p));
+			
+			showToast('Project marked as completed and customer notified', 'success');
+			setShowCompletionDialog(false);
+			setProjectToComplete(null);
+			setCompletionMessage('');
 		} catch (err) {
-			console.error('Failed to update project status:', err);
-			setError(err instanceof Error ? err.message : 'Failed to update status');
+			console.error('Failed to complete project:', err);
+			showToast(err instanceof Error ? err.message : 'Failed to complete project', 'error');
+		} finally {
+			setSubmittingCompletion(false);
 		}
 	};
 
@@ -392,7 +429,7 @@ export default function EmployeeProjects() {
 													)}
 													<Button
 														type="button"
-														onClick={() => handleMarkAsCompleted(project.id)}
+														onClick={() => handleMarkAsCompleted(project)}
 														className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
 													>
 														Mark as Completed
@@ -615,6 +652,83 @@ export default function EmployeeProjects() {
 								</>
 							) : (
 								'Post Update'
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Mark as Completed Dialog */}
+			<Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+				<DialogContent className="max-w-lg">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold flex items-center gap-2">
+							<CheckCircle2 className="h-6 w-6 text-green-600" />
+							Complete Project
+						</DialogTitle>
+						<DialogDescription>
+							Send a completion message to the customer and mark this project as completed.
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4 py-4">
+						{projectToComplete && (
+							<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+								<p className="text-sm font-medium text-blue-900">
+									Project: {projectToComplete.name}
+								</p>
+								<p className="text-xs text-blue-700 mt-1">
+									Customer: {projectToComplete.customerName || `Customer #${projectToComplete.customerId}`}
+								</p>
+							</div>
+						)}
+
+						<div className="space-y-2">
+							<Label htmlFor="completionMessage">Completion Message *</Label>
+							<Textarea
+								id="completionMessage"
+								placeholder="Inform the customer about the project completion, final details, or any important notes..."
+								value={completionMessage}
+								onChange={(e) => setCompletionMessage(e.target.value)}
+								rows={6}
+								className="resize-none"
+								required
+							/>
+							<p className="text-xs text-gray-500">
+								{completionMessage.length}/1000 characters
+							</p>
+						</div>
+
+						<div className="bg-green-50 border border-green-200 rounded-lg p-3">
+							<p className="text-xs text-green-800">
+								<strong>Note:</strong> This message will be sent to the customer as a completion update, and the project status will be changed to "Completed".
+							</p>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowCompletionDialog(false)}
+							disabled={submittingCompletion}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleConfirmCompletion}
+							disabled={submittingCompletion || !completionMessage.trim()}
+							className="bg-green-600 hover:bg-green-700"
+						>
+							{submittingCompletion ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Completing...
+								</>
+							) : (
+								<>
+									<CheckCircle2 className="mr-2 h-4 w-4" />
+									Mark as Completed
+								</>
 							)}
 						</Button>
 					</DialogFooter>

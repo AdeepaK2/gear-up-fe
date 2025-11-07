@@ -78,11 +78,6 @@ export default function Sidebar() {
       icon: <CalendarIcon className="h-4 w-4" />,
       text: "Appointments",
     },
-    {
-      href: "/admin/modification-requests",
-      icon: <FileText className="h-4 w-4" />,
-      text: "Modify Requests",
-    },
   ];
 
   return (
