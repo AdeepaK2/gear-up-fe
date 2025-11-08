@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import {
   Calendar,
   Clock,
   Car,
@@ -29,6 +35,7 @@ import {
   Vehicle,
 } from '@/lib/types/Appointment';
 import { shopSettingsService, type ShopSettings } from '@/lib/services/shopSettingsService';
+import { format } from 'date-fns';
 
 // Consultation options with realistic durations (in minutes)
 const consultationTypes: {
@@ -148,6 +155,27 @@ export default function AppointmentForm({
     setAvailableTimeSlots(slots);
   }, [shopSettings]);
 
+  // Function to check if a date should be disabled
+  const isDateDisabled = (dateString: string): boolean => {
+    if (!shopSettings) return false;
+
+    const date = new Date(dateString + 'T00:00:00'); // Add time to avoid timezone issues
+    
+    // Check if shop is globally closed
+    if (!shopSettings.isShopOpen) {
+      return true;
+    }
+
+    // Check if date is in closed dates
+    if (shopSettings.closedDates.includes(dateString)) {
+      return true;
+    }
+
+    // Check if day of week is in operating days
+    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ... 6=Saturday
+    return !shopSettings.operatingDays.includes(dayOfWeek);
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -161,6 +189,8 @@ export default function AppointmentForm({
 
     if (!formData.appointmentDate) {
       newErrors.appointmentDate = 'Please select an appointment date';
+    } else if (isDateDisabled(formData.appointmentDate)) {
+      newErrors.appointmentDate = 'Shop is closed on the selected date';
     }
 
     if (!formData.startTime) {
@@ -379,19 +409,62 @@ export default function AppointmentForm({
               <Calendar className="h-4 w-4" />
               Consultation Date
             </Label>
-            <Input
-              id="appointmentDate"
-              type="date"
-              value={formData.appointmentDate}
-              min={today}
-              onChange={(e) =>
-                setFormData({ ...formData, appointmentDate: e.target.value })
-              }
-              className={cn(
-                'border-2',
-                errors.appointmentDate && 'border-red-500'
-              )}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal border-2',
+                    !formData.appointmentDate && 'text-muted-foreground',
+                    errors.appointmentDate && 'border-red-500'
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {formData.appointmentDate ? (
+                    format(new Date(formData.appointmentDate + 'T00:00:00'), 'PPP')
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={formData.appointmentDate ? new Date(formData.appointmentDate + 'T00:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      const dateString = `${year}-${month}-${day}`;
+                      setFormData({ ...formData, appointmentDate: dateString });
+                    }
+                  }}
+                  disabled={(date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const dateString = `${year}-${month}-${day}`;
+                    
+                    // Disable past dates
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (date < today) return true;
+                    
+                    // Disable based on shop settings
+                    return isDateDisabled(dateString);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {shopSettings && (
+              <p className="text-xs text-gray-500">
+                Operating days: {shopSettings.operatingDays.map(day => 
+                  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]
+                ).join(', ')}
+              </p>
+            )}
             {errors.appointmentDate && (
               <p className="text-red-500 text-sm">{errors.appointmentDate}</p>
             )}
