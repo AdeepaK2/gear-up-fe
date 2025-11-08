@@ -3,6 +3,7 @@
 import Navbar from "../../componenets/landing/Navbar";
 import ServicesPreview from "../../componenets/landing/ServicesPreview";
 import Footer from "../../componenets/shared/Footer";
+import ShopStatusBanner from "@/components/shared/ShopStatusBanner";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -152,6 +153,7 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-custom">
       <Navbar />
+      <ShopStatusBanner />
 
       {/* Services Hero */}
       <section className="pt-16 bg-gradient-to-r from-primary to-secondary py-20">

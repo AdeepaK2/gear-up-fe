@@ -196,9 +196,7 @@ export default function CreateProjectPage() {
     selectedTaskIds.includes(task.taskId)
   );
   const unselectedTasks = allTasks.filter(
-    (task) =>
-      !selectedTaskIds.includes(task.taskId) &&
-      task.appointmentId !== appointmentId
+    (task) => !selectedTaskIds.includes(task.taskId)
   );
 
   const totalCost = selectedTasks.reduce(
@@ -431,19 +429,32 @@ export default function CreateProjectPage() {
           {unselectedTasks.length > 0 && (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">
-                Add Additional Services
+                Other Available Services
               </h2>
-              <div className="space-y-2">
-                {unselectedTasks.slice(0, 5).map((task) => (
+              <p className="text-sm text-gray-600 mb-4">
+                Browse and add any additional services you'd like to include in your project
+              </p>
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {unselectedTasks.map((task) => (
                   <div
                     key={task.taskId}
-                    className="border rounded-lg p-3 flex items-center justify-between hover:bg-gray-50"
+                    className="border rounded-lg p-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{task.name}</h4>
-                      <p className="text-xs text-gray-600">
-                        LKR {task.estimatedCost.toFixed(2)} •{" "}
-                        {task.estimatedHours}h
+                      <p className="text-xs text-gray-600 mt-1">
+                        {task.description}
+                      </p>
+                      <div className="flex gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          {task.category}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {task.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        LKR {task.estimatedCost.toFixed(2)} • {task.estimatedHours}h
                       </p>
                     </div>
                     <Button
@@ -451,6 +462,7 @@ export default function CreateProjectPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => addAdditionalTask(task.taskId)}
+                      className="ml-3"
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add

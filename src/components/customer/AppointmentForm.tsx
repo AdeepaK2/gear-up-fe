@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
   Calendar,
   Clock,
@@ -28,6 +34,8 @@ import {
   ConsultationType,
   Vehicle,
 } from '@/lib/types/Appointment';
+import { shopSettingsService, type ShopSettings } from '@/lib/services/shopSettingsService';
+import { format } from 'date-fns';
 
 // Consultation options with realistic durations (in minutes)
 const consultationTypes: {
@@ -101,6 +109,72 @@ export default function AppointmentForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [shopSettings, setShopSettings] = useState<ShopSettings | null>(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+
+  // Load shop settings on mount
+  useEffect(() => {
+    const loadShopSettings = async () => {
+      try {
+        const settings = await shopSettingsService.getShopSettings();
+        setShopSettings(settings);
+      } catch (error) {
+        console.error('Failed to load shop settings:', error);
+      }
+    };
+    loadShopSettings();
+  }, []);
+
+  // Generate available time slots based on shop settings
+  useEffect(() => {
+    if (!shopSettings) return;
+
+    const slots: string[] = [];
+    const [openHour, openMinute] = shopSettings.openingTime.split(':').map(Number);
+    const [closeHour, closeMinute] = shopSettings.closingTime.split(':').map(Number);
+
+    // Generate 30-minute intervals
+    let currentHour = openHour;
+    let currentMinute = openMinute;
+
+    while (
+      currentHour < closeHour ||
+      (currentHour === closeHour && currentMinute < closeMinute)
+    ) {
+      const timeString = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+      slots.push(timeString);
+
+      // Increment by 30 minutes
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour += 1;
+      }
+    }
+
+    setAvailableTimeSlots(slots);
+  }, [shopSettings]);
+
+  // Function to check if a date should be disabled
+  const isDateDisabled = (dateString: string): boolean => {
+    if (!shopSettings) return false;
+
+    const date = new Date(dateString + 'T00:00:00'); // Add time to avoid timezone issues
+    
+    // Check if shop is globally closed
+    if (!shopSettings.isShopOpen) {
+      return true;
+    }
+
+    // Check if date is in closed dates
+    if (shopSettings.closedDates.includes(dateString)) {
+      return true;
+    }
+
+    // Check if day of week is in operating days
+    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ... 6=Saturday
+    return !shopSettings.operatingDays.includes(dayOfWeek);
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -115,6 +189,8 @@ export default function AppointmentForm({
 
     if (!formData.appointmentDate) {
       newErrors.appointmentDate = 'Please select an appointment date';
+    } else if (isDateDisabled(formData.appointmentDate)) {
+      newErrors.appointmentDate = 'Shop is closed on the selected date';
     }
 
     if (!formData.startTime) {
@@ -333,19 +409,62 @@ export default function AppointmentForm({
               <Calendar className="h-4 w-4" />
               Consultation Date
             </Label>
-            <Input
-              id="appointmentDate"
-              type="date"
-              value={formData.appointmentDate}
-              min={today}
-              onChange={(e) =>
-                setFormData({ ...formData, appointmentDate: e.target.value })
-              }
-              className={cn(
-                'border-2',
-                errors.appointmentDate && 'border-red-500'
-              )}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal border-2',
+                    !formData.appointmentDate && 'text-muted-foreground',
+                    errors.appointmentDate && 'border-red-500'
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {formData.appointmentDate ? (
+                    format(new Date(formData.appointmentDate + 'T00:00:00'), 'PPP')
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={formData.appointmentDate ? new Date(formData.appointmentDate + 'T00:00:00') : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      const dateString = `${year}-${month}-${day}`;
+                      setFormData({ ...formData, appointmentDate: dateString });
+                    }
+                  }}
+                  disabled={(date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const dateString = `${year}-${month}-${day}`;
+                    
+                    // Disable past dates
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (date < today) return true;
+                    
+                    // Disable based on shop settings
+                    return isDateDisabled(dateString);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {shopSettings && (
+              <p className="text-xs text-gray-500">
+                Operating days: {shopSettings.operatingDays.map(day => 
+                  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]
+                ).join(', ')}
+              </p>
+            )}
             {errors.appointmentDate && (
               <p className="text-red-500 text-sm">{errors.appointmentDate}</p>
             )}
@@ -360,28 +479,67 @@ export default function AppointmentForm({
               <Clock className="h-4 w-4" />
               Preferred Start Time
             </Label>
-            <Input
-              id="startTime"
-              type="time"
-              value={formData.startTime}
-              onChange={(e) => {
-                const startTime = e.target.value;
-                const selectedType = consultationTypes.find(
-                  (c) => c.value === formData.consultationType
-                );
-                let endTime = formData.endTime;
+            {availableTimeSlots.length > 0 ? (
+              <Select
+                value={formData.startTime}
+                onValueChange={(value) => {
+                  const selectedType = consultationTypes.find(
+                    (c) => c.value === formData.consultationType
+                  );
+                  let endTime = formData.endTime;
 
-                if (selectedType) {
-                  endTime = calculateEndTime(startTime, selectedType.duration);
-                }
+                  if (selectedType) {
+                    endTime = calculateEndTime(value, selectedType.duration);
+                  }
 
-                setFormData({ ...formData, startTime, endTime });
-              }}
-              className={cn('border-2', errors.startTime && 'border-red-500')}
-            />
+                  setFormData({ ...formData, startTime: value, endTime });
+                }}
+              >
+                <SelectTrigger
+                  className={cn(
+                    'border-2',
+                    errors.startTime && 'border-red-500'
+                  )}
+                >
+                  <SelectValue placeholder="Select start time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimeSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot}>
+                      {slot}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => {
+                  const startTime = e.target.value;
+                  const selectedType = consultationTypes.find(
+                    (c) => c.value === formData.consultationType
+                  );
+                  let endTime = formData.endTime;
+
+                  if (selectedType) {
+                    endTime = calculateEndTime(startTime, selectedType.duration);
+                  }
+
+                  setFormData({ ...formData, startTime, endTime });
+                }}
+                className={cn('border-2', errors.startTime && 'border-red-500')}
+              />
+            )}
 
             {errors.startTime && (
               <p className="text-red-500 text-sm">{errors.startTime}</p>
+            )}
+            {shopSettings && (
+              <p className="text-xs text-gray-500">
+                Available hours: {shopSettings.openingTime} - {shopSettings.closingTime}
+              </p>
             )}
             <p className="text-xs text-gray-500">
               The duration will be determined by our service team based on your
