@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
     EMPLOYEES: `${API_BASE_URL}/admin/employees`,
     CUSTOMERS: `${API_BASE_URL}/admin/customers`,
     DASHBOARD: `${API_BASE_URL}/admin/dashboard`,
+    SETTINGS: `${API_BASE_URL}/admin/settings`,
   },
   APPOINTMENTS: {
     BASE: `${API_BASE_URL}/appointments`,
