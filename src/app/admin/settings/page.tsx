@@ -62,7 +62,7 @@ export default function SettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const data = await shopSettingsService.getShopSettings();
+      const data = await shopSettingsService.getShopSettingsAdmin();
       setSettings(data);
       
       // Populate form

@@ -32,9 +32,37 @@ export interface ApiResponse<T> {
 
 class ShopSettingsService {
   /**
-   * Get current shop settings
+   * Get current shop settings (public endpoint)
    */
   async getShopSettings(): Promise<ShopSettings> {
+    try {
+      const response = await fetch(
+        `${API_ENDPOINTS.APPOINTMENTS.SHOP_SETTINGS}`,
+        { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch shop settings');
+      }
+
+      const apiResponse: ApiResponse<ShopSettings> = await response.json();
+      return apiResponse.data;
+    } catch (error: any) {
+      console.error('Fetch shop settings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get current shop settings (admin endpoint - requires authentication)
+   */
+  async getShopSettingsAdmin(): Promise<ShopSettings> {
     try {
       const response = await authService.authenticatedFetch(
         `${API_ENDPOINTS.ADMIN.SETTINGS}`,

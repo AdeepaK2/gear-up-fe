@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
     FILTER_BY_DATE: `${API_BASE_URL}/appointments/filter-by-date`,
     SEARCH: `${API_BASE_URL}/appointments/search`,
     AVAILABLE_SLOTS: `${API_BASE_URL}/appointments/employee/available-slots`,
+    SHOP_SETTINGS: `${API_BASE_URL}/appointments/shop-settings`,
   },
   VEHICLES: {
     BASE: `${API_BASE_URL}/vehicles`,
