@@ -114,11 +114,21 @@ class EmployeeService {
   // Create new employee (Admin only)
   async createEmployee(data: CreateEmployeeRequest): Promise<CreateEmployeeResponse> {
     try {
+      // Generate temporary password if not provided
+      const temporaryPassword = data.password || this.generateTemporaryPassword();
+      
+      // Prepare request data with password
+      const requestData = {
+        name: data.name,
+        email: data.email,
+        password: temporaryPassword,
+      };
+
       const response = await authService.authenticatedFetch(
         API_ENDPOINTS.ADMIN.EMPLOYEES,
         {
           method: 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify(requestData),
         }
       );
 
@@ -128,17 +138,16 @@ class EmployeeService {
       }
 
       const apiResponse: ApiResponse<{
-        employee: { email: string; name: string };
-        temporaryPassword: string;
-        message: string;
+        email: string;
+        name: string;
       }> = await response.json();
 
-      // Return the response with the temporary password from backend
+      // Return the response with the temporary password we generated
       return {
-        email: apiResponse.data.employee.email,
-        name: apiResponse.data.employee.name,
-        temporaryPassword: apiResponse.data.temporaryPassword,
-        message: apiResponse.data.message || 'Employee created successfully!'
+        email: apiResponse.data.email,
+        name: apiResponse.data.name,
+        temporaryPassword: temporaryPassword,
+        message: apiResponse.message || 'Employee created successfully!'
       };
     } catch (error: any) {
       console.error('Create employee error:', error);

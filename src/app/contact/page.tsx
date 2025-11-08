@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "../../componenets/landing/Navbar";
 import Footer from "../../componenets/shared/Footer";
+import ShopStatusBanner from "@/components/shared/ShopStatusBanner";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -32,6 +33,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-custom">
       <Navbar />
+      <ShopStatusBanner />
       
       {/* Contact Hero */}
       <section className="pt-16 bg-gradient-to-r from-primary to-secondary py-20">
