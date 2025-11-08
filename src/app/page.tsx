@@ -4,11 +4,13 @@ import ServicesPreview from "../componenets/landing/ServicesPreview";
 import AboutSection from "../componenets/landing/AboutSection";
 import Footer from "../componenets/shared/Footer";
 import ChatbotPopup from "@/components/shared/ChatbotPopup";
+import ShopStatusBanner from "@/components/shared/ShopStatusBanner";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-custom">
       <Navbar />
+      <ShopStatusBanner />
       <HeroSection />
       <ServicesPreview />
       <AboutSection />
