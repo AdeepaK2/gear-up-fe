@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,7 @@ import {
   ConsultationType,
   Vehicle,
 } from '@/lib/types/Appointment';
+import { shopSettingsService, type ShopSettings } from '@/lib/services/shopSettingsService';
 
 // Consultation options with realistic durations (in minutes)
 const consultationTypes: {
@@ -101,6 +102,51 @@ export default function AppointmentForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [shopSettings, setShopSettings] = useState<ShopSettings | null>(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+
+  // Load shop settings on mount
+  useEffect(() => {
+    const loadShopSettings = async () => {
+      try {
+        const settings = await shopSettingsService.getShopSettings();
+        setShopSettings(settings);
+      } catch (error) {
+        console.error('Failed to load shop settings:', error);
+      }
+    };
+    loadShopSettings();
+  }, []);
+
+  // Generate available time slots based on shop settings
+  useEffect(() => {
+    if (!shopSettings) return;
+
+    const slots: string[] = [];
+    const [openHour, openMinute] = shopSettings.openingTime.split(':').map(Number);
+    const [closeHour, closeMinute] = shopSettings.closingTime.split(':').map(Number);
+
+    // Generate 30-minute intervals
+    let currentHour = openHour;
+    let currentMinute = openMinute;
+
+    while (
+      currentHour < closeHour ||
+      (currentHour === closeHour && currentMinute < closeMinute)
+    ) {
+      const timeString = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+      slots.push(timeString);
+
+      // Increment by 30 minutes
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour += 1;
+      }
+    }
+
+    setAvailableTimeSlots(slots);
+  }, [shopSettings]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -360,28 +406,67 @@ export default function AppointmentForm({
               <Clock className="h-4 w-4" />
               Preferred Start Time
             </Label>
-            <Input
-              id="startTime"
-              type="time"
-              value={formData.startTime}
-              onChange={(e) => {
-                const startTime = e.target.value;
-                const selectedType = consultationTypes.find(
-                  (c) => c.value === formData.consultationType
-                );
-                let endTime = formData.endTime;
+            {availableTimeSlots.length > 0 ? (
+              <Select
+                value={formData.startTime}
+                onValueChange={(value) => {
+                  const selectedType = consultationTypes.find(
+                    (c) => c.value === formData.consultationType
+                  );
+                  let endTime = formData.endTime;
 
-                if (selectedType) {
-                  endTime = calculateEndTime(startTime, selectedType.duration);
-                }
+                  if (selectedType) {
+                    endTime = calculateEndTime(value, selectedType.duration);
+                  }
 
-                setFormData({ ...formData, startTime, endTime });
-              }}
-              className={cn('border-2', errors.startTime && 'border-red-500')}
-            />
+                  setFormData({ ...formData, startTime: value, endTime });
+                }}
+              >
+                <SelectTrigger
+                  className={cn(
+                    'border-2',
+                    errors.startTime && 'border-red-500'
+                  )}
+                >
+                  <SelectValue placeholder="Select start time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimeSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot}>
+                      {slot}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => {
+                  const startTime = e.target.value;
+                  const selectedType = consultationTypes.find(
+                    (c) => c.value === formData.consultationType
+                  );
+                  let endTime = formData.endTime;
+
+                  if (selectedType) {
+                    endTime = calculateEndTime(startTime, selectedType.duration);
+                  }
+
+                  setFormData({ ...formData, startTime, endTime });
+                }}
+                className={cn('border-2', errors.startTime && 'border-red-500')}
+              />
+            )}
 
             {errors.startTime && (
               <p className="text-red-500 text-sm">{errors.startTime}</p>
+            )}
+            {shopSettings && (
+              <p className="text-xs text-gray-500">
+                Available hours: {shopSettings.openingTime} - {shopSettings.closingTime}
+              </p>
             )}
             <p className="text-xs text-gray-500">
               The duration will be determined by our service team based on your
