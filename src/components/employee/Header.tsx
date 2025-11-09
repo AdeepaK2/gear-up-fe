@@ -1,55 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { Bell, User, Loader2 } from "lucide-react";
-import { employeeService } from "@/lib/services/employeeService";
-import { notificationService } from "@/lib/services/notificationService";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function Header() {
-  const [employeeName, setEmployeeName] = useState<string>("Employee");
-  const [notificationCount, setNotificationCount] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const { unreadCount, connectionStatus } = useNotifications();
+  const [employeeName, setEmployeeName] = React.useState<string>("Employee");
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
-    loadEmployeeData();
-    
-    // Refresh notification count every 30 seconds
-    const notificationInterval = setInterval(refreshNotificationCount, 30000);
-    
-    return () => clearInterval(notificationInterval);
-  }, []);
-
-  const refreshNotificationCount = async () => {
-    try {
-      const count = await notificationService.getUnreadCount();
-      setNotificationCount(count);
-    } catch (error) {
-      console.error('Failed to refresh notification count:', error);
-    }
-  };
-
-  const loadEmployeeData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch current employee info
-      const employee = await employeeService.getCurrentEmployee();
-      if (employee && employee.name) {
-        setEmployeeName(employee.name);
+  React.useEffect(() => {
+    const loadEmployeeData = async () => {
+      try {
+        const { employeeService } = await import("@/lib/services/employeeService");
+        const employee = await employeeService.getCurrentEmployee();
+        if (employee?.name) {
+          setEmployeeName(employee.name);
+        }
+      } catch (error) {
+        console.error('Failed to load employee data:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      // Fetch notification count
-      const count = await notificationService.getUnreadCount();
-      setNotificationCount(count);
-      
-    } catch (error) {
-      console.error('Failed to load employee data:', error);
-      setEmployeeName("Employee");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadEmployeeData();
+  }, []);
 
   return (
     <header className="fixed top-0 left-64 right-0 flex justify-end items-center p-6 bg-gray-50 z-40 border-b border-gray-200 h-20">
@@ -57,10 +34,13 @@ export default function Header() {
         <Link href="/employee/notifications">
           <div className="relative cursor-pointer hover:bg-gray-100 rounded-full p-2 transition-colors">
             <Bell className="h-6 w-6 text-gray-600 hover:text-gray-900" />
-            {notificationCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {notificationCount > 9 ? '9+' : notificationCount}
+                {unreadCount > 9 ? '9+' : unreadCount}
               </span>
+            )}
+            {connectionStatus === 'CONNECTED' && (
+              <span className="absolute bottom-0 right-0 bg-green-500 rounded-full w-2 h-2"></span>
             )}
           </div>
         </Link>
