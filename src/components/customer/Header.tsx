@@ -4,9 +4,12 @@ import React, { useEffect, useState } from "react";
 import { Bell, User } from "lucide-react";
 import { authService } from "@/lib/services/authService";
 import { customerService } from "@/lib/services/customerService";
+import { useNotifications } from "@/contexts/NotificationContext";
+import Link from "next/link";
 
 export default function Header() {
   const [customerName, setCustomerName] = useState("Customer");
+  const { unreadCount, connectionStatus } = useNotifications();
 
   useEffect(() => {
     const fetchCustomerName = async () => {
@@ -37,7 +40,17 @@ export default function Header() {
       {/* On md+ screens the sidebar occupies 16rem (left-64). We add a wrapper to push header contents to the right so icons align visually with the main content. */}
       <div className="w-full max-w-[calc(100%_-_16rem)] ml-auto flex items-center">
         <div className="flex items-center ml-auto">
-          <Bell className="h-6 w-6 text-primary cursor-pointer" />
+          <Link href="/customer/notifications" className="relative cursor-pointer">
+            <Bell className="h-6 w-6 text-primary" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+            {connectionStatus === 'CONNECTED' && (
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+            )}
+          </Link>
           <div className="mx-6 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer">
             <User className="h-6 w-6 text-primary" />
           </div>
