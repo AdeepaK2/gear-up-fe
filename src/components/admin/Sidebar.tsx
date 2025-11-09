@@ -13,6 +13,7 @@ import {
   Calendar as CalendarIcon,
   FileText,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { authService } from "@/lib/services/authService";
 import { useToast } from "@/contexts/ToastContext";
@@ -77,6 +78,11 @@ export default function Sidebar() {
       href: "/admin/appointments",
       icon: <CalendarIcon className="h-4 w-4" />,
       text: "Appointments",
+    },
+    {
+      href: "/admin/settings",
+      icon: <Settings className="h-4 w-4" />,
+      text: "Settings",
     },
   ];
 

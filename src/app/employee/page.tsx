@@ -86,19 +86,27 @@ export default function EmployeeDashboard() {
 				projectService.getEmployeeProjects().catch(() => [] as Project[]), // Return empty array on error
 			]);
 
-			// Process task summary
-			const stats: DashboardStats = {
-				assignedServices: taskSummary.assigned || taskSummary.total || 0,
-				inProgress: taskSummary.inProgress || taskSummary.pending || 0,
-				completedToday: taskSummary.completedToday || 0,
-				total: taskSummary.total || 0,
-			};
+            // Process task summary
+            const assigned = taskSummary.assigned || 0;
+            const inProg = (taskSummary.inProgress || taskSummary.inprogress || taskSummary.pending || 0);
+            const completedToday = taskSummary.completedToday || 0;
+            const reportedTotal = taskSummary.total || 0;
 
-			// Calculate daily progress
-			const dailyProgress = {
-				completed: stats.completedToday,
-				total: stats.total || stats.assignedServices,
-			};
+            const derivedTotal = Math.max(reportedTotal, assigned + inProg + completedToday);
+
+            const stats: DashboardStats = {
+                assignedServices: assigned || reportedTotal,
+                inProgress: inProg,
+                completedToday,
+                total: derivedTotal,
+            };
+
+            // Calculate daily progress (guard against division by zero)
+            const totalForProgress = derivedTotal > 0 ? derivedTotal : (assigned + inProg) || 0;
+            const dailyProgress = {
+                completed: completedToday,
+                total: totalForProgress,
+            };
 
 			// Calculate projects by status
 			const statusCounts: Record<string, number> = {};
@@ -252,9 +260,14 @@ export default function EmployeeDashboard() {
 								<p className="text-gray-700 text-base font-semibold mb-1">
 									Daily Progress
 								</p>
-								<div className="text-4xl font-extrabold text-primary">
-									{Math.round((dailyProgress.completed / dailyProgress.total) * 100)}%
-								</div>
+                                <div className="text-4xl font-extrabold text-primary">
+                                    {(() => {
+                                        const t = dailyProgress.total || 0;
+                                        const c = dailyProgress.completed || 0;
+                                        const pct = t > 0 ? Math.min(100, Math.max(0, Math.round((c / t) * 100))) : 0;
+                                        return `${pct}%`;
+                                    })()}
+                                </div>
 							</div>
 							<div className="p-3 bg-primary rounded-lg shadow-sm">
 								<Clock className="h-8 w-8 text-white" />
