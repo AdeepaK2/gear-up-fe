@@ -52,10 +52,10 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen space-y-8 p-6">
-        <h1 className="text-3xl font-bold text-primary mb-6">Notifications</h1>
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Notifications</h1>
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
           <span className="ml-2 text-lg">Loading notifications...</span>
         </div>
       </div>
@@ -63,11 +63,11 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen space-y-8 p-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-primary">Notifications</h1>
-          <div className="w-8 h-8 bg-primary text-white text-lg rounded-full flex items-center justify-center font-semibold">
+          <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
+          <div className="w-8 h-8 bg-gray-800 text-white text-lg rounded-full flex items-center justify-center font-semibold">
             {notifications.length}
           </div>
           {connectionStatus === 'CONNECTED' && (
@@ -78,7 +78,7 @@ export default function NotificationsPage() {
           )}
         </div>
         <button
-          className="text-sm font-medium text-gray-600 hover:underline"
+          className="text-sm font-medium text-gray-600 hover:underline hover:text-gray-800"
           onClick={markAllAsRead}
         >
           Mark all as read
@@ -89,7 +89,7 @@ export default function NotificationsPage() {
           <div className="flex-1 h-px bg-gray-300"></div>
           <div className="flex items-center gap-2 px-4">
             <span className="text-sm font-medium text-gray-600">New</span>
-            <div className="w-6 h-6 bg-primary text-white text-xs rounded-full flex items-center justify-center font-semibold">
+            <div className="w-6 h-6 bg-gray-800 text-white text-xs rounded-full flex items-center justify-center font-semibold">
               {newNotifications.length}
             </div>
           </div>
@@ -104,16 +104,16 @@ export default function NotificationsPage() {
           newNotifications.map((n, idx) => (
             <div
               key={n.id}
-              className={`group relative flex items-start gap-4 bg-gradient-to-r from-white to-blue-50/30 rounded-xl px-5 py-4 shadow-sm hover:shadow-md border border-gray-100 hover:border-blue-200 transition-all duration-300 cursor-pointer ${
-                selectedIdx === idx ? "ring-2 ring-blue-400 shadow-md" : ""
+              className={`group relative flex items-start gap-4 bg-gradient-to-r from-white to-gray-50/50 rounded-xl px-5 py-4 shadow-sm hover:shadow-md border border-gray-100 hover:border-gray-300 transition-all duration-300 cursor-pointer ${
+                selectedIdx === idx ? "ring-2 ring-gray-500 shadow-md" : ""
               }`}
               onClick={() => handleMarkAsRead(n.id, idx)}
             >
               {/* Unread indicator */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-blue-500 to-blue-600 rounded-r-full"></div>
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-gray-600 to-gray-700 rounded-r-full"></div>
               
               {/* Icon */}
-              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center ring-1 ring-blue-200">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center ring-1 ring-gray-200">
                 {getTypeIcon(n.type)}
               </div>
               

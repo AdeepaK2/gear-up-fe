@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "../contexts/ToastContext";
+import { NotificationProvider } from "../contexts/NotificationContext";
 import ClientAuthProvider from "../components/providers/ClientAuthProvider";
 
 const geistSans = Geist({
@@ -39,9 +40,11 @@ export default function RootLayout({
         className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClientAuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <NotificationProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </NotificationProvider>
         </ClientAuthProvider>
       </body>
     </html>
