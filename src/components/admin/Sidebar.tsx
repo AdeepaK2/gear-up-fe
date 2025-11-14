@@ -14,6 +14,7 @@ import {
   FileText,
   LogOut,
   Settings,
+  Clock,
 } from "lucide-react";
 import { authService } from "@/lib/services/authService";
 import { useToast } from "@/contexts/ToastContext";
@@ -78,6 +79,11 @@ export default function Sidebar() {
       href: "/admin/appointments",
       icon: <CalendarIcon className="h-4 w-4" />,
       text: "Appointments",
+    },
+    {
+      href: "/admin/time-logs",
+      icon: <Clock className="h-4 w-4" />,
+      text: "Time Logs",
     },
     {
       href: "/admin/settings",
