@@ -74,6 +74,9 @@ export const API_ENDPOINTS = {
     UNREAD_COUNT: `${API_BASE_URL}/notifications/unread/count`,
     READ_ALL: `${API_BASE_URL}/notifications/read-all`,
   },
+  TIME_LOGS: {
+    BASE: `${API_BASE_URL}/timelogs`,
+  },
 };
 
 export default API_BASE_URL;

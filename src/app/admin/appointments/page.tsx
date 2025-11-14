@@ -76,7 +76,15 @@ export default function AppointmentsPage() {
         employeeService.getAllEmployees(),
         customerService.getAllCustomers(),
       ]);
-      setAppointments(appointmentsData);
+      
+      // Sort appointments by date and time (latest first)
+      const sortedAppointments = appointmentsData.sort((a, b) => {
+        const dateA = new Date(`${a.appointmentDate}T${a.startTime || '00:00:00'}`);
+        const dateB = new Date(`${b.appointmentDate}T${b.startTime || '00:00:00'}`);
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      });
+      
+      setAppointments(sortedAppointments);
       setEmployees(employeesData);
       setCustomers(customersData);
     } catch (error: any) {
@@ -668,25 +676,10 @@ function PendingApprovalTable({
   return (
     <Card className="bg-white shadow-lg border-0">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-bold text-orange-600 flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Appointments Pending Approval
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <Select>
-              <SelectTrigger className="w-80">
-                <SelectValue placeholder="Filter by Customer/Employee/Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <CardTitle className="text-xl font-bold text-orange-600 flex items-center gap-2">
+          <Clock className="h-5 w-5" />
+          Appointments Pending Approval
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <Table>
@@ -872,29 +865,14 @@ function TableWrapper({
   return (
     <Card className="bg-white shadow-lg border-0">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle
-            className={`text-xl font-bold flex items-center gap-2 ${getStatusColor(
-              status
-            )}`}
-          >
-            {getStatusIcon(status)}
-            {status} Appointments
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <Select>
-              <SelectTrigger className="w-80">
-                <SelectValue placeholder="Filter by Customer/Employee/Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <CardTitle
+          className={`text-xl font-bold flex items-center gap-2 ${getStatusColor(
+            status
+          )}`}
+        >
+          {getStatusIcon(status)}
+          {status} Appointments
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <Table>
