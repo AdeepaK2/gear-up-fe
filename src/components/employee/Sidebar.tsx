@@ -4,13 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import React from "react";
-import { Home, UserCog, User, Briefcase, Calendar, Bell, LogOut} from "lucide-react";
+import { Home, UserCog, User, Briefcase, Calendar, Bell, LogOut, Clock} from "lucide-react";
 
 const navItems = [
   { href: "/employee", label: "Dashboard", icon: Home },
   { href: "/employee/profile", label: "Profile", icon: UserCog },
   { href: "/employee/projects", label: "Projects", icon: Briefcase },
   { href: "/employee/appointments", label: "Appointments", icon: Calendar },
+  { href: "/employee/time-logs", label: "Time Logs", icon: Clock },
   { href: "/employee/notifications", label: "Notifications", icon: Bell },
 ];
 
