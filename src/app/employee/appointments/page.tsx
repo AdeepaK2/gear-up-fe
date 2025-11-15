@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { CalendarEvent } from '@/components/ui/calendar-event';
-import { Search, ChevronLeft, ChevronRight, Eye, Calendar as CalendarIcon, Clock, User, FileText, AlertCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Eye, Calendar as CalendarIcon, Clock, User, FileText, AlertCircle, ClipboardList } from "lucide-react";
 import { appointmentService } from '@/lib/services/appointmentService';
+import { timeLogService } from '@/lib/services/timeLogService';
 import type { Appointment } from '@/lib/types/Appointment';
 import {
 	Dialog,
@@ -10,8 +11,12 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface CalendarEvent {
 	date: Date;
@@ -32,6 +37,16 @@ export default function EmployeeAppointments() {
 	const [actionLoading, setActionLoading] = useState<number | null>(null);
 	const [viewDialogOpen, setViewDialogOpen] = useState(false);
 	const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+	const [logWorkDialogOpen, setLogWorkDialogOpen] = useState(false);
+	const [logWorkData, setLogWorkData] = useState({
+		description: '',
+		startTime: '',
+		endTime: '',
+		hoursWorked: 0
+	});
+	const [submittingLogWork, setSubmittingLogWork] = useState(false);
+	const [appointmentTimeLogs, setAppointmentTimeLogs] = useState<Record<number, any[]>>({});
+	const [loadingTimeLogs, setLoadingTimeLogs] = useState<Record<number, boolean>>({});
 
 	// Load appointments on component mount and when month changes
 	useEffect(() => {
@@ -59,6 +74,12 @@ export default function EmployeeAppointments() {
 
 			const appointmentsData = await appointmentService.getEmployeeAppointments();
 			setAppointments(appointmentsData);
+			
+			// Load time logs for completed appointments
+			const completedAppointments = appointmentsData.filter(apt => apt.status.toUpperCase() === 'COMPLETED');
+			for (const appointment of completedAppointments) {
+				await loadTimeLogsForAppointment(appointment.id);
+			}
 		} catch (err) {
 			console.error('Failed to load appointments:', err);
 			setError(err instanceof Error ? err.message : 'Failed to load appointments');
@@ -108,6 +129,80 @@ export default function EmployeeAppointments() {
 	const handleViewDetails = (appointment: Appointment) => {
 		setSelectedAppointment(appointment);
 		setViewDialogOpen(true);
+	};
+
+	const loadTimeLogsForAppointment = async (appointmentId: number) => {
+		try {
+			setLoadingTimeLogs(prev => ({ ...prev, [appointmentId]: true }));
+			const logs = await timeLogService.getTimeLogsByAppointment(appointmentId);
+			setAppointmentTimeLogs(prev => ({ ...prev, [appointmentId]: logs }));
+		} catch (err) {
+			console.error(`Failed to load time logs for appointment ${appointmentId}:`, err);
+		} finally {
+			setLoadingTimeLogs(prev => ({ ...prev, [appointmentId]: false }));
+		}
+	};
+
+	const hasLoggedWork = (appointmentId: number) => {
+		return appointmentTimeLogs[appointmentId] && appointmentTimeLogs[appointmentId].length > 0;
+	};
+
+	const getLoggedWorkDetails = (appointmentId: number) => {
+		return appointmentTimeLogs[appointmentId]?.[0]; // Get first log
+	};
+
+	const handleLogWork = (appointment: Appointment) => {
+		setSelectedAppointment(appointment);
+		setLogWorkData({
+			description: '',
+			startTime: '',
+			endTime: '',
+			hoursWorked: 0
+		});
+		setLogWorkDialogOpen(true);
+	};
+
+	const calculateHours = () => {
+		if (logWorkData.startTime && logWorkData.endTime) {
+			const start = new Date(logWorkData.startTime);
+			const end = new Date(logWorkData.endTime);
+			const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+			setLogWorkData(prev => ({ ...prev, hoursWorked: Math.max(0, diff) }));
+		}
+	};
+
+	const handleSubmitLogWork = async () => {
+		if (!selectedAppointment || !logWorkData.description.trim() || !logWorkData.startTime || !logWorkData.endTime) {
+			alert('Please fill in all required fields');
+			return;
+		}
+
+		const start = new Date(logWorkData.startTime);
+		const end = new Date(logWorkData.endTime);
+		if (start >= end) {
+			alert('End time must be after start time');
+			return;
+		}
+
+		setSubmittingLogWork(true);
+		try {
+			await timeLogService.createTimeLog({
+				description: logWorkData.description,
+				startTime: logWorkData.startTime,
+				endTime: logWorkData.endTime,
+				appointmentId: selectedAppointment.id
+			});
+			alert('Work logged successfully!');
+			setLogWorkDialogOpen(false);
+			setSelectedAppointment(null);
+			// Reload time logs for this appointment
+			await loadTimeLogsForAppointment(selectedAppointment.id);
+		} catch (err) {
+			console.error('Failed to log work:', err);
+			alert(err instanceof Error ? err.message : 'Failed to log work. Please try again.');
+		} finally {
+			setSubmittingLogWork(false);
+		}
 	};
 
 	const convertAppointmentsToCalendarEvents = () => {
@@ -211,11 +306,24 @@ export default function EmployeeAppointments() {
 											<div className="flex gap-2 mt-2">
 												<button
 													onClick={() => handleViewDetails(appointment)}
-													className="w-full px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+													className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
 												>
 													<Eye className="w-3 h-3" />
-													View Details
+													View
 												</button>
+												{!hasLoggedWork(appointment.id) ? (
+													<button
+														onClick={() => handleLogWork(appointment)}
+														className="flex-1 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+													>
+														<ClipboardList className="w-3 h-3" />
+														Log
+													</button>
+												) : (
+													<div className="flex-1 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium text-center">
+														✓ Logged
+													</div>
+												)}
 											</div>
 										)}
 									</div>
@@ -453,6 +561,54 @@ export default function EmployeeAppointments() {
 								</div>
 							)}
 
+							{/* Logged Work Details */}
+							{selectedAppointment.status.toUpperCase() === 'COMPLETED' && hasLoggedWork(selectedAppointment.id) && (
+								<div className="bg-green-50 p-4 rounded-lg border border-green-200">
+									<h3 className="font-semibold text-lg text-gray-900 mb-3 flex items-center gap-2">
+										<ClipboardList className="w-5 h-5 text-green-600" />
+										Logged Work
+									</h3>
+									{(() => {
+										const logDetails = getLoggedWorkDetails(selectedAppointment.id);
+										if (!logDetails) return null;
+										return (
+											<div className="space-y-2">
+												<div>
+													<p className="text-sm text-gray-600">Hours Worked</p>
+													<p className="text-2xl font-bold text-green-600">
+														{logDetails.hoursWorked.toFixed(2)} hours
+													</p>
+												</div>
+												<div className="grid grid-cols-2 gap-3">
+													<div>
+														<p className="text-sm text-gray-600">Start Time</p>
+														<p className="font-medium">
+															{new Date(logDetails.startTime).toLocaleString()}
+														</p>
+													</div>
+													<div>
+														<p className="text-sm text-gray-600">End Time</p>
+														<p className="font-medium">
+															{new Date(logDetails.endTime).toLocaleString()}
+														</p>
+													</div>
+												</div>
+												<div>
+													<p className="text-sm text-gray-600">Work Description</p>
+													<p className="font-medium mt-1">{logDetails.description}</p>
+												</div>
+												<div>
+													<p className="text-sm text-gray-600">Logged At</p>
+													<p className="text-xs text-gray-500">
+														{new Date(logDetails.loggedAt).toLocaleString()}
+													</p>
+												</div>
+											</div>
+										);
+									})()}
+								</div>
+							)}
+
 							{/* Action Buttons */}
 							<div className="flex gap-3 pt-4 border-t">
 								{selectedAppointment.status.toUpperCase() === 'CONFIRMED' && (
@@ -478,6 +634,18 @@ export default function EmployeeAppointments() {
 										Submit Report
 									</button>
 								)}
+								{selectedAppointment.status.toUpperCase() === 'COMPLETED' && (
+									<button
+										onClick={() => {
+											setViewDialogOpen(false);
+											handleLogWork(selectedAppointment);
+										}}
+										className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+									>
+										<ClipboardList className="w-4 h-4" />
+										Log Work
+									</button>
+								)}
 								<button
 									onClick={() => setViewDialogOpen(false)}
 									className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium"
@@ -487,6 +655,101 @@ export default function EmployeeAppointments() {
 							</div>
 						</div>
 					)}
+				</DialogContent>
+			</Dialog>
+
+			{/* Log Work Dialog */}
+			<Dialog open={logWorkDialogOpen} onOpenChange={setLogWorkDialogOpen}>
+				<DialogContent className="max-w-lg">
+					<DialogHeader>
+						<DialogTitle>Log Work for Appointment</DialogTitle>
+						<DialogDescription>
+							Record the time you worked on this appointment
+						</DialogDescription>
+					</DialogHeader>
+
+					{selectedAppointment && (
+						<div className="space-y-4">
+							{/* Appointment Info */}
+							<div className="bg-gray-50 p-3 rounded-lg">
+								<p className="text-sm text-gray-600">Appointment</p>
+								<p className="font-medium">
+									{selectedAppointment.consultationTypeLabel || selectedAppointment.consultationType} - Customer #{selectedAppointment.customerId}
+								</p>
+								<p className="text-sm text-gray-500">{selectedAppointment.appointmentDate}</p>
+							</div>
+
+							{/* Start Time */}
+							<div className="space-y-2">
+								<Label htmlFor="startTime">Start Time *</Label>
+								<Input
+									id="startTime"
+									type="datetime-local"
+									value={logWorkData.startTime}
+									onChange={(e) => {
+										setLogWorkData({ ...logWorkData, startTime: e.target.value });
+										setTimeout(calculateHours, 0);
+									}}
+									required
+								/>
+							</div>
+
+							{/* End Time */}
+							<div className="space-y-2">
+								<Label htmlFor="endTime">End Time *</Label>
+								<Input
+									id="endTime"
+									type="datetime-local"
+									value={logWorkData.endTime}
+									onChange={(e) => {
+										setLogWorkData({ ...logWorkData, endTime: e.target.value });
+										setTimeout(calculateHours, 0);
+									}}
+									required
+								/>
+							</div>
+
+							{/* Hours Calculation */}
+							{logWorkData.hoursWorked > 0 && (
+								<div className="bg-blue-50 p-3 rounded-lg">
+									<p className="text-sm text-gray-600">Total Hours</p>
+									<p className="text-xl font-bold text-blue-600">
+										{logWorkData.hoursWorked.toFixed(2)} hours
+									</p>
+								</div>
+							)}
+
+							{/* Description */}
+							<div className="space-y-2">
+								<Label htmlFor="description">Work Description *</Label>
+								<Textarea
+									id="description"
+									placeholder="Describe the work performed..."
+									value={logWorkData.description}
+									onChange={(e) => setLogWorkData({ ...logWorkData, description: e.target.value })}
+									rows={4}
+									required
+								/>
+							</div>
+						</div>
+					)}
+
+					<DialogFooter>
+						<button
+							onClick={() => setLogWorkDialogOpen(false)}
+							className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium"
+							disabled={submittingLogWork}
+						>
+							Cancel
+						</button>
+						<button
+							onClick={handleSubmitLogWork}
+							className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium disabled:opacity-50"
+							disabled={submittingLogWork || !logWorkData.description.trim() || !logWorkData.startTime || !logWorkData.endTime}
+						>
+							{submittingLogWork ? 'Logging...' : 'Log Work'}
+						</button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</div>

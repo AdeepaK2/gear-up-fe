@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare, CheckCircle2 } from "lucide-react";
+import { Loader2, RefreshCw, Users, Crown, Filter, FileText, MessageSquarePlus, MessageSquare, CheckCircle2, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { projectService, type Project, type Task, type TaskCompletion } from '@/lib/services/projectService';
+import { projectService, type Project, type TaskCompletion } from '@/lib/services/projectService';
+import { type Task } from '@/lib/services/taskService';
+import { timeLogService, type CreateTimeLogDTO } from '@/lib/services/timeLogService';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/contexts/ToastContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import ProjectTimeLogSummaryCard from '@/components/admin/ProjectTimeLogSummary';
 
 type StatusFilter = "all" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
@@ -95,6 +98,18 @@ export default function EmployeeProjects() {
 	const [completionMessage, setCompletionMessage] = useState('');
 	const [projectToComplete, setProjectToComplete] = useState<Project | null>(null);
 	const [submittingCompletion, setSubmittingCompletion] = useState(false);
+
+	// Log work dialog state
+	const [showLogWorkDialog, setShowLogWorkDialog] = useState(false);
+	const [selectedProjectForLog, setSelectedProjectForLog] = useState<Project | null>(null);
+	const [projectTasksForLog, setProjectTasksForLog] = useState<Task[]>([]);
+	const [logWorkData, setLogWorkData] = useState({
+		description: '',
+		startTime: '',
+		endTime: '',
+		taskId: '',
+	});
+	const [submittingLogWork, setSubmittingLogWork] = useState(false);
 
 	// Load projects on component mount
 	useEffect(() => {
@@ -192,7 +207,7 @@ export default function EmployeeProjects() {
 			// Initialize task completions
 			const initialCompletions: Record<number, TaskCompletion> = {};
 			tasks.forEach((task, index) => {
-				const taskId = task.id ?? index;
+				const taskId = task.taskId ?? index;
 				console.log(`🔧 Initializing task ${taskId}: ${task.name}`);
 				initialCompletions[taskId] = {
 					taskId: taskId,
@@ -215,6 +230,73 @@ export default function EmployeeProjects() {
 
 	const handleViewUpdates = (projectId: number) => {
 		router.push(`/employee/projects/${projectId}/updates`);
+	};
+
+	const handleLogWork = async (project: Project) => {
+		setSelectedProjectForLog(project);
+		setLogWorkData({
+			description: '',
+			startTime: '',
+			endTime: '',
+			taskId: '',
+		});
+
+		// Load tasks for the project
+		setLoadingTasks(true);
+		try {
+			const tasks = await projectService.getProjectTasks(project.id);
+			setProjectTasksForLog(tasks);
+		} catch (err) {
+			console.error('Failed to load tasks:', err);
+			showToast('Failed to load project tasks', 'error');
+		} finally {
+			setLoadingTasks(false);
+		}
+
+		setShowLogWorkDialog(true);
+	};
+
+	const handleSubmitLogWork = async () => {
+		if (!selectedProjectForLog || !logWorkData.description.trim() || !logWorkData.startTime || !logWorkData.endTime || !logWorkData.taskId) {
+			showToast('Please fill all required fields', 'error');
+			return;
+		}
+
+		// Validate that end time is after start time
+		const start = new Date(logWorkData.startTime);
+		const end = new Date(logWorkData.endTime);
+		if (end <= start) {
+			showToast('End time must be after start time', 'error');
+			return;
+		}
+
+		setSubmittingLogWork(true);
+		try {
+			const timeLogDTO: CreateTimeLogDTO = {
+				description: logWorkData.description,
+				startTime: logWorkData.startTime,
+				endTime: logWorkData.endTime,
+				taskId: parseInt(logWorkData.taskId),
+				projectId: selectedProjectForLog.id,
+			};
+
+			await timeLogService.createTimeLog(timeLogDTO);
+			showToast('Work logged successfully', 'success');
+			setShowLogWorkDialog(false);
+			setSelectedProjectForLog(null);
+			setProjectTasksForLog([]);
+			setLogWorkData({
+				description: '',
+				startTime: '',
+				endTime: '',
+				taskId: '',
+			});
+		} catch (err) {
+			console.error('Failed to log work:', err);
+			showToast(err instanceof Error ? err.message : 'Failed to log work', 'error');
+		} finally {
+			setSubmittingLogWork(false);
+		}
 	};
 
 	const handleSubmitUpdate = async () => {
@@ -417,6 +499,14 @@ export default function EmployeeProjects() {
 										<div className="flex items-center gap-2">
 											{isInProgress(project.status) && (
 												<>
+													<Button
+														type="button"
+														onClick={() => handleLogWork(project)}
+														className="px-3 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+													>
+														<Clock className="w-4 h-4" />
+														Log Work
+													</Button>
 													{project.isMainRepresentative && (
 														<Button
 															type="button"
@@ -520,7 +610,7 @@ export default function EmployeeProjects() {
 								<div className="space-y-4 max-h-[300px] overflow-y-auto">
 									{projectTasks.map((task, index) => {
 										console.log(`🔍 Task data:`, task);
-										const taskId = task.id ?? index;
+										const taskId = task.taskId ?? index;
 										const completion = taskCompletions[taskId];
 										if (!completion) {
 											console.warn(`⚠️ No completion found for taskId: ${taskId}`, task);
@@ -728,6 +818,141 @@ export default function EmployeeProjects() {
 								<>
 									<CheckCircle2 className="mr-2 h-4 w-4" />
 									Mark as Completed
+								</>
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Log Work Dialog */}
+			<Dialog open={showLogWorkDialog} onOpenChange={setShowLogWorkDialog}>
+				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold flex items-center gap-2">
+							<Clock className="h-6 w-6 text-purple-600" />
+							Log Work Time
+						</DialogTitle>
+						<DialogDescription>
+							Record the time you spent working on this project
+						</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-4 py-4">
+						{selectedProjectForLog && (
+							<>
+								<div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+									<p className="text-sm font-medium text-purple-900">
+										Project: {selectedProjectForLog.name}
+									</p>
+									<p className="text-xs text-purple-700 mt-1">
+										Customer: {selectedProjectForLog.customerName || `Customer #${selectedProjectForLog.customerId}`}
+									</p>
+								</div>
+
+								{/* Time Log Summary */}
+								<ProjectTimeLogSummaryCard projectId={selectedProjectForLog.id} />
+							</>
+						)}
+
+						<div className="space-y-2">
+							<Label htmlFor="logTaskId">Task/Service *</Label>
+							<Select
+								value={logWorkData.taskId}
+								onValueChange={(value) => setLogWorkData({ ...logWorkData, taskId: value })}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Select a task..." />
+								</SelectTrigger>
+								<SelectContent>
+									{loadingTasks ? (
+										<div className="flex items-center justify-center py-4">
+											<Loader2 className="h-4 w-4 animate-spin" />
+										</div>
+									) : projectTasksForLog.length === 0 ? (
+										<div className="py-4 text-center text-sm text-gray-500">
+											No tasks found
+										</div>
+									) : (
+										projectTasksForLog.map((task) => (
+											<SelectItem key={task.taskId} value={task.taskId.toString()}>
+												{task.name} ({task.estimatedHours}h estimated)
+											</SelectItem>
+										))
+									)}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="startTime">Start Time *</Label>
+								<Input
+									id="startTime"
+									type="datetime-local"
+									value={logWorkData.startTime}
+									onChange={(e) => setLogWorkData({ ...logWorkData, startTime: e.target.value })}
+									required
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="endTime">End Time *</Label>
+								<Input
+									id="endTime"
+									type="datetime-local"
+									value={logWorkData.endTime}
+									onChange={(e) => setLogWorkData({ ...logWorkData, endTime: e.target.value })}
+									required
+								/>
+							</div>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="logDescription">Work Description *</Label>
+							<Textarea
+								id="logDescription"
+								placeholder="Describe what you worked on..."
+								value={logWorkData.description}
+								onChange={(e) => setLogWorkData({ ...logWorkData, description: e.target.value })}
+								rows={4}
+								className="resize-none"
+								required
+							/>
+							<p className="text-xs text-gray-500">
+								{logWorkData.description.length}/500 characters
+							</p>
+						</div>
+
+						<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+							<p className="text-xs text-yellow-800">
+								<strong>Note:</strong> The system will validate that your logged time doesn't exceed the total estimated hours for the project.
+							</p>
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowLogWorkDialog(false)}
+							disabled={submittingLogWork}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleSubmitLogWork}
+							disabled={submittingLogWork || !logWorkData.description.trim() || !logWorkData.startTime || !logWorkData.endTime || !logWorkData.taskId}
+							className="bg-purple-600 hover:bg-purple-700"
+						>
+							{submittingLogWork ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Logging...
+								</>
+							) : (
+								<>
+									<Clock className="mr-2 h-4 w-4" />
+									Log Work Time
 								</>
 							)}
 						</Button>
