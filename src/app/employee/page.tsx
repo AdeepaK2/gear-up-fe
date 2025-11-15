@@ -86,27 +86,40 @@ export default function EmployeeDashboard() {
 				projectService.getEmployeeProjects().catch(() => [] as Project[]), // Return empty array on error
 			]);
 
-            // Process task summary
-            const assigned = taskSummary.assigned || 0;
-            const inProg = (taskSummary.inProgress || taskSummary.inprogress || taskSummary.pending || 0);
-            const completedToday = taskSummary.completedToday || 0;
-            const reportedTotal = taskSummary.total || 0;
+			console.log('Task Summary:', taskSummary);
+			console.log('Appointments:', appointments);
+			console.log('Projects:', projects);
 
-            const derivedTotal = Math.max(reportedTotal, assigned + inProg + completedToday);
+			// Process task summary - check all possible key variations
+			const assigned = taskSummary.assigned || taskSummary.Assigned || 0;
+			const inProg = taskSummary.inProgress || taskSummary.in_progress || taskSummary.InProgress || 
+						   taskSummary.inprogress || taskSummary.pending || taskSummary.Pending || 0;
+			const completedToday = taskSummary.completedToday || taskSummary.completed_today || 
+								  taskSummary.CompletedToday || taskSummary.completed || 0;
+			const reportedTotal = taskSummary.total || taskSummary.Total || 0;
 
-            const stats: DashboardStats = {
-                assignedServices: assigned || reportedTotal,
-                inProgress: inProg,
-                completedToday,
-                total: derivedTotal,
-            };
+			// Calculate from appointments if task summary is empty
+			const confirmedCount = appointments.filter(a => a.status.toUpperCase() === 'CONFIRMED').length;
+			const inProgressCount = appointments.filter(a => a.status.toUpperCase() === 'IN_PROGRESS').length;
+			const completedCount = appointments.filter(a => a.status.toUpperCase() === 'COMPLETED').length;
 
-            // Calculate daily progress (guard against division by zero)
-            const totalForProgress = derivedTotal > 0 ? derivedTotal : (assigned + inProg) || 0;
-            const dailyProgress = {
-                completed: completedToday,
-                total: totalForProgress,
-            };
+			const derivedTotal = Math.max(reportedTotal, assigned + inProg + completedToday, appointments.length);
+
+			const stats: DashboardStats = {
+				assignedServices: assigned || confirmedCount || appointments.length,
+				inProgress: inProg || inProgressCount,
+				completedToday: completedToday || completedCount,
+				total: derivedTotal,
+			};
+
+			console.log('Calculated Stats:', stats);
+
+			// Calculate daily progress (guard against division by zero)
+			const totalForProgress = derivedTotal > 0 ? derivedTotal : (assigned + inProg) || appointments.length || 1;
+			const dailyProgress = {
+				completed: completedToday || completedCount,
+				total: totalForProgress,
+			};
 
 			// Calculate projects by status
 			const statusCounts: Record<string, number> = {};

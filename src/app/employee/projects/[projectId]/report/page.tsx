@@ -548,7 +548,7 @@ export default function ProjectReportPage() {
                       htmlFor={`charge-amount-${index}`}
                       className="text-sm text-gray-600"
                     >
-                      Amount ($)
+                      Amount (LKR)
                     </Label>
                     <Input
                       id={`charge-amount-${index}`}
