@@ -101,7 +101,7 @@ function ResetPasswordContent() {
       if (response.ok) {
         setIsSuccess(true);
         setTimeout(() => {
-          router.push("/customer/login");
+          router.push("/login");
         }, 3000);
       } else {
         setErrors({ general: data.message || "Failed to reset password. The link may have expired." });
@@ -137,7 +137,7 @@ function ResetPasswordContent() {
                 Redirecting to login page in 3 seconds...
               </p>
               <Link
-                href="/customer/login"
+                href="/login"
                 className="inline-flex items-center text-primary hover:text-secondary transition-colors font-semibold text-sm"
               >
                 Go to Login Now
@@ -162,7 +162,7 @@ function ResetPasswordContent() {
         {/* Back to Login Button */}
         <div className="mb-4">
           <Link
-            href="/customer/login"
+            href="/login"
             className="inline-flex items-center text-gray-700 hover:text-primary backdrop-blur-sm bg-white/80 px-3 py-1.5 rounded-full border border-gray-200 transition-all duration-300 hover:bg-white shadow-sm text-sm"
           >
             <ArrowLeft size={14} className="mr-1.5" />
