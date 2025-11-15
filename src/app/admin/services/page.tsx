@@ -49,6 +49,7 @@ export default function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const toast = useToast();
 
   // Form state
@@ -119,8 +120,14 @@ export default function ServicesPage() {
         throw new Error("Please login to continue");
       }
 
-  const response = await fetch(`${API_ENDPOINTS.TASKS.BASE}`, {
-        method: "POST",
+      const url = editingService 
+        ? `${API_ENDPOINTS.TASKS.BASE}/${editingService.taskId}`
+        : `${API_ENDPOINTS.TASKS.BASE}`;
+      
+      const method = editingService ? "PATCH" : "POST";
+
+  const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -145,11 +152,12 @@ export default function ServicesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add service");
+        throw new Error(errorData.message || `Failed to ${editingService ? 'update' : 'add'} service`);
       }
 
-      toast.success("Service added successfully!");
+      toast.success(`Service ${editingService ? 'updated' : 'added'} successfully!`);
       setIsDialogOpen(false);
+      setEditingService(null);
       setFormData({
         name: "",
         description: "",
@@ -161,10 +169,38 @@ export default function ServicesPage() {
       });
       fetchServices();
     } catch (err: any) {
-      toast.error(err.message || "Failed to add service");
+      toast.error(err.message || `Failed to ${editingService ? 'update' : 'add'} service`);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setFormData({
+      name: service.name,
+      description: service.description,
+      estimatedHours: service.estimatedHours.toString(),
+      estimatedCost: service.estimatedCost.toString(),
+      category: service.category,
+      priority: service.priority,
+      notes: service.notes || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingService(null);
+    setFormData({
+      name: "",
+      description: "",
+      estimatedHours: "",
+      estimatedCost: "",
+      category: "General",
+      priority: "Medium",
+      notes: "",
+    });
   };
 
   const handleDeleteService = async (serviceId: number) => {
@@ -252,7 +288,10 @@ export default function ServicesPage() {
         </div>
 
         {/* Add Service Button */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          if (!open) handleCloseDialog();
+          else setIsDialogOpen(true);
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90 h-12 px-6 text-base font-semibold">
               <PlusCircle className="mr-3 h-7 w-7" />
@@ -272,10 +311,12 @@ export default function ServicesPage() {
                   </div>
                   <div>
                     <DialogTitle className="text-2xl font-bold text-gray-900 tracking-tight">
-                      Add New Service
+                      {editingService ? 'Edit Service' : 'Add New Service'}
                     </DialogTitle>
                     <DialogDescription className="text-gray-600 mt-1 text-base">
-                      Create a new service for your catalog - employees will select services later
+                      {editingService 
+                        ? 'Update the service details below'
+                        : 'Create a new service for your catalog - employees will select services later'}
                     </DialogDescription>
                   </div>
                 </div>
@@ -444,7 +485,7 @@ export default function ServicesPage() {
                   type="button"
                   variant="outline"
                   className="h-12 px-8 bg-gradient-to-r from-red-50 to-red-100 border-red-200 text-red-700 hover:from-red-100 hover:to-red-200 hover:border-red-300 hover:text-red-900 transition-all duration-200 font-medium"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={handleCloseDialog}
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -457,10 +498,10 @@ export default function ServicesPage() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adding...
+                      {editingService ? 'Updating...' : 'Adding...'}
                     </>
                   ) : (
-                    "Add Service"
+                    editingService ? 'Update Service' : 'Add Service'
                   )}
                 </Button>
               </DialogFooter>
@@ -496,6 +537,9 @@ export default function ServicesPage() {
                     Description
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700">
+                    Price (LKR)
+                  </TableHead>
+                  <TableHead className="font-semibold text-gray-700">
                     Estimated Hours
                   </TableHead>
                   <TableHead className="font-semibold text-gray-700">
@@ -521,6 +565,9 @@ export default function ServicesPage() {
                           {service.description || "No description"}
                         </div>
                       </TableCell>
+                      <TableCell className="py-6 text-gray-700 font-semibold">
+                        LKR {service.estimatedCost.toFixed(2)}
+                      </TableCell>
                       <TableCell className="py-6 text-gray-700">
                         {service.estimatedHours}h
                       </TableCell>
@@ -528,21 +575,31 @@ export default function ServicesPage() {
                         {formatDate(service.createdAt)}
                       </TableCell>
                       <TableCell className="text-center py-6">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                          onClick={() => handleDeleteService(service.taskId)}
-                        >
-                          Delete Service
-                        </Button>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            onClick={() => handleEditService(service)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            onClick={() => handleDeleteService(service.taskId)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center py-8 text-gray-500"
                     >
                       No services found.

@@ -302,14 +302,14 @@ export default function EmployeeAppointments() {
 												</button>
 											</div>
 										)}
-										{appointment.status.toUpperCase() === 'COMPLETED' && (
+										{selectedAppointment.status.toUpperCase() === 'COMPLETED' && (
 											<div className="flex gap-2 mt-2">
 												<button
 													onClick={() => handleViewDetails(appointment)}
 													className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
 												>
 													<Eye className="w-3 h-3" />
-													View
+													View Report
 												</button>
 												{!hasLoggedWork(appointment.id) ? (
 													<button
@@ -561,6 +561,28 @@ export default function EmployeeAppointments() {
 								</div>
 							)}
 
+							{/* Submitted Report Details */}
+							{selectedAppointment.status.toUpperCase() === 'COMPLETED' && selectedAppointment.notes && (
+								<div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+									<h3 className="font-semibold text-lg text-gray-900 mb-3 flex items-center gap-2">
+										<FileText className="w-5 h-5 text-blue-600" />
+										Submitted Report
+									</h3>
+									<div className="space-y-3">
+										<div className="bg-white p-3 rounded-lg">
+											<p className="text-sm text-gray-600 mb-2">Report Details</p>
+											<div className="prose prose-sm max-w-none">
+												<p className="text-gray-800 whitespace-pre-wrap">{selectedAppointment.notes}</p>
+											</div>
+										</div>
+										<div className="text-xs text-gray-500 flex items-center gap-1">
+											<Clock className="w-3 h-3" />
+											Submitted on {new Date(selectedAppointment.appointmentDate).toLocaleDateString()}
+										</div>
+									</div>
+								</div>
+							)}
+
 							{/* Logged Work Details */}
 							{selectedAppointment.status.toUpperCase() === 'COMPLETED' && hasLoggedWork(selectedAppointment.id) && (
 								<div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -635,16 +657,20 @@ export default function EmployeeAppointments() {
 									</button>
 								)}
 								{selectedAppointment.status.toUpperCase() === 'COMPLETED' && (
-									<button
-										onClick={() => {
-											setViewDialogOpen(false);
-											handleLogWork(selectedAppointment);
-										}}
-										className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
-									>
-										<ClipboardList className="w-4 h-4" />
-										Log Work
-									</button>
+									<>
+										{!hasLoggedWork(selectedAppointment.id) && (
+											<button
+												onClick={() => {
+													setViewDialogOpen(false);
+													handleLogWork(selectedAppointment);
+												}}
+												className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium flex items-center justify-center gap-2"
+											>
+												<ClipboardList className="w-4 h-4" />
+												Log Work
+											</button>
+										)}
+									</>
 								)}
 								<button
 									onClick={() => setViewDialogOpen(false)}

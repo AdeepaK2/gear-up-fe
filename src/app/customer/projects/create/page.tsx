@@ -492,7 +492,7 @@ export default function CreateProjectPage() {
               <div className="pb-3 border-b">
                 <p className="text-sm text-gray-600">Total Cost</p>
                 <p className="text-2xl font-bold text-green-600">
-                  ${totalCost.toFixed(2)}
+                  LKR {totalCost.toFixed(2)}
                 </p>
               </div>
             </div>
