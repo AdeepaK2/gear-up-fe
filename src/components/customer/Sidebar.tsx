@@ -13,6 +13,7 @@ import {
   MessageSquare,
   LogOut,
   FileText,
+  X,
 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import type { User as UserType } from '@/lib/types/Auth';
@@ -29,7 +30,12 @@ const navItems = [
   { href: '/customer/chatbot', label: 'Chatbot', icon: MessageSquare },
 ];
 
-export default function CustomerSidebar() {
+interface CustomerSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function CustomerSidebar({ isOpen = true, onClose }: CustomerSidebarProps) {
   const rawPathname = usePathname() || '/customer/dashboard';
   const router = useRouter();
   const toast = useToast();
@@ -75,7 +81,19 @@ export default function CustomerSidebar() {
   };
 
   return (
-    <aside className="fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={`fixed top-0 left-0 w-64 h-screen bg-white border-r shadow-sm px-4 py-6 flex flex-col overflow-y-auto z-50 transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:translate-x-0`}>
       <div className="mb-6 text-center">
         <div className="inline-flex items-center justify-center bg-gray-100 rounded px-2 py-1 mx-auto">
           <Image
@@ -154,5 +172,6 @@ export default function CustomerSidebar() {
         onConfirm={handleLogoutConfirm}
       />
     </aside>
+    </>
   );
 }
