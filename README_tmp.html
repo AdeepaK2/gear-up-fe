@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>README.md</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+html,footer,header{
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Custom MD PDF CSS
+ */
+html,footer,header{
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+
+ }
+body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///r%3A/2.Travail/1.Enseignement/Cours/_1.Outils/2.Developpement/1.SCSS/main.css" type="text/css"><link rel="stylesheet" href="file:///d%3A/rdaros/Cours/_1.Outils/2.Developpement/1.SCSS/main.css" type="text/css">
+</head>
+
+<body>
+    <h1 id="gear-up-frontend">Gear Up Frontend</h1>
+<p>Modern, responsive vehicle service management system built with Next.js 15 and React 18.</p>
+<h2 id="%F0%9F%9A%80-tech-stack">🚀 Tech Stack</h2>
+<ul>
+<li><strong>Next.js 15</strong> - React framework with App Router</li>
+<li><strong>React 18</strong> - UI library with modern hooks</li>
+<li><strong>TypeScript</strong> - Type-safe development</li>
+<li><strong>Tailwind CSS</strong> - Utility-first styling</li>
+<li><strong>shadcn/ui</strong> - High-quality React components</li>
+<li><strong>Lucide Icons</strong> - Beautiful icon library</li>
+<li><strong>Docker</strong> - Containerization</li>
+<li><strong>Google Kubernetes Engine</strong> - Cloud deployment</li>
+</ul>
+<h2 id="%F0%9F%93%8B-features">📋 Features</h2>
+<h3 id="customer-portal">Customer Portal</h3>
+<ul>
+<li>🚗 Vehicle registration and management</li>
+<li>📅 Service appointment booking</li>
+<li>📊 Real-time appointment status tracking</li>
+<li>💬 AI-powered chatbot assistance</li>
+<li>📜 Service history and invoices</li>
+</ul>
+<h3 id="employee-dashboard">Employee Dashboard</h3>
+<ul>
+<li>✅ Task management and tracking</li>
+<li>⏱️ Work time logging against projects/appointments</li>
+<li>📈 Personal productivity statistics</li>
+<li>🔔 Appointment notifications</li>
+<li>📊 Work distribution analytics</li>
+</ul>
+<h3 id="admin-console">Admin Console</h3>
+<ul>
+<li>👥 User and employee management</li>
+<li>🏗️ Project creation and oversight</li>
+<li>📋 Task assignment and tracking</li>
+<li>📊 Time log monitoring and reporting</li>
+<li>📈 Team performance analytics</li>
+<li>🚗 Vehicle and customer management</li>
+</ul>
+<h2 id="%F0%9F%9B%A0%EF%B8%8F-prerequisites">🛠️ Prerequisites</h2>
+<ul>
+<li>Node.js 18+ (20+ recommended)</li>
+<li>npm 9+ or pnpm</li>
+<li>Backend API running (gear-up-be)</li>
+</ul>
+<h2 id="%E2%9A%99%EF%B8%8F-environment-configuration">⚙️ Environment Configuration</h2>
+<p>Create <code>.env.local</code>:</p>
+<pre class="hljs"><code><div># API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+
+# Optional: Analytics, etc.
+# NEXT_PUBLIC_GA_ID=your-ga-id
+</div></code></pre>
+<h2 id="%F0%9F%8F%83-running-locally">🏃 Running Locally</h2>
+<h2 id="%F0%9F%8F%83-running-locally">🏃 Running Locally</h2>
+<h3 id="development-server">Development Server</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Install dependencies</span>
+npm install
+
+<span class="hljs-comment"># Start development server</span>
+npm run dev
+</div></code></pre>
+<p>Open <a href="http://localhost:3000">http://localhost:3000</a> in your browser.</p>
+<h3 id="docker">Docker</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Build image</span>
+docker build -t gearup-frontend .
+
+<span class="hljs-comment"># Run container</span>
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api \
+  gearup-frontend
+</div></code></pre>
+<h3 id="docker-compose">Docker Compose</h3>
+<pre class="hljs"><code><div><span class="hljs-comment"># Start frontend only</span>
+docker-compose up -d
+
+<span class="hljs-comment"># View logs</span>
+docker-compose logs -f
+</div></code></pre>
+<h2 id="%F0%9F%8E%A8-styling-guide">🎨 Styling Guide</h2>
+<h3 id="color-palette">Color Palette</h3>
+<pre class="hljs"><code><div><span class="hljs-comment">/* Primary colors */</span>
+<span class="hljs-selector-tag">--color-primary</span>: <span class="hljs-selector-id">#163172</span>;    <span class="hljs-comment">/* Dark blue */</span>
+<span class="hljs-selector-tag">--color-secondary</span>: <span class="hljs-selector-id">#1E56A0</span>;  <span class="hljs-comment">/* Medium blue */</span>
+<span class="hljs-selector-tag">--color-ternary</span>: <span class="hljs-selector-id">#D6E4F0</span>;    <span class="hljs-comment">/* Light blue */</span>
+<span class="hljs-selector-tag">--color-bg</span>: <span class="hljs-selector-id">#F6F6F6</span>;         <span class="hljs-comment">/* Light gray background */</span>
+</div></code></pre>
+<h3 id="tailwind-utilities">Tailwind Utilities</h3>
+<pre class="hljs"><code><div>// Text colors
+&lt;p className=&quot;text-primary&quot;&gt;Primary text&lt;/p&gt;
+&lt;p className=&quot;text-secondary&quot;&gt;Secondary text&lt;/p&gt;
+&lt;p className=&quot;text-ternary&quot;&gt;Light text&lt;/p&gt;
+
+// Backgrounds
+&lt;div className=&quot;bg-primary&quot;&gt;Dark blue background&lt;/div&gt;
+&lt;div className=&quot;bg-secondary&quot;&gt;Medium blue background&lt;/div&gt;
+&lt;div className=&quot;bg-ternary&quot;&gt;Light blue background&lt;/div&gt;
+
+// Borders
+&lt;div className=&quot;border-primary&quot;&gt;Primary border&lt;/div&gt;
+</div></code></pre>
+<h3 id="fonts">Fonts</h3>
+<ul>
+<li><strong>Sans-serif</strong>: Geist (default)</li>
+<li><strong>Monospace</strong>: Geist Mono</li>
+</ul>
+<pre class="hljs"><code><div>&lt;div className=&quot;font-sans&quot;&gt;Regular text&lt;/div&gt;
+&lt;code className=&quot;font-mono&quot;&gt;Code text&lt;/code&gt;
+</div></code></pre>
+<h2 id="%F0%9F%93%A6-building-for-production">📦 Building for Production</h2>
+<pre class="hljs"><code><div><span class="hljs-comment"># Create production build</span>
+npm run build
+
+<span class="hljs-comment"># Test production build locally</span>
+npm run start
+
+<span class="hljs-comment"># Production server runs on http://localhost:3000</span>
+</div></code></pre>
+<h2 id="%F0%9F%A7%AA-testing">🧪 Testing</h2>
+<pre class="hljs"><code><div><span class="hljs-comment"># Lint code</span>
+npm run lint
+
+<span class="hljs-comment"># Type check</span>
+npx tsc --noEmit
+</div></code></pre>
+<h2 id="%F0%9F%9A%A2-deployment">🚢 Deployment</h2>
+<h3 id="google-kubernetes-engine-gke">Google Kubernetes Engine (GKE)</h3>
+<p>Automated deployment via GitHub Actions:</p>
+<ol>
+<li><strong>Setup</strong>: Follow <code>../DEPLOYMENT_GUIDE.md</code></li>
+<li><strong>Configure</strong>: Add GitHub secrets for GCP</li>
+<li><strong>Deploy</strong>: Push to <code>main</code> or <code>production</code> branch</li>
+</ol>
+<pre class="hljs"><code><div><span class="hljs-comment"># Manual deployment</span>
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/frontend-configmap.yaml
+kubectl apply -f k8s/frontend-deployment.yaml
+</div></code></pre>
+<h3 id="vercel-alternative">Vercel (Alternative)</h3>
+<p><a href="https://vercel.com/new"><img src="https://vercel.com/button" alt="Deploy with Vercel"></a></p>
+<ol>
+<li>Import repository</li>
+<li>Set environment variable: <code>NEXT_PUBLIC_API_BASE_URL</code></li>
+<li>Deploy</li>
+</ol>
+<h2 id="%F0%9F%93%81-project-structure">📁 Project Structure</h2>
+<pre class="hljs"><code><div>src/
+├── app/                    # Next.js App Router pages
+│   ├── admin/             # Admin dashboard routes
+│   ├── employee/          # Employee dashboard routes
+│   ├── customer/          # Customer portal routes
+│   └── auth/              # Authentication pages
+├── components/            # React components
+│   ├── admin/            # Admin-specific components
+│   ├── employee/         # Employee-specific components
+│   ├── customer/         # Customer-specific components
+│   └── ui/               # shadcn/ui components
+├── contexts/             # React Context providers
+│   └── AuthContext.tsx   # Authentication state
+├── lib/                  # Utilities and services
+│   ├── services/        # API service functions
+│   └── utils.ts         # Helper functions
+└── types/               # TypeScript type definitions
+</div></code></pre>
+<h2 id="%F0%9F%94%91-key-features-implementation">🔑 Key Features Implementation</h2>
+<h3 id="authentication">Authentication</h3>
+<pre class="hljs"><code><div>import { useAuth } from '@/contexts/AuthContext';
+
+function MyComponent() {
+  const { user, login, logout, isAuthenticated } = useAuth();
+  
+  return (
+    &lt;div&gt;
+      {isAuthenticated ? (
+        &lt;p&gt;Welcome {user.name}&lt;/p&gt;
+      ) : (
+        &lt;button onClick={login}&gt;Login&lt;/button&gt;
+      )}
+    &lt;/div&gt;
+  );
+}
+</div></code></pre>
+<h3 id="api-calls">API Calls</h3>
+<pre class="hljs"><code><div>import { projectService } from '@/lib/services/projectService';
+
+async function fetchProjects() {
+  const projects = await projectService.getAllProjects();
+  return projects;
+}
+</div></code></pre>
+<h3 id="time-logging">Time Logging</h3>
+<pre class="hljs"><code><div>import { timeLogService } from '@/lib/services/timeLogService';
+
+await timeLogService.createTimeLog({
+  description: 'Completed oil change',
+  startTime: '2025-01-15T09:00:00',
+  endTime: '2025-01-15T11:00:00',
+  taskId: 123,
+  appointmentId: 456
+});
+</div></code></pre>
+<h2 id="%F0%9F%8E%AF-routes">🎯 Routes</h2>
+<h3 id="public-routes">Public Routes</h3>
+<ul>
+<li><code>/</code> - Landing page</li>
+<li><code>/auth/login</code> - Login page</li>
+<li><code>/auth/register</code> - Registration</li>
+</ul>
+<h3 id="customer-routes">Customer Routes</h3>
+<ul>
+<li><code>/customer/dashboard</code> - Customer dashboard</li>
+<li><code>/customer/vehicles</code> - Vehicle management</li>
+<li><code>/customer/appointments</code> - Appointment booking</li>
+</ul>
+<h3 id="employee-routes">Employee Routes</h3>
+<ul>
+<li><code>/employee/dashboard</code> - Employee dashboard</li>
+<li><code>/employee/tasks</code> - Task list</li>
+<li><code>/employee/time-logs</code> - Time tracking</li>
+</ul>
+<h3 id="admin-routes">Admin Routes</h3>
+<ul>
+<li><code>/admin/dashboard</code> - Admin overview</li>
+<li><code>/admin/projects</code> - Project management</li>
+<li><code>/admin/employees</code> - Employee management</li>
+<li><code>/admin/time-logs</code> - Team time tracking</li>
+</ul>
+<h2 id="%F0%9F%94%92-security">🔒 Security</h2>
+<ul>
+<li>JWT token stored in localStorage</li>
+<li>Protected routes with middleware</li>
+<li>Role-based UI rendering</li>
+<li>XSS protection via React</li>
+<li>HTTPS in production</li>
+</ul>
+<h2 id="%F0%9F%8C%90-browser-support">🌐 Browser Support</h2>
+<ul>
+<li>Chrome (latest)</li>
+<li>Firefox (latest)</li>
+<li>Safari (latest)</li>
+<li>Edge (latest)</li>
+</ul>
+<h2 id="%F0%9F%A4%9D-contributing">🤝 Contributing</h2>
+<ol>
+<li>Create feature branch from <code>main</code></li>
+<li>Follow TypeScript and ESLint rules</li>
+<li>Test responsiveness (mobile, tablet, desktop)</li>
+<li>Submit pull request</li>
+</ol>
+<h2 id="%F0%9F%93%9A-resources">📚 Resources</h2>
+<p>To learn more about Next.js, take a look at the following resources:</p>
+<ul>
+<li><a href="https://nextjs.org/docs">Next.js Documentation</a> - learn about Next.js features and API.</li>
+<li><a href="https://nextjs.org/learn">Learn Next.js</a> - an interactive Next.js tutorial.</li>
+</ul>
+<p>You can check out <a href="https://github.com/vercel/next.js">the Next.js GitHub repository</a> - your feedback and contributions are welcome!</p>
+<h2 id="deploy-on-vercel">Deploy on Vercel</h2>
+<p>The easiest way to deploy your Next.js app is to use the <a href="https://vercel.com/new?utm_medium=default-template&amp;filter=next.js&amp;utm_source=create-next-app&amp;utm_campaign=create-next-app-readme">Vercel Platform</a> from the creators of Next.js.</p>
+<p>Check out our <a href="https://nextjs.org/docs/app/building-your-application/deploying">Next.js deployment documentation</a> for more details.<br>
+#� �g�e�a�r�-�u�p�-�f�e�<br>
+�<br>
+�</p>
+
+</body>
+
+</html>
