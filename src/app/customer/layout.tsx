@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/customer/Sidebar";
 import Header from "@/components/customer/Header";
@@ -13,6 +13,7 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Handle chatbot page - full screen without header/sidebar
   const isChatbotPage =
@@ -30,11 +31,14 @@ export default function CustomerLayout({
     <ProtectedRoute requiredRole={UserRole.CUSTOMER} redirectTo="/login">
       <div className="min-h-screen bg-gray-50">
         {/* Fixed Sidebar */}
-        <Sidebar />
+        <Sidebar 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)} 
+        />
 
         {/* Page wrapper: reserve top space for header (h-16) and apply left margin on md+ to avoid sidebar overlap */}
         <div className="ml-0 md:ml-64 pt-16">
-          <Header />
+          <Header onMenuClick={() => setIsSidebarOpen(true)} />
           <main className="p-4 max-w-full">{children}</main>
         </div>
       </div>

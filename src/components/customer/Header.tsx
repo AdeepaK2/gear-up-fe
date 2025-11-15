@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Bell, User } from "lucide-react";
+import { Bell, User, Menu } from "lucide-react";
 import { authService } from "@/lib/services/authService";
 import { customerService } from "@/lib/services/customerService";
 import { useNotifications } from "@/contexts/NotificationContext";
 import Link from "next/link";
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const [customerName, setCustomerName] = useState("Customer");
   const { unreadCount, connectionStatus } = useNotifications();
 
@@ -35,10 +39,16 @@ export default function Header() {
   }, []);
 
   return (
-    // Fixed header that accounts for the sidebar width on large screens and is full-width on small screens
-    <header className="fixed top-0 left-0 right-0 h-16 flex items-center px-4 md:px-6 bg-white border-b border-gray-200 shadow-sm z-40">
-      {/* On md+ screens the sidebar occupies 16rem (left-64). We add a wrapper to push header contents to the right so icons align visually with the main content. */}
-      <div className="w-full max-w-[calc(100%_-_16rem)] ml-auto flex items-center">
+    <header className="fixed top-0 left-0 right-0 h-16 flex items-center px-4 md:px-6 bg-white border-b border-gray-200 shadow-sm z-40 md:left-64">
+      {/* Hamburger menu for mobile */}
+      <button
+        onClick={onMenuClick}
+        className="mr-4 p-2 rounded-lg hover:bg-gray-100 md:hidden"
+      >
+        <Menu size={24} className="text-primary" />
+      </button>
+
+      <div className="w-full flex items-center">
         <div className="flex items-center ml-auto">
           <Link href="/customer/notifications" className="relative cursor-pointer">
             <Bell className="h-6 w-6 text-primary" />
