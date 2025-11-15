@@ -331,7 +331,7 @@ export default function CustomerReportsPage() {
                               </div>
                               <div className="text-left sm:text-right sm:ml-4 w-full sm:w-auto flex sm:flex-col justify-between sm:justify-start items-center sm:items-end">
                                 <div className="text-base sm:text-lg font-bold text-primary">
-                                  ${(task.estimatedCost || 0).toFixed(2)}
+                                  LKR {(task.estimatedCost || 0).toFixed(2)}
                                 </div>
                                 <div className="text-xs sm:text-sm text-gray-500">
                                   {(task.estimatedHours || 0)}h
@@ -346,7 +346,7 @@ export default function CustomerReportsPage() {
                           Total Services Cost
                         </div>
                         <div className="text-xl sm:text-2xl font-bold text-primary">
-                          ${project.tasks
+                          LKR {project.tasks
                             .reduce((sum, task) => sum + (task.estimatedCost || 0), 0)
                             .toFixed(2)}
                         </div>
@@ -522,7 +522,7 @@ export default function CustomerReportsPage() {
                             </div>
                             <div className="text-left sm:text-right sm:ml-4 w-full sm:w-auto flex sm:flex-col justify-between sm:justify-start items-center sm:items-end">
                               <div className="text-base sm:text-lg font-bold text-primary">
-                                ${task.estimatedCost.toFixed(2)}
+                                LKR {task.estimatedCost.toFixed(2)}
                               </div>
                               <div className="text-xs sm:text-sm text-gray-500">
                                 {task.estimatedHours}h
@@ -544,7 +544,7 @@ export default function CustomerReportsPage() {
                         Total Estimated Cost
                       </div>
                       <div className="text-xl sm:text-2xl font-bold text-primary">
-                        ${appointment.tasks
+                        LKR {appointment.tasks
                           .reduce((sum, task) => sum + task.estimatedCost, 0)
                           .toFixed(2)}
                       </div>
