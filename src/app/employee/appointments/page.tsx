@@ -302,7 +302,7 @@ export default function EmployeeAppointments() {
 												</button>
 											</div>
 										)}
-										{selectedAppointment.status.toUpperCase() === 'COMPLETED' && (
+										{appointment.status.toUpperCase() === 'COMPLETED' && (
 											<div className="flex gap-2 mt-2">
 												<button
 													onClick={() => handleViewDetails(appointment)}
